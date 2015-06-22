@@ -1,7 +1,7 @@
 # ApplicationInsights-Go
 Microsoft Application Insights SDK for Go
 
-This project provides a Go SDK for Application Insights. [Application Insights](http://azure.microsoft.com/en-us/services/application-insights/) is a service that allows developers to keep their applications available, performant, and successful. This go package will allow you to send telemetry of various kinds (event, trace, exception, etc.) to the Application Insights service where they can be visualized in the Azure Portal. 
+This project provides a Go SDK for Application Insights. [Application Insights](http://azure.microsoft.com/en-us/services/application-insights/) is a service that allows developers to keep their applications available, performant, and successful. This go package will allow you to send telemetry of various kinds (event, metric, trace) to the Application Insights service where they can be visualized in the Azure Portal. 
 
 ## Requirements ##
 **Install**
@@ -19,10 +19,10 @@ import "github.com/Microsoft/ApplicationInsights-Go"
 client := appinsights.NewTelemetryClient("<instrumentation key>")
 client.TrackEvent("custom event")
 client.TrackMetric("custom metric", 123)
-client.TrackTrace("trace message"
+client.TrackTrace("trace message")
 ```
 
-## telpad example test and example app ##
+## telpad test and example app ##
 
 The telpad app can be used to send test telemetry and as an example of using the SDK.
 

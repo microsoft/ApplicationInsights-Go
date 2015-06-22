@@ -13,7 +13,14 @@ type telemetryContext struct {
 	tags map[string]string
 }
 
-func NewTelemetryContext() TelemetryContext {
+func NewItemTelemetryContext() TelemetryContext {
+	context := &telemetryContext{
+		tags: make(map[string]string),
+	}
+	return context
+}
+
+func NewClientTelemetryContext() TelemetryContext {
 	context := &telemetryContext{
 		tags: make(map[string]string),
 	}

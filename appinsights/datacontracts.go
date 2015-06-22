@@ -3,20 +3,20 @@ package appinsights
 import "time"
 
 type Telemetry interface {
-    Timestamp() time.Time
-    Context() TelemetryContext
+	Timestamp() time.Time
+	Context() TelemetryContext
 	baseTypeName() string
 	baseData() Domain
 }
 
 type BaseTelemetry struct {
-    timestamp time.Time
+	timestamp time.Time
 	context   TelemetryContext
 }
 
 type TraceTelemetry struct {
-    BaseTelemetry
-	data      *messageData
+	BaseTelemetry
+	data *messageData
 }
 
 func NewTraceTelemetry(message string, severityLevel SeverityLevel) *TraceTelemetry {
@@ -28,13 +28,13 @@ func NewTraceTelemetry(message string, severityLevel SeverityLevel) *TraceTeleme
 	data.Ver = 2
 
 	item := &TraceTelemetry{
-		data:      data,
+		data: data,
 	}
-    
-    item.timestamp = now
-    item.context = &telemetryContext{}
-    
-    return item
+
+	item.timestamp = now
+	item.context = NewItemTelemetryContext()
+
+	return item
 }
 
 func (item *TraceTelemetry) Timestamp() time.Time {
@@ -42,7 +42,7 @@ func (item *TraceTelemetry) Timestamp() time.Time {
 }
 
 func (item *TraceTelemetry) Context() TelemetryContext {
-    return item.context
+	return item.context
 }
 
 func (item *TraceTelemetry) baseTypeName() string {
@@ -55,7 +55,7 @@ func (item *TraceTelemetry) baseData() Domain {
 
 type EventTelemetry struct {
 	BaseTelemetry
-	data      *eventData
+	data *eventData
 }
 
 func NewEventTelemetry(name string) *EventTelemetry {
@@ -67,13 +67,13 @@ func NewEventTelemetry(name string) *EventTelemetry {
 	data.Ver = 2
 
 	item := &EventTelemetry{
-		data:      data,
+		data: data,
 	}
-    
-    item.timestamp = now
-    item.context = &telemetryContext{}
-    
-    return item
+
+	item.timestamp = now
+	item.context = NewItemTelemetryContext()
+
+	return item
 }
 
 func (item *EventTelemetry) Timestamp() time.Time {
@@ -81,7 +81,7 @@ func (item *EventTelemetry) Timestamp() time.Time {
 }
 
 func (item *EventTelemetry) Context() TelemetryContext {
-    return item.context
+	return item.context
 }
 
 func (item *EventTelemetry) baseTypeName() string {
@@ -94,7 +94,7 @@ func (item *EventTelemetry) baseData() Domain {
 
 type MetricTelemetry struct {
 	BaseTelemetry
-	data      *metricData
+	data *metricData
 }
 
 func NewMetricTelemetry(name string, value float32) *MetricTelemetry {
@@ -113,13 +113,13 @@ func NewMetricTelemetry(name string, value float32) *MetricTelemetry {
 	data.Metrics[0] = metric
 
 	item := &MetricTelemetry{
-		data:      data,
+		data: data,
 	}
-    
-    item.timestamp = now
-    item.context = &telemetryContext{}
-    
-    return item
+
+	item.timestamp = now
+	item.context = NewItemTelemetryContext()
+
+	return item
 }
 
 func (item *MetricTelemetry) Timestamp() time.Time {
@@ -127,7 +127,7 @@ func (item *MetricTelemetry) Timestamp() time.Time {
 }
 
 func (item *MetricTelemetry) Context() TelemetryContext {
-    return item.context
+	return item.context
 }
 
 func (item *MetricTelemetry) baseTypeName() string {
@@ -140,7 +140,7 @@ func (item *MetricTelemetry) baseData() Domain {
 
 type RequestTelemetry struct {
 	BaseTelemetry
-	data      *requestData
+	data *requestData
 }
 
 func NewRequestTelemetry(name string, timestamp time.Time, duration time.Duration, responseCode string, success bool) *RequestTelemetry {
@@ -156,13 +156,13 @@ func NewRequestTelemetry(name string, timestamp time.Time, duration time.Duratio
 	data.Ver = 2
 
 	item := &RequestTelemetry{
-		data:      data,
+		data: data,
 	}
-    
-    item.timestamp = now
-    item.context = &telemetryContext{}
-    
-    return item
+
+	item.timestamp = now
+	item.context = NewItemTelemetryContext()
+
+	return item
 }
 
 func (item *RequestTelemetry) Timestamp() time.Time {
@@ -170,7 +170,7 @@ func (item *RequestTelemetry) Timestamp() time.Time {
 }
 
 func (item *RequestTelemetry) Context() TelemetryContext {
-    return item.context
+	return item.context
 }
 
 func (item *RequestTelemetry) baseTypeName() string {
