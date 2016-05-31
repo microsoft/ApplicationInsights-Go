@@ -20,7 +20,7 @@
 	"showOutput": "always",
     
     "windows": {
-        "command": "go.exe",
+        "command": "go.exe"
     },
 	
     "tasks": [
