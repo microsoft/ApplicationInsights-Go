@@ -18,7 +18,7 @@ func processDiagnosticMessage(message string) {
 func main() {
 	fmt.Println("telpad " + version + " - a tool for sending test telemetry.")
 
-	iKey := null
+	iKey := "2fd42776-5762-41fa-b141-d27dfdb31b3f"
 
 	if len(os.Args) == 2 {
 		iKey = os.Args[1]
