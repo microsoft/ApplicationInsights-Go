@@ -11,14 +11,14 @@ import "github.com/Microsoft/ApplicationInsights-Go/appinsights"
 const version string = "1.0"
 
 func processDiagnosticMessage(message string) {
-    fmt.Println(message)
-    fmt.Printf("> ")
+	fmt.Println(message)
+	fmt.Printf("> ")
 }
 
 func main() {
 	fmt.Println("telpad " + version + " - a tool for sending test telemetry.")
-    
-    iKey := null
+
+	iKey := null
 
 	if len(os.Args) == 2 {
 		iKey = os.Args[1]
@@ -33,11 +33,11 @@ func main() {
 
 	fmt.Println()
 	fmt.Printf("Sending telemetry with iKey '%s'.", iKey)
-    
-	fmt.Println()    
-    
-    diagnosticsMessageListener := appinsights.NewDiagnosticsMessageListener()
-    go diagnosticsMessageListener.ProcessMessages(processDiagnosticMessage)
+
+	fmt.Println()
+
+	diagnosticsMessageListener := appinsights.NewDiagnosticsMessageListener()
+	go diagnosticsMessageListener.ProcessMessages(processDiagnosticMessage)
 
 	in := bufio.NewReader(os.Stdin)
 
@@ -77,8 +77,8 @@ func main() {
 					break
 				}
 				telemetryClient.TrackMetric(strings.TrimSpace(parts[1]), float32(value))
-            case "request":
-                
+			case "request":
+
 			default:
 				telemetryClient.TrackTrace(input)
 			}

@@ -60,16 +60,16 @@ func (tc *telemetryClient) Track(item Telemetry) {
 			iKey = tc.TelemetryConfiguration.InstrumentationKey
 		}
 
-        itemContext := item.Context().(*telemetryContext)
-        itemContext.iKey = iKey
-        
-        clientContext := tc.context.(*telemetryContext)
-        
-        for tagkey, tagval := range clientContext.tags {
-            if itemContext.tags[tagkey] == "" {
-                itemContext.tags[tagkey] = tagval
-            }
-        }
+		itemContext := item.Context().(*telemetryContext)
+		itemContext.iKey = iKey
+
+		clientContext := tc.context.(*telemetryContext)
+
+		for tagkey, tagval := range clientContext.tags {
+			if itemContext.tags[tagkey] == "" {
+				itemContext.tags[tagkey] = tagval
+			}
+		}
 
 		tc.channel.Send(item)
 	}
