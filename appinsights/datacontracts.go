@@ -1,6 +1,10 @@
 package appinsights
 
-import "time"
+import (
+	"fmt"
+	"github.com/satori/go.uuid"
+	"time"
+)
 
 type Telemetry interface {
 	Timestamp() time.Time
@@ -145,10 +149,30 @@ type RequestTelemetry struct {
 
 func NewRequestTelemetry(name string, timestamp time.Time, duration time.Duration, responseCode string, success bool) *RequestTelemetry {
 	now := time.Now()
+
+	var (
+		refHours        = int(duration.Hours())
+		refMinutes      = int(duration.Minutes())
+		refSeconds      = int(duration.Seconds())
+		refMilliPlusOne = int(duration.Nanoseconds() / 1e3)
+		days            = refHours / 24
+		hours           = refHours - days*24
+		minutes         = refMinutes - refHours*60
+		seconds         = refSeconds - refMinutes*60
+		milliPlusOne    = refMilliPlusOne - refSeconds*1e6
+	)
+	durationString := fmt.Sprintf("%02d.%02d:%02d:%02d.%04d",
+		days,
+		hours,
+		minutes,
+		seconds,
+		milliPlusOne)
+
 	data := &requestData{
+		Id:           uuid.NewV4().String(),
 		Name:         name,
 		StartTime:    timestamp.Format(time.RFC3339Nano),
-		Duration:     duration.String(),
+		Duration:     durationString,
 		ResponseCode: responseCode,
 		Success:      success,
 	}
