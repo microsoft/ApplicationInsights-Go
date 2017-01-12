@@ -1,48 +1,39 @@
 package appinsights
 
-import "os"
-import "runtime"
+import (
+	"os"
+	"runtime"
+)
 
-type TelemetryContext interface {
-	InstrumentationKey() string
-	loadDeviceContext()
-}
-
-type telemetryContext struct {
-	iKey string
-	tags map[string]string
+type TelemetryContext struct {
+	InstrumentationKey string
+	Tags               map[string]string
 }
 
 func NewItemTelemetryContext() TelemetryContext {
-	context := &telemetryContext{
-		tags: make(map[string]string),
-	}
-	return context
+	return TelemetryContext{
+		Tags: make(map[string]string)}
 }
 
 func NewClientTelemetryContext() TelemetryContext {
-	context := &telemetryContext{
-		tags: make(map[string]string),
+	context := TelemetryContext{
+		Tags: make(map[string]string),
 	}
-	context.loadDeviceContext()
-	context.loadInternalContext()
+	loadDeviceContext(&context)
+	loadInternalContext(&context)
 	return context
 }
 
-func (context *telemetryContext) InstrumentationKey() string {
-	return context.iKey
-}
-
-func (context *telemetryContext) loadDeviceContext() {
+func loadDeviceContext(context *TelemetryContext) {
 	hostname, err := os.Hostname()
 	if err == nil {
-		context.tags[DeviceId] = hostname
-		context.tags[DeviceMachineName] = hostname
-		context.tags[DeviceRoleInstance] = hostname
+		context.Tags[DeviceId] = hostname
+		context.Tags[DeviceMachineName] = hostname
+		context.Tags[DeviceRoleInstance] = hostname
 	}
-	context.tags[DeviceOS] = runtime.GOOS
+	context.Tags[DeviceOS] = runtime.GOOS
 }
 
-func (context *telemetryContext) loadInternalContext() {
-	context.tags[InternalSdkVersion] = "go:" + version
+func loadInternalContext(context *TelemetryContext) {
+	context.Tags[InternalSdkVersion] = "go:" + version
 }

@@ -18,21 +18,14 @@ func (items TelemetryBufferItems) serialize() string {
 }
 
 func serialize(item Telemetry) string {
-	data := &data{
-		BaseType: item.baseTypeName() + "Data",
-		BaseData: item.baseData(),
-	}
-
-	context := item.Context()
-
-	envelope := &envelope{
-		Name: "Microsoft.ApplicationInsights." + item.baseTypeName(),
-		Time: item.Timestamp().Format(time.RFC3339),
-		IKey: context.InstrumentationKey(),
-		Data: data,
-	}
-
-	envelope.Tags = context.(*telemetryContext).tags
+	envelope := Envelope{
+		Name: "Microsoft.ApplicationInsights." + item.TypeName,
+		Time: item.Timestamp.Format(time.RFC3339),
+		IKey: item.Context.InstrumentationKey,
+		Data: Data{
+			BaseType: item.TypeName + "Data",
+			BaseData: item.Data},
+		Tags: item.Context.Tags}
 
 	jsonBytes, err := json.Marshal(envelope)
 	if err != nil {

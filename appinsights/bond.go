@@ -1,24 +1,16 @@
 package appinsights
 
-type Domain interface {
+type Data struct {
+	BaseType string      `json:"baseType"`
+	BaseData interface{} `json:"baseData"`
 }
 
-type domain struct {
-	Ver        int               `json:"ver"`
-	Properties map[string]string `json:"properties"`
-}
-
-type data struct {
-	BaseType string `json:"baseType"`
-	BaseData Domain `json:"baseData"`
-}
-
-type envelope struct {
+type Envelope struct {
 	Name string            `json:"name"`
 	Time string            `json:"time"`
 	IKey string            `json:"iKey"`
 	Tags map[string]string `json:"tags"`
-	Data *data             `json:"data"`
+	Data Data              `json:"data"`
 }
 
 type DataPointType int
@@ -33,18 +25,20 @@ type DataPoint struct {
 	Kind   DataPointType `json:"kind"`
 	Value  float32       `json:"value"`
 	Count  int           `json:"count"`
-	min    float32       `json:"min"`
-	max    float32       `json:"max"`
-	stdDev float32       `json:"stdDev"`
+	Min    float32       `json:"min"`
+	Max    float32       `json:"max"`
+	StdDev float32       `json:"stdDev"`
 }
 
-type metricData struct {
-	domain
-	Metrics []*DataPoint `json:"metrics"`
+type MetricData struct {
+	Ver        int               `json:"ver"`
+	Properties map[string]string `json:"properties"`
+	Metrics    []*DataPoint      `json:"metrics"`
 }
 
-type eventData struct {
-	domain
+type EventData struct {
+	Ver          int                `json:"ver"`
+	Properties   map[string]string  `json:"properties"`
 	Name         string             `json:"name"`
 	Measurements map[string]float32 `json:"measurements"`
 }
@@ -59,22 +53,24 @@ const (
 	Critical
 )
 
-type messageData struct {
-	domain
-	Message       string        `json:"message"`
-	SeverityLevel SeverityLevel `json:"severityLevel"`
+type MessageData struct {
+	Ver           int               `json:"ver"`
+	Properties    map[string]string `json:"properties"`
+	Message       string            `json:"message"`
+	SeverityLevel SeverityLevel     `json:"severityLevel"`
 }
 
-type requestData struct {
-	domain
+type RequestData struct {
+	Ver          int                `json:"ver"`
+	Properties   map[string]string  `json:"properties"`
 	Id           string             `json:"id"`
 	Name         string             `json:"name"`
 	StartTime    string             `json:"startTime"` // yyyy-mm-ddThh:mm:ss.fffffff-hh:mm
 	Duration     string             `json:"duration"`  // d:hh:mm:ss.fffffff
 	ResponseCode string             `json:"responseCode"`
 	Success      bool               `json:"success"`
-	httpMethod   string             `json:"httpMethod"`
-	url          string             `json:"url"`
+	HttpMethod   string             `json:"httpMethod"`
+	Url          string             `json:"url"`
 	Measurements map[string]float32 `json:"measurements"`
 }
 
