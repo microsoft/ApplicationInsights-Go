@@ -3,8 +3,6 @@ package appinsights
 import (
 	"fmt"
 	"time"
-
-	"github.com/satori/go.uuid"
 )
 
 type Telemetry struct {
@@ -48,9 +46,12 @@ func NewMetricTelemetry(name string, value float32) Telemetry {
 }
 
 func NewRequestTelemetry(
+	id string,
 	name string,
 	timestamp time.Time,
 	duration time.Duration,
+	httpMethod string,
+	url string,
 	responseCode string,
 	success bool) Telemetry {
 
@@ -59,12 +60,14 @@ func NewRequestTelemetry(
 		Context:   NewItemTelemetryContext(),
 		TypeName:  "Request",
 		Data: &RequestData{
-			Id:           uuid.NewV4().String(),
+			Id:           id,
 			Name:         name,
 			StartTime:    timestamp.Format(time.RFC3339Nano),
 			Duration:     formatDuration(duration),
 			ResponseCode: responseCode,
 			Success:      success,
+			HttpMethod:   httpMethod,
+			Url:          url,
 			Ver:          2}}
 }
 

@@ -56,6 +56,23 @@ func (tc *TelemetryClient) TrackTrace(message string) {
 	tc.Track(NewTraceTelemetry(message, Information))
 }
 
-func (tc *TelemetryClient) TrackRequest(name string, timestamp time.Time, duration time.Duration, responseCode string, success bool) {
-	tc.Track(NewRequestTelemetry(name, timestamp, duration, responseCode, success))
+func (tc *TelemetryClient) TrackRequest(
+	id string,
+	name string,
+	timestamp time.Time,
+	duration time.Duration,
+	httpMethod string,
+	url string,
+	responseCode string,
+	success bool) {
+
+	tc.Track(NewRequestTelemetry(
+		id,
+		name,
+		timestamp,
+		duration,
+		httpMethod,
+		url,
+		responseCode,
+		success))
 }
