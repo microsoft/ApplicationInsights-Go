@@ -71,6 +71,52 @@ func NewRequestTelemetry(
 			Ver:          2}}
 }
 
+func NewRemoteDependencyData(
+	id string,
+	name string,
+	resultCode int,
+	commandName string,
+	kind DataPointType,
+	duration time.Duration,
+	count int,
+	min float32,
+	max float32,
+	stdDev float32,
+	theType string,
+	dependencyKind DependencyKind,
+	success bool,
+	async bool,
+	dependencySource DependencySourceType,
+	properties map[string]string,
+	alterTelementryContext func(*TelemetryContext)) Telemetry {
+
+	context := NewItemTelemetryContext()
+	alterTelementryContext(&context)
+
+	return Telemetry{
+		Timestamp: time.Now(),
+		Context:   context,
+		TypeName:  "RemoteDependency",
+		Data: &RemoteDependencyData{
+			Ver:              2,
+			Id:               id,
+			Name:             name,
+			ResultCode:       resultCode,
+			CommandName:      commandName,
+			Kind:             kind,
+			Duration:         formatDuration(duration),
+			Count:            count,
+			Min:              min,
+			Max:              max,
+			StdDev:           stdDev,
+			Type:             theType,
+			DependencyKind:   dependencyKind,
+			Success:          success,
+			Async:            async,
+			DependencySource: dependencySource,
+			Properties:       properties}}
+}
+
 func formatDuration(duration time.Duration) string {
 	var (
 		refHours   = int(duration.Hours())

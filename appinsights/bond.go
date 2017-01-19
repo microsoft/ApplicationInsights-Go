@@ -74,6 +74,42 @@ type RequestData struct {
 	Measurements map[string]float32 `json:"measurements"`
 }
 
+type DependencyKind int
+
+const (
+	SQL DependencyKind = iota
+	Http
+	Other
+)
+
+type DependencySourceType int
+
+const (
+	Undefined DependencySourceType = iota
+	Aic
+	Apmc
+)
+
+type RemoteDependencyData struct {
+	Ver              int                  `json:"ver"`
+	Id               string               `json:"id"`
+	Name             string               `json:"name"`
+	ResultCode       int                  `json:"resultCode"`
+	CommandName      string               `json:"commandName"`
+	Kind             DataPointType        `json:"kind"`
+	Duration         string               `json:"duration"`
+	Count            int                  `json:"count"`
+	Min              float32              `json:"min"`
+	Max              float32              `json:"max"`
+	StdDev           float32              `json:"stdDev"`
+	Type             string               `json:"type"`
+	DependencyKind   DependencyKind       `json:"-"` // omitted according to Java reference
+	Success          bool                 `json:"success"`
+	Async            bool                 `json:"async"`
+	DependencySource DependencySourceType `json:"dependencySource"`
+	Properties       map[string]string    `json:"properties"`
+}
+
 type ContextTagKeys string
 
 const (

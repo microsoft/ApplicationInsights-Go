@@ -76,3 +76,42 @@ func (tc *TelemetryClient) TrackRequest(
 		responseCode,
 		success))
 }
+
+func (tc *TelemetryClient) TrackRemoteDependency(
+	id string,
+	name string,
+	resultCode int,
+	commandName string,
+	kind DataPointType,
+	duration time.Duration,
+	count int,
+	min float32,
+	max float32,
+	stdDev float32,
+	theType string,
+	dependencyKind DependencyKind,
+	success bool,
+	async bool,
+	dependencySource DependencySourceType,
+	properties map[string]string,
+	alterTelementryContext func(*TelemetryContext)) {
+
+	tc.Track(NewRemoteDependencyData(
+		id,
+		name,
+		resultCode,
+		commandName,
+		kind,
+		duration,
+		count,
+		min,
+		max,
+		stdDev,
+		theType,
+		dependencyKind,
+		success,
+		async,
+		dependencySource,
+		properties,
+		alterTelementryContext))
+}
