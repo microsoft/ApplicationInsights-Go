@@ -4,7 +4,7 @@ import "time"
 
 type TelemetryClient struct {
 	TelemetryConfiguration TelemetryConfiguration
-	channel                TelemetryChannel
+	Channel                TelemetryChannel
 	Context                TelemetryContext
 	IsEnabled              bool
 }
@@ -13,7 +13,7 @@ func NewTelemetryClient(iKey string) TelemetryClient {
 	config := NewTelemetryConfiguration(iKey)
 	return TelemetryClient{
 		TelemetryConfiguration: config,
-		channel:                NewInMemoryChannel(config.EndpointUrl),
+		Channel:                NewInMemoryChannel(config.EndpointUrl),
 		Context:                NewClientTelemetryContext(),
 		IsEnabled:              true,
 	}
@@ -41,7 +41,7 @@ func (tc *TelemetryClient) Track(item Telemetry) {
 		}
 	}
 
-	tc.channel.Send(item)
+	tc.Channel.Send(item)
 }
 
 func (tc *TelemetryClient) TrackEvent(name string) {

@@ -16,6 +16,7 @@ type TelemetryBufferItems []Telemetry
 type InMemoryChannel interface {
 	EndpointAddress() string
 	Send(Telemetry)
+	Flush()
 }
 
 type inMemoryChannel struct {
@@ -40,9 +41,9 @@ func NewInMemoryChannel(endpointAddress string) InMemoryChannel {
 	}
 
 	go func() {
-		for t := range ticker.C {
+		for _ = range ticker.C {
 			//log.Trace("Transmit tick at ", t)
-			channel.transmit(t)
+			channel.Flush()
 		}
 	}()
 
@@ -74,7 +75,7 @@ func (channel *inMemoryChannel) swapBuffer() TelemetryBufferItems {
 	return buffer
 }
 
-func (channel *inMemoryChannel) transmit(t time.Time) {
+func (channel *inMemoryChannel) Flush() {
 	if len(channel.buffer) == 0 {
 		//log.Trace("Not transmitting due to empty buffer.")
 		return
