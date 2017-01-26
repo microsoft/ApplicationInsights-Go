@@ -1,12 +1,15 @@
 package appinsights
 
-import "bytes"
-import "fmt"
-import "io/ioutil"
-import "log"
-import "net/http"
-import "time"
-import "sync"
+import (
+	"bytes"
+	"errors"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"sync"
+	"time"
+)
 
 type TelemetryBufferItems []Telemetry
 
@@ -53,15 +56,21 @@ func (channel *inMemoryChannel) EndpointAddress() string {
 func (channel *inMemoryChannel) Send(item Telemetry) {
 	// TODO: Use a fixed buffer size and don't require sync.
 	channel.bufferWg.Add(1)
+	defer channel.bufferWg.Done()
 	channel.buffer = append(channel.buffer, item)
-	channel.bufferWg.Done()
+}
+
+func (channel *inMemoryChannel) Requeue(items TelemetryBufferItems) {
+	for _, item := range items {
+		channel.Send(item)
+	}
 }
 
 func (channel *inMemoryChannel) swapBuffer() TelemetryBufferItems {
 	channel.bufferWg.Add(1)
+	defer channel.bufferWg.Done()
 	buffer := channel.buffer
 	channel.buffer = make(TelemetryBufferItems, 0)
-	channel.bufferWg.Done()
 	return buffer
 }
 
@@ -94,12 +103,20 @@ func (channel *inMemoryChannel) transmit(t time.Time) {
 
 	client := http.DefaultClient
 	resp, err := client.Do(req)
+	duration := time.Since(start)
+	if err == nil {
+		if resp == nil {
+			err = errors.New("empty server response")
+		} else if resp.StatusCode/100 > 2 {
+			err = errors.New(fmt.Sprintf("unexpected response status code %s", resp.Status))
+		}
+	}
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("requeuing, due to \"%s\"", err)
+		channel.Requeue(buffer)
+		log.Print("requeuing done.")
 		return
 	}
-
-	duration := time.Since(start)
 
 	transmission += fmt.Sprintf("\nSent in %s\n", duration)
 	transmission += fmt.Sprintf("Response: %d", resp.StatusCode)
@@ -107,7 +124,9 @@ func (channel *inMemoryChannel) transmit(t time.Time) {
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("requeuing, due to \"%s\"", err)
+		channel.Requeue(buffer)
+		log.Print("requeuing done.")
 		return
 	}
 
