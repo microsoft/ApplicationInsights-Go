@@ -2,7 +2,7 @@ package appinsights
 
 import (
 	"bytes"
-	"errors"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -85,15 +85,15 @@ func (channel *inMemoryChannel) Flush() {
 
 	transmission := fmt.Sprintf("\n----------- Transmitting %d items ---------\n\n", len(buffer))
 
-	start := time.Now()
-
 	// TODO: Return the actual buffer here instead of buffer -> string -> buffer
 	reqBody := buffer.serialize()
 	reqBuf := bytes.NewBufferString(reqBody)
 
 	req, err := http.NewRequest("POST", channel.endpointAddress, reqBuf)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("complete requeuing, due to \"%s\"", err)
+		channel.Requeue(buffer)
+		log.Print("requeuing done.")
 		return
 	}
 
@@ -102,18 +102,17 @@ func (channel *inMemoryChannel) Flush() {
 
 	transmission += fmt.Sprintf(reqBody)
 
+	start := time.Now()
 	client := http.DefaultClient
 	resp, err := client.Do(req)
 	duration := time.Since(start)
-	if err == nil {
-		if resp == nil {
-			err = errors.New("empty server response")
-		} else if resp.StatusCode/100 > 2 {
-			err = errors.New(fmt.Sprintf("unexpected response status code %s", resp.Status))
+
+	if err != nil || resp == nil {
+		if err != nil {
+			log.Printf("complete requeuing, due to \"%s\"", err)
+		} else if resp == nil {
+			log.Print("complete requeuing, due to missing response")
 		}
-	}
-	if err != nil {
-		log.Printf("requeuing, due to \"%s\"", err)
 		channel.Requeue(buffer)
 		log.Print("requeuing done.")
 		return
@@ -129,6 +128,31 @@ func (channel *inMemoryChannel) Flush() {
 		channel.Requeue(buffer)
 		log.Print("requeuing done.")
 		return
+	}
+
+	var report struct {
+		Errors []struct {
+			Index      int    `json:"index"`
+			Message    string `json:"message"`
+			StatusCode int    `json:"statusCode"`
+		} `json:"errors"`
+	}
+
+	err = json.Unmarshal(body, &report)
+	if err != nil {
+		log.Printf("requeuing, due to \"%s\"", err)
+		channel.Requeue(buffer)
+		log.Print("requeuing done.")
+		return
+	}
+
+	for _, reportedError := range report.Errors {
+		log.Printf(
+			"requeuing index %d, due to status code %d and message \"%s\"",
+			reportedError.Index,
+			reportedError.StatusCode,
+			reportedError.Message)
+		channel.Send(buffer[reportedError.Index])
 	}
 
 	transmission += fmt.Sprintf(" - %s\n", body)
