@@ -12,14 +12,19 @@ type Telemetry struct {
 	Data      interface{}
 }
 
-func NewTraceTelemetry(message string, severityLevel SeverityLevel) Telemetry {
+func NewTraceTelemetry(
+	message string,
+	properties map[string]string,
+	severityLevel SeverityLevel) Telemetry {
 	return Telemetry{
 		Timestamp: time.Now(),
 		Context:   NewItemTelemetryContext(),
 		TypeName:  "Message",
 		Data: &MessageData{
-			Message: message,
-			Ver:     2}}
+			Message:       message,
+			Properties:    properties,
+			SeverityLevel: severityLevel,
+			Ver:           2}}
 }
 
 func NewEventTelemetry(name string) Telemetry {

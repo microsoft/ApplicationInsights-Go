@@ -6,7 +6,7 @@ import "time"
 
 func TestJsonSerializerSingle(t *testing.T) {
 
-	item := NewTraceTelemetry("testing", Verbose)
+	item := NewTraceTelemetry("testing", nil, Verbose)
 	now := time.Now()
 	item.Timestamp = now
 
@@ -24,7 +24,7 @@ func TestJsonSerializerMultiple(t *testing.T) {
 	nowString := now.Format(time.RFC3339)
 
 	for i := 0; i < 3; i++ {
-		item := NewTraceTelemetry("testing", Verbose)
+		item := NewTraceTelemetry("testing", nil, Verbose)
 		item.Timestamp = now
 		buffer = append(buffer, item)
 	}

@@ -52,8 +52,11 @@ func (tc *TelemetryClient) TrackMetric(name string, value float32) {
 	tc.Track(NewMetricTelemetry(name, value))
 }
 
-func (tc *TelemetryClient) TrackTrace(message string) {
-	tc.Track(NewTraceTelemetry(message, Information))
+func (tc *TelemetryClient) TrackTrace(
+	level SeverityLevel,
+	message string,
+	properties map[string]string) {
+	tc.Track(NewTraceTelemetry(message, properties, level))
 }
 
 func (tc *TelemetryClient) TrackRequest(
