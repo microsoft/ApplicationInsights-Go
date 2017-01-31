@@ -15,10 +15,15 @@ type Telemetry struct {
 func NewTraceTelemetry(
 	message string,
 	properties map[string]string,
-	severityLevel SeverityLevel) Telemetry {
+	severityLevel SeverityLevel,
+	alterTelementryContext func(*TelemetryContext)) Telemetry {
+
+	context := NewItemTelemetryContext()
+	alterTelementryContext(&context)
+
 	return Telemetry{
 		Timestamp: time.Now(),
-		Context:   NewItemTelemetryContext(),
+		Context:   context,
 		TypeName:  "Message",
 		Data: &MessageData{
 			Message:       message,
@@ -58,11 +63,16 @@ func NewRequestTelemetry(
 	httpMethod string,
 	url string,
 	responseCode string,
-	success bool) Telemetry {
+	success bool,
+	properties map[string]string,
+	alterTelementryContext func(*TelemetryContext)) Telemetry {
+
+	context := NewItemTelemetryContext()
+	alterTelementryContext(&context)
 
 	return Telemetry{
 		Timestamp: time.Now(),
-		Context:   NewItemTelemetryContext(),
+		Context:   context,
 		TypeName:  "Request",
 		Data: &RequestData{
 			Id:           id,
@@ -73,6 +83,7 @@ func NewRequestTelemetry(
 			Success:      success,
 			HttpMethod:   httpMethod,
 			Url:          url,
+			Properties:   properties,
 			Ver:          2}}
 }
 

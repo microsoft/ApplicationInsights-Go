@@ -55,8 +55,14 @@ func (tc *TelemetryClient) TrackMetric(name string, value float32) {
 func (tc *TelemetryClient) TrackTrace(
 	level SeverityLevel,
 	message string,
-	properties map[string]string) {
-	tc.Track(NewTraceTelemetry(message, properties, level))
+	properties map[string]string,
+	alterTelementryContext func(*TelemetryContext)) {
+
+	tc.Track(NewTraceTelemetry(
+		message,
+		properties,
+		level,
+		alterTelementryContext))
 }
 
 func (tc *TelemetryClient) TrackRequest(
@@ -67,7 +73,9 @@ func (tc *TelemetryClient) TrackRequest(
 	httpMethod string,
 	url string,
 	responseCode string,
-	success bool) {
+	success bool,
+	properties map[string]string,
+	alterTelementryContext func(*TelemetryContext)) {
 
 	tc.Track(NewRequestTelemetry(
 		id,
@@ -77,7 +85,9 @@ func (tc *TelemetryClient) TrackRequest(
 		httpMethod,
 		url,
 		responseCode,
-		success))
+		success,
+		properties,
+		alterTelementryContext))
 }
 
 func (tc *TelemetryClient) TrackRemoteDependency(
