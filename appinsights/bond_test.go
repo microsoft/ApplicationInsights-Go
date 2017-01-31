@@ -5,7 +5,7 @@ import "testing"
 func TestMessageData(t *testing.T) {
 	testMessage := "test"
 
-	messageData := &messageData{
+	messageData := &MessageData{
 		Message: testMessage,
 	}
 

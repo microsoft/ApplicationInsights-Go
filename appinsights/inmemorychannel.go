@@ -1,18 +1,22 @@
 package appinsights
 
-import "bytes"
-import "fmt"
-import "io/ioutil"
-import "log"
-import "net/http"
-import "time"
-import "sync"
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"sync"
+	"time"
+)
 
 type TelemetryBufferItems []Telemetry
 
 type InMemoryChannel interface {
 	EndpointAddress() string
 	Send(Telemetry)
+	Flush()
 }
 
 type inMemoryChannel struct {
@@ -37,9 +41,9 @@ func NewInMemoryChannel(endpointAddress string) InMemoryChannel {
 	}
 
 	go func() {
-		for t := range ticker.C {
+		for _ = range ticker.C {
 			//log.Trace("Transmit tick at ", t)
-			channel.transmit(t)
+			channel.Flush()
 		}
 	}()
 
@@ -53,19 +57,25 @@ func (channel *inMemoryChannel) EndpointAddress() string {
 func (channel *inMemoryChannel) Send(item Telemetry) {
 	// TODO: Use a fixed buffer size and don't require sync.
 	channel.bufferWg.Add(1)
+	defer channel.bufferWg.Done()
 	channel.buffer = append(channel.buffer, item)
-	channel.bufferWg.Done()
+}
+
+func (channel *inMemoryChannel) Requeue(items TelemetryBufferItems) {
+	for _, item := range items {
+		channel.Send(item)
+	}
 }
 
 func (channel *inMemoryChannel) swapBuffer() TelemetryBufferItems {
 	channel.bufferWg.Add(1)
+	defer channel.bufferWg.Done()
 	buffer := channel.buffer
 	channel.buffer = make(TelemetryBufferItems, 0)
-	channel.bufferWg.Done()
 	return buffer
 }
 
-func (channel *inMemoryChannel) transmit(t time.Time) {
+func (channel *inMemoryChannel) Flush() {
 	if len(channel.buffer) == 0 {
 		//log.Trace("Not transmitting due to empty buffer.")
 		return
@@ -75,15 +85,15 @@ func (channel *inMemoryChannel) transmit(t time.Time) {
 
 	transmission := fmt.Sprintf("\n----------- Transmitting %d items ---------\n\n", len(buffer))
 
-	start := time.Now()
-
 	// TODO: Return the actual buffer here instead of buffer -> string -> buffer
 	reqBody := buffer.serialize()
 	reqBuf := bytes.NewBufferString(reqBody)
 
 	req, err := http.NewRequest("POST", channel.endpointAddress, reqBuf)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("complete requeuing, due to \"%s\"", err)
+		channel.Requeue(buffer)
+		log.Print("requeuing done.")
 		return
 	}
 
@@ -92,14 +102,21 @@ func (channel *inMemoryChannel) transmit(t time.Time) {
 
 	transmission += fmt.Sprintf(reqBody)
 
+	start := time.Now()
 	client := http.DefaultClient
 	resp, err := client.Do(req)
-	if err != nil {
-		log.Fatal(err)
+	duration := time.Since(start)
+
+	if err != nil || resp == nil {
+		if err != nil {
+			log.Printf("complete requeuing, due to \"%s\"", err)
+		} else if resp == nil {
+			log.Print("complete requeuing, due to missing response")
+		}
+		channel.Requeue(buffer)
+		log.Print("requeuing done.")
 		return
 	}
-
-	duration := time.Since(start)
 
 	transmission += fmt.Sprintf("\nSent in %s\n", duration)
 	transmission += fmt.Sprintf("Response: %d", resp.StatusCode)
@@ -107,8 +124,35 @@ func (channel *inMemoryChannel) transmit(t time.Time) {
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("requeuing, due to \"%s\"", err)
+		channel.Requeue(buffer)
+		log.Print("requeuing done.")
 		return
+	}
+
+	var report struct {
+		Errors []struct {
+			Index      int    `json:"index"`
+			Message    string `json:"message"`
+			StatusCode int    `json:"statusCode"`
+		} `json:"errors"`
+	}
+
+	err = json.Unmarshal(body, &report)
+	if err != nil {
+		log.Printf("requeuing, due to \"%s\"", err)
+		channel.Requeue(buffer)
+		log.Print("requeuing done.")
+		return
+	}
+
+	for _, reportedError := range report.Errors {
+		log.Printf(
+			"requeuing index %d, due to status code %d and message \"%s\"",
+			reportedError.Index,
+			reportedError.StatusCode,
+			reportedError.Message)
+		channel.Send(buffer[reportedError.Index])
 	}
 
 	transmission += fmt.Sprintf(" - %s\n", body)

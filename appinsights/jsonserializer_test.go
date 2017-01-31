@@ -6,9 +6,9 @@ import "time"
 
 func TestJsonSerializerSingle(t *testing.T) {
 
-	item := NewTraceTelemetry("testing", Verbose)
+	item := NewTraceTelemetry("testing", nil, Verbose, func(*TelemetryContext) {})
 	now := time.Now()
-	item.timestamp = now
+	item.Timestamp = now
 
 	want := fmt.Sprintf(`{"name":"Microsoft.ApplicationInsights.Message","time":"%s","iKey":"","tags":{},"data":{"baseType":"MessageData","baseData":{"ver":2,"properties":null,"message":"testing","severityLevel":0}}}`, now.Format(time.RFC3339))
 	result := serialize(item)
@@ -24,8 +24,8 @@ func TestJsonSerializerMultiple(t *testing.T) {
 	nowString := now.Format(time.RFC3339)
 
 	for i := 0; i < 3; i++ {
-		item := NewTraceTelemetry("testing", Verbose)
-		item.timestamp = now
+		item := NewTraceTelemetry("testing", nil, Verbose, func(*TelemetryContext) {})
+		item.Timestamp = now
 		buffer = append(buffer, item)
 	}
 

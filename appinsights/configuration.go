@@ -5,8 +5,8 @@ type TelemetryConfiguration struct {
 	EndpointUrl        string
 }
 
-func NewTelemetryConfiguration(instrumentationKey string) *TelemetryConfiguration {
-	return &TelemetryConfiguration{
+func NewTelemetryConfiguration(instrumentationKey string) TelemetryConfiguration {
+	return TelemetryConfiguration{
 		InstrumentationKey: instrumentationKey,
 		EndpointUrl:        "https://dc.services.visualstudio.com/v2/track",
 	}
