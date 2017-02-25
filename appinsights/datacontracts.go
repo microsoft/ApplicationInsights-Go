@@ -7,6 +7,7 @@ type Telemetry interface {
 	Context() TelemetryContext
 	baseTypeName() string
 	baseData() Domain
+	SetProperty(string, string)
 }
 
 type BaseTelemetry struct {
@@ -53,6 +54,10 @@ func (item *TraceTelemetry) baseData() Domain {
 	return item.data
 }
 
+func (item *TraceTelemetry) SetProperty(key, value string) {
+	item.data.Properties[key] = value
+}
+
 type EventTelemetry struct {
 	BaseTelemetry
 	data *eventData
@@ -90,6 +95,10 @@ func (item *EventTelemetry) baseTypeName() string {
 
 func (item *EventTelemetry) baseData() Domain {
 	return item.data
+}
+
+func (item *EventTelemetry) SetProperty(key, value string) {
+	item.data.Properties[key] = value
 }
 
 type MetricTelemetry struct {
@@ -138,12 +147,16 @@ func (item *MetricTelemetry) baseData() Domain {
 	return item.data
 }
 
+func (item *MetricTelemetry) SetProperty(key, value string) {
+	item.data.Properties[key] = value
+}
+
 type RequestTelemetry struct {
 	BaseTelemetry
 	data *requestData
 }
 
-func NewRequestTelemetry(name string, timestamp time.Time, duration time.Duration, responseCode string, success bool) *RequestTelemetry {
+func NewRequestTelemetry(name, httpMethod, url string, timestamp time.Time, duration time.Duration, responseCode string, success bool) *RequestTelemetry {
 	now := time.Now()
 	data := &requestData{
 		Name:         name,
@@ -151,6 +164,8 @@ func NewRequestTelemetry(name string, timestamp time.Time, duration time.Duratio
 		Duration:     duration.String(),
 		ResponseCode: responseCode,
 		Success:      success,
+		HttpMethod:   httpMethod,
+		Url:          url,
 	}
 
 	data.Ver = 2
@@ -179,4 +194,8 @@ func (item *RequestTelemetry) baseTypeName() string {
 
 func (item *RequestTelemetry) baseData() Domain {
 	return item.data
+}
+
+func (item *RequestTelemetry) SetProperty(key, value string) {
+	item.data.Properties[key] = value
 }

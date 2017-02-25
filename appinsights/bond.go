@@ -73,8 +73,8 @@ type requestData struct {
 	Duration     string             `json:"duration"`  // d:hh:mm:ss.fffffff
 	ResponseCode string             `json:"responseCode"`
 	Success      bool               `json:"success"`
-	httpMethod   string             `json:"httpMethod"`
-	url          string             `json:"url"`
+	HttpMethod   string             `json:"httpMethod"`
+	Url          string             `json:"url"`
 	Measurements map[string]float32 `json:"measurements"`
 }
 
@@ -83,6 +83,8 @@ type ContextTagKeys string
 const (
 	ApplicationVersion         ContextTagKeys = "ai.application.ver"
 	ApplicationBuild                          = "ai.application.build"
+	CloudRole                                 = "ai.cloud.role"
+	CloudRoleInstance                         = "ai.cloud.roleInstance"
 	DeviceId                                  = "ai.device.id"
 	DeviceIp                                  = "ai.device.ip"
 	DeviceLanguage                            = "ai.device.language"
@@ -98,6 +100,7 @@ const (
 	DeviceType                                = "ai.device.type"
 	DeviceMachineName                         = "ai.device.machineName"
 	LocationIp                                = "ai.location.ip"
+	OperationCorrelationVector                = "ai.operation.correlationVector"
 	OperationId                               = "ai.operation.id"
 	OperationName                             = "ai.operation.name"
 	OperationParentId                         = "ai.operation.parentId"
@@ -110,6 +113,7 @@ const (
 	UserAccountAcquisitionDate                = "ai.user.accountAcquisitionDate"
 	UserAccountId                             = "ai.user.accountId"
 	UserAgent                                 = "ai.user.userAgent"
+	UserAuthUserId                            = "ai.user.authUserId"
 	UserId                                    = "ai.user.id"
 	UserStoreRegion                           = "ai.user.storeRegion"
 	SampleRate                                = "ai.sample.sampleRate"

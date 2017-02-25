@@ -14,7 +14,7 @@ type TelemetryClient interface {
 	TrackMetricTelemetry(*MetricTelemetry)
 	TrackTrace(string)
 	TrackTraceTelemetry(*TraceTelemetry)
-	TrackRequest(string, time.Time, time.Duration, string, bool)
+	TrackRequest(string, string, string, time.Time, time.Duration, string, bool)
 	TrackRequestTelemetry(*RequestTelemetry)
 }
 
@@ -111,8 +111,8 @@ func (tc *telemetryClient) TrackTraceTelemetry(trace *TraceTelemetry) {
 	tc.Track(item)
 }
 
-func (tc *telemetryClient) TrackRequest(name string, timestamp time.Time, duration time.Duration, responseCode string, success bool) {
-	item := NewRequestTelemetry(name, timestamp, duration, responseCode, success)
+func (tc *telemetryClient) TrackRequest(name, method, url string, timestamp time.Time, duration time.Duration, responseCode string, success bool) {
+	item := NewRequestTelemetry(name, method, url, timestamp, duration, responseCode, success)
 	tc.TrackRequestTelemetry(item)
 }
 
