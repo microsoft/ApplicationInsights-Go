@@ -5,6 +5,7 @@ import "time"
 type TelemetryClient interface {
 	Context() TelemetryContext
 	InstrumentationKey() string
+	Channel() TelemetryChannel
 	IsEnabled() bool
 	SetIsEnabled(bool)
 	Track(Telemetry)
@@ -26,7 +27,10 @@ type telemetryClient struct {
 }
 
 func NewTelemetryClient(iKey string) TelemetryClient {
-	config := NewTelemetryConfiguration(iKey)
+	return NewTelemetryClientFromConfig(NewTelemetryConfiguration(iKey))
+}
+
+func NewTelemetryClientFromConfig(config *TelemetryConfiguration) TelemetryClient {
 	channel := NewInMemoryChannel(config.EndpointUrl)
 	context := NewClientTelemetryContext()
 	return &telemetryClient{
@@ -39,6 +43,10 @@ func NewTelemetryClient(iKey string) TelemetryClient {
 
 func (tc *telemetryClient) Context() TelemetryContext {
 	return tc.context
+}
+
+func (tc *telemetryClient) Channel() TelemetryChannel {
+	return tc.channel
 }
 
 func (tc *telemetryClient) InstrumentationKey() string {
