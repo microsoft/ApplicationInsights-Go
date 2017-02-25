@@ -1,6 +1,8 @@
 package appinsights
 
-import "time"
+import (
+	"time"
+)
 
 type Telemetry interface {
 	Timestamp() time.Time
@@ -55,6 +57,9 @@ func (item *TraceTelemetry) baseData() Domain {
 }
 
 func (item *TraceTelemetry) SetProperty(key, value string) {
+	if item.data.Properties == nil {
+		item.data.Properties = make(map[string]string)
+	}
 	item.data.Properties[key] = value
 }
 
@@ -98,6 +103,9 @@ func (item *EventTelemetry) baseData() Domain {
 }
 
 func (item *EventTelemetry) SetProperty(key, value string) {
+	if item.data.Properties == nil {
+		item.data.Properties = make(map[string]string)
+	}
 	item.data.Properties[key] = value
 }
 
@@ -148,6 +156,9 @@ func (item *MetricTelemetry) baseData() Domain {
 }
 
 func (item *MetricTelemetry) SetProperty(key, value string) {
+	if item.data.Properties == nil {
+		item.data.Properties = make(map[string]string)
+	}
 	item.data.Properties[key] = value
 }
 
@@ -166,6 +177,7 @@ func NewRequestTelemetry(name, httpMethod, url string, timestamp time.Time, dura
 		Success:      success,
 		HttpMethod:   httpMethod,
 		Url:          url,
+		Id:           randomId(),
 	}
 
 	data.Ver = 2
@@ -197,5 +209,8 @@ func (item *RequestTelemetry) baseData() Domain {
 }
 
 func (item *RequestTelemetry) SetProperty(key, value string) {
+	if item.data.Properties == nil {
+		item.data.Properties = make(map[string]string)
+	}
 	item.data.Properties[key] = value
 }
