@@ -1,6 +1,7 @@
 package appinsights
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -172,7 +173,7 @@ func NewRequestTelemetry(name, httpMethod, url string, timestamp time.Time, dura
 	data := &requestData{
 		Name:         name,
 		StartTime:    timestamp.Format(time.RFC3339Nano),
-		Duration:     duration.String(),
+		Duration:     formatDuration(duration),
 		ResponseCode: responseCode,
 		Success:      success,
 		HttpMethod:   httpMethod,
@@ -213,4 +214,14 @@ func (item *RequestTelemetry) SetProperty(key, value string) {
 		item.data.Properties = make(map[string]string)
 	}
 	item.data.Properties[key] = value
+}
+
+func formatDuration(d time.Duration) string {
+	ticks := int64(d / (time.Nanosecond * 100)) % 10000000
+	seconds := int64(d / time.Second) % 60
+	minutes := int64(d / time.Minute) % 60
+	hours := int64(d / time.Hour) % 24
+	days := int64(d / (time.Hour * 24))
+	
+	return fmt.Sprintf("%02d:%02d:%02d:%02d.%07d", days, hours, minutes, seconds, ticks)
 }
