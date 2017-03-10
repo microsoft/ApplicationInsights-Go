@@ -223,5 +223,5 @@ func formatDuration(d time.Duration) string {
 	hours := int64(d / time.Hour) % 24
 	days := int64(d / (time.Hour * 24))
 	
-	return fmt.Sprintf("%02d:%02d:%02d:%02d.%07d", days, hours, minutes, seconds, ticks)
+	return fmt.Sprintf("%d.%02d:%02d:%02d.%07d", days, hours, minutes, seconds, ticks)
 }
