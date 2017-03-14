@@ -8,26 +8,26 @@ import (
 	"unsafe"
 )
 
-type concurrentRandom struct {
-	channel		chan string
-	random		*rand.Rand
-}
-
+type concurrentRandom chan string
 var randomGenerator *concurrentRandom
 
 func newConcurrentRandom() *concurrentRandom {
-	source := rand.NewSource(time.Now().UnixNano())
-	return &concurrentRandom{
-		channel: make(chan string, 4),
-		random:  rand.New(source),
-	}
+	result := make(concurrentRandom, 4)
+	return &result
 }
 
-func (generator *concurrentRandom) run() {
-	buf := make([]byte, 8)
+func (generator concurrentRandom) run() {
+	random := rand.New(rand.NewSource(time.Now().UnixNano()))
+	
+	buf := make([]byte, 9)
 	for {
-		generator.random.Read(buf)
-		generator.channel <- base64.StdEncoding.EncodeToString(buf)
+		for i := 0; i < 16384; i++ {
+			random.Read(buf)
+			generator <- base64.StdEncoding.EncodeToString(buf)
+		}
+		
+		// Reseed every few thousand requests
+		random.Seed(time.Now().UnixNano())
 	}
 }
 
@@ -37,9 +37,9 @@ func randomId() string {
 		if atomic.CompareAndSwapPointer((*unsafe.Pointer)(unsafe.Pointer(&randomGenerator)), unsafe.Pointer(nil), unsafe.Pointer(r)) {
 			go r.run()
 		} else {
-			close(r.channel)
+			close(*r)
 		}
 	}
 	
-	return <- randomGenerator.channel
+	return <- *randomGenerator
 }
