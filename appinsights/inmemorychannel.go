@@ -1,12 +1,13 @@
 package appinsights
 
-import "bytes"
-import "fmt"
-import "io/ioutil"
-import "log"
-import "net/http"
-import "time"
-import "sync"
+import (
+	"bytes"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"time"
+	"sync"
+)
 
 type TelemetryBufferItems []Telemetry
 
@@ -19,7 +20,7 @@ type inMemoryChannel struct {
 	endpointAddress string
 	isDeveloperMode bool
 	buffer          TelemetryBufferItems
-	bufferWg        sync.WaitGroup
+	bufferLock      sync.Mutex
 	ticker          *time.Ticker
 }
 
@@ -27,19 +28,16 @@ var diagWriter = getDiagnosticsMessageWriter()
 
 func NewInMemoryChannel(endpointAddress string) InMemoryChannel {
 	buffer := make(TelemetryBufferItems, 0)
-	var bufferWg sync.WaitGroup
 	ticker := time.NewTicker(time.Second * 10)
 	channel := &inMemoryChannel{
 		endpointAddress: endpointAddress,
 		buffer:          buffer,
-		bufferWg:        bufferWg,
 		ticker:          ticker,
 	}
 
 	go func() {
-		for t := range ticker.C {
-			//log.Trace("Transmit tick at ", t)
-			channel.transmit(t)
+		for _ = range ticker.C {
+			channel.transmit()
 		}
 	}()
 
@@ -52,28 +50,37 @@ func (channel *inMemoryChannel) EndpointAddress() string {
 
 func (channel *inMemoryChannel) Send(item Telemetry) {
 	// TODO: Use a fixed buffer size and don't require sync.
-	channel.bufferWg.Add(1)
+	channel.bufferLock.Lock()
+	defer channel.bufferLock.Unlock()
 	channel.buffer = append(channel.buffer, item)
-	channel.bufferWg.Done()
+}
+
+func (channel *inMemoryChannel) sendMany(items TelemetryBufferItems) {
+	channel.bufferLock.Lock()
+	defer channel.bufferLock.Unlock()
+
+	channel.buffer = append(channel.buffer, items...)
 }
 
 func (channel *inMemoryChannel) swapBuffer() TelemetryBufferItems {
-	channel.bufferWg.Add(1)
+	channel.bufferLock.Lock()
+	defer channel.bufferLock.Unlock()
+
 	buffer := channel.buffer
 	channel.buffer = make(TelemetryBufferItems, 0)
-	channel.bufferWg.Done()
 	return buffer
 }
 
-func (channel *inMemoryChannel) transmit(t time.Time) {
+func (channel *inMemoryChannel) transmit() error {
 	if len(channel.buffer) == 0 {
 		//log.Trace("Not transmitting due to empty buffer.")
-		return
+		return nil
 	}
 
 	buffer := channel.swapBuffer()
 
-	transmission := fmt.Sprintf("\n----------- Transmitting %d items ---------\n\n", len(buffer))
+	var dbg bytes.Buffer
+	fmt.Fprintf(&dbg, "\n----------- Transmitting %d items ---------\n\n", len(buffer))
 
 	start := time.Now()
 
@@ -83,36 +90,44 @@ func (channel *inMemoryChannel) transmit(t time.Time) {
 
 	req, err := http.NewRequest("POST", channel.endpointAddress, reqBuf)
 	if err != nil {
-		log.Fatal(err)
-		return
+		// Requeue
+		fmt.Fprintf(&dbg, "Error from NewRequest: %s", err.Error())
+		diagWriter.Write(dbg.String())
+		channel.sendMany(buffer)
+		return err
 	}
 
 	req.Header.Set("Content-Type", "application/x-json-stream")
 	req.Header.Set("Accept-Encoding", "gzip, deflate")
 
-	transmission += fmt.Sprintf(reqBody)
+	dbg.WriteString(reqBody)
 
 	client := http.DefaultClient
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Fatal(err)
-		return
+		fmt.Fprintf(&dbg, "\nError from client.Do: %s", err.Error())
+		diagWriter.Write(dbg.String())
+		channel.sendMany(buffer)
+		return err
 	}
 
 	duration := time.Since(start)
 
-	transmission += fmt.Sprintf("\nSent in %s\n", duration)
-	transmission += fmt.Sprintf("Response: %d", resp.StatusCode)
+	fmt.Fprintf(&dbg, "\nSent in %s\n", duration)
+	fmt.Fprintf(&dbg, "Response: %d", resp.StatusCode)
 
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal(err)
-		return
+		fmt.Fprintf(&dbg, "Error reading response: %s", err.Error())
+		diagWriter.Write(dbg.String())
+		channel.sendMany(buffer)
+		return err
 	}
 
-	transmission += fmt.Sprintf(" - %s\n", body)
-	transmission += fmt.Sprintf("\n-----------------------------------------\n")
+	fmt.Fprintf(&dbg, " - %s\n", body)
+	fmt.Fprintf(&dbg, "\n-----------------------------------------\n")
+	diagWriter.Write(dbg.String())
 
-	diagWriter.Write(transmission)
+	return nil
 }

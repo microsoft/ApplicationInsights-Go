@@ -36,7 +36,7 @@ func serialize(item Telemetry) string {
 
 	jsonBytes, err := json.Marshal(envelope)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		return ""
 	}
 
