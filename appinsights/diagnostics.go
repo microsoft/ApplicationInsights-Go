@@ -19,12 +19,8 @@ type diagnosticsMessageListener struct {
 	channel chan string
 }
 
-var writer *diagnosticsMessageWriter = &diagnosticsMessageWriter{
+var diagnosticsWriter *diagnosticsMessageWriter = &diagnosticsMessageWriter{
 	listeners: make([]chan string, 0),
-}
-
-func getDiagnosticsMessageWriter() DiagnosticsMessageWriter {
-	return writer
 }
 
 func NewDiagnosticsMessageListener() DiagnosticsMessageListener {
@@ -32,7 +28,7 @@ func NewDiagnosticsMessageListener() DiagnosticsMessageListener {
 		channel: make(chan string),
 	}
 
-	writer.appendListener(listener)
+	diagnosticsWriter.appendListener(listener)
 
 	return listener
 }
