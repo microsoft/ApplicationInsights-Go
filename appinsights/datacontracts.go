@@ -217,11 +217,11 @@ func (item *RequestTelemetry) SetProperty(key, value string) {
 }
 
 func formatDuration(d time.Duration) string {
-	ticks := int64(d / (time.Nanosecond * 100)) % 10000000
-	seconds := int64(d / time.Second) % 60
-	minutes := int64(d / time.Minute) % 60
-	hours := int64(d / time.Hour) % 24
+	ticks := int64(d/(time.Nanosecond*100)) % 10000000
+	seconds := int64(d/time.Second) % 60
+	minutes := int64(d/time.Minute) % 60
+	hours := int64(d/time.Hour) % 24
 	days := int64(d / (time.Hour * 24))
-	
+
 	return fmt.Sprintf("%d.%02d:%02d:%02d.%07d", days, hours, minutes, seconds, ticks)
 }

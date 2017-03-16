@@ -7,16 +7,16 @@ import (
 )
 
 type TelemetryContext interface {
-	InstrumentationKey()	string
+	InstrumentationKey() string
 	loadDeviceContext()
-	
-	Component()		ComponentContext
-	Device()		DeviceContext
-	Cloud()			CloudContext
-	Session()		SessionContext
-	User()			UserContext
-	Operation()		OperationContext
-	Location()		LocationContext
+
+	Component() ComponentContext
+	Device() DeviceContext
+	Cloud() CloudContext
+	Session() SessionContext
+	User() UserContext
+	Operation() OperationContext
+	Location() LocationContext
 }
 
 type telemetryContext struct {
@@ -25,69 +25,69 @@ type telemetryContext struct {
 }
 
 type ComponentContext interface {
-	GetVersion()		string
+	GetVersion() string
 	SetVersion(string)
 }
 
 type DeviceContext interface {
-	GetType()		string
+	GetType() string
 	SetType(string)
-	GetId()			string
+	GetId() string
 	SetId(string)
-	GetOperatingSystem()	string
+	GetOperatingSystem() string
 	SetOperatingSystem(string)
-	GetOemName()		string
+	GetOemName() string
 	SetOemName(string)
-	GetModel()		string
+	GetModel() string
 	SetModel(string)
-	GetNetworkType()	string
+	GetNetworkType() string
 	SetNetworkType(string)
-	GetScreenResolution()	string
+	GetScreenResolution() string
 	SetScreenResolution(string)
-	GetLanguage()		string
+	GetLanguage() string
 	SetLanguage(string)
 }
 
 type CloudContext interface {
-	GetRoleName()		string
+	GetRoleName() string
 	SetRoleName(string)
-	GetRoleInstance()	string
+	GetRoleInstance() string
 	SetRoleInstance(string)
 }
 
 type SessionContext interface {
-	GetId()			string
+	GetId() string
 	SetId(string)
-	GetIsFirst()		bool
+	GetIsFirst() bool
 	SetIsFirst(bool)
 }
 
 type UserContext interface {
-	GetId()			string
+	GetId() string
 	SetId(string)
-	GetAccountId()		string
+	GetAccountId() string
 	SetAccountId(string)
-	GetUserAgent()		string
+	GetUserAgent() string
 	SetUserAgent(string)
 	GetAuthenticatedUserId() string
 	SetAuthenticatedUserId(string)
 }
 
 type OperationContext interface {
-	GetId()			string
+	GetId() string
 	SetId(string)
-	GetParentId()		string
+	GetParentId() string
 	SetParentId(string)
-	GetCorrelationVector()	string
+	GetCorrelationVector() string
 	SetCorrelationVector(string)
-	GetName()		string
+	GetName() string
 	SetName(string)
-	GetSyntheticSource()	string
+	GetSyntheticSource() string
 	SetSyntheticSource(string)
 }
 
 type LocationContext interface {
-	GetIp()			string
+	GetIp() string
 	SetIp(string)
 }
 
@@ -157,7 +157,7 @@ func (context *telemetryContext) getTagString(key ContextTagKeys) string {
 	if val, ok := context.tags[string(key)]; ok {
 		return val
 	}
-	
+
 	return ""
 }
 
@@ -175,7 +175,7 @@ func (context *telemetryContext) getTagBool(key ContextTagKeys) bool {
 			return b
 		}
 	}
-	
+
 	return false
 }
 
@@ -188,31 +188,31 @@ func (context *telemetryContext) setTagBool(key ContextTagKeys, value bool) {
 }
 
 type componentContext struct {
-	context			*telemetryContext
+	context *telemetryContext
 }
 
 type deviceContext struct {
-	context			*telemetryContext
+	context *telemetryContext
 }
 
 type cloudContext struct {
-	context			*telemetryContext
+	context *telemetryContext
 }
 
 type sessionContext struct {
-	context			*telemetryContext
+	context *telemetryContext
 }
 
 type userContext struct {
-	context			*telemetryContext
+	context *telemetryContext
 }
 
 type operationContext struct {
-	context			*telemetryContext
+	context *telemetryContext
 }
 
 type locationContext struct {
-	context			*telemetryContext
+	context *telemetryContext
 }
 
 func (context *componentContext) GetVersion() string {

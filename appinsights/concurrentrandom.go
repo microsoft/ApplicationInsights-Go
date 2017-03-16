@@ -9,8 +9,8 @@ import (
 )
 
 type concurrentRandom struct {
-	channel		chan string
-	random		*rand.Rand
+	channel chan string
+	random  *rand.Rand
 }
 
 var randomGenerator *concurrentRandom
@@ -40,6 +40,6 @@ func randomId() string {
 			close(r.channel)
 		}
 	}
-	
-	return <- randomGenerator.channel
+
+	return <-randomGenerator.channel
 }

@@ -10,7 +10,7 @@ import (
 
 var (
 	submit_telemetry_every = time.Duration(10 * time.Second)
-	submit_retries = []time.Duration{time.Duration(10 * time.Second), time.Duration(30 * time.Second), time.Duration(60 * time.Second)}
+	submit_retries         = []time.Duration{time.Duration(10 * time.Second), time.Duration(30 * time.Second), time.Duration(60 * time.Second)}
 )
 
 type TelemetryBufferItems []Telemetry
@@ -65,7 +65,7 @@ func (channel *inMemoryChannel) acceptLoop() {
 	for {
 		// Wait for an event
 		select {
-		case event := <- channel.collectChan:
+		case event := <-channel.collectChan:
 			if event == nil {
 				// Channel closed, quit.
 				close(channel.flushChan)
@@ -74,7 +74,7 @@ func (channel *inMemoryChannel) acceptLoop() {
 
 			buffer = append(buffer, event)
 
-		case _ = <- channel.flushChan:
+		case _ = <-channel.flushChan:
 			// The buffer is empty.
 			break
 		}
@@ -85,9 +85,10 @@ func (channel *inMemoryChannel) acceptLoop() {
 
 		// Delay until timeout passes
 		timer := time.After(submit_telemetry_every)
-waitLoop:	for {
+	waitLoop:
+		for {
 			select {
-			case event := <- channel.collectChan:
+			case event := <-channel.collectChan:
 				if event == nil {
 					// Channel closed, flush and exit.
 					break waitLoop
@@ -95,10 +96,10 @@ waitLoop:	for {
 
 				buffer = append(buffer, event)
 
-			case _ = <- channel.flushChan:
+			case _ = <-channel.flushChan:
 				break waitLoop
 
-			case _ = <- timer:
+			case _ = <-timer:
 				// Timeout expired
 				break waitLoop
 			}
@@ -119,10 +120,10 @@ func (channel *inMemoryChannel) transmitRetry(count int, reqBody []byte) {
 		if err := channel.transmit(count, reqBody); err == nil {
 			return
 		}
-		
+
 		time.Sleep(wait)
 	}
-	
+
 	diagnosticsWriter.Write("Gave up transmitting payload; exhausted retries")
 }
 
