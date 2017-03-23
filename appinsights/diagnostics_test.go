@@ -3,18 +3,7 @@ package appinsights
 import "testing"
 import "sync"
 
-func TestDiagnosticsWriterIsSingleton(t *testing.T) {
-	diagWriter1 := getDiagnosticsMessageWriter()
-	diagWriter2 := getDiagnosticsMessageWriter()
-
-	if diagWriter1 != diagWriter2 {
-		t.Errorf("getDiagnosticsMessageWriter() returned difference instances.")
-	}
-}
-
 func TestMessageSentToConsumers(t *testing.T) {
-	diagWriter := getDiagnosticsMessageWriter()
-
 	original := "test"
 
 	var wg sync.WaitGroup
@@ -36,7 +25,7 @@ func TestMessageSentToConsumers(t *testing.T) {
 		wg.Done()
 	})
 
-	diagWriter.Write(original)
+	diagnosticsWriter.Write(original)
 
 	wg.Wait()
 }

@@ -1,24 +1,32 @@
 package appinsights
 
-import "fmt"
-import "testing"
-import "time"
+import (
+	"bytes"
+	"fmt"
+	"testing"
+	"time"
+)
 
 func TestJsonSerializerSingle(t *testing.T) {
-
 	item := NewTraceTelemetry("testing", Verbose)
 	now := time.Now()
 	item.timestamp = now
 
 	want := fmt.Sprintf(`{"name":"Microsoft.ApplicationInsights.Message","time":"%s","iKey":"","tags":{},"data":{"baseType":"MessageData","baseData":{"ver":2,"properties":null,"message":"testing","severityLevel":0}}}`, now.Format(time.RFC3339))
-	result := serialize(item)
-	if result != want {
-		t.Errorf("serialize() returned '%s', want '%s'", result, want)
+	want += "\n"
+
+	var buf bytes.Buffer
+	err := serialize(item, &buf)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if buf.String() != want {
+		t.Errorf("serialize() returned %q, want %q", buf.String(), want)
 	}
 }
 
 func TestJsonSerializerMultiple(t *testing.T) {
-
 	buffer := make(TelemetryBufferItems, 0)
 	now := time.Now()
 	nowString := now.Format(time.RFC3339)
@@ -34,7 +42,7 @@ func TestJsonSerializerMultiple(t *testing.T) {
 		nowString,
 		nowString)
 	result := buffer.serialize()
-	if result != want {
+	if string(result) != want {
 		t.Errorf("serialize() returned '%s', want '%s'", result, want)
 	}
 }
