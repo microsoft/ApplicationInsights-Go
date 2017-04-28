@@ -9,31 +9,27 @@ import (
 )
 
 var (
-	submit_telemetry_every = time.Duration(10 * time.Second)
-	submit_retries         = []time.Duration{time.Duration(10 * time.Second), time.Duration(30 * time.Second), time.Duration(60 * time.Second)}
+	submit_retries = []time.Duration{time.Duration(10 * time.Second), time.Duration(30 * time.Second), time.Duration(60 * time.Second)}
 )
 
 type TelemetryBufferItems []Telemetry
 
-type InMemoryChannel interface {
-	EndpointAddress() string
-	Send(Telemetry)
-	Flush()
-	Stop()
-}
-
-type inMemoryChannel struct {
+type InMemoryChannel struct {
 	endpointAddress string
 	isDeveloperMode bool
 	collectChan     chan Telemetry
 	flushChan       chan bool
+	batchSize       int
+	batchInterval   time.Duration
 }
 
-func NewInMemoryChannel(endpointAddress string) InMemoryChannel {
-	channel := &inMemoryChannel{
-		endpointAddress: endpointAddress,
+func NewInMemoryChannel(config *TelemetryConfiguration) *InMemoryChannel {
+	channel := &InMemoryChannel{
+		endpointAddress: config.EndpointUrl,
 		collectChan:     make(chan Telemetry),
 		flushChan:       make(chan bool),
+		batchSize:       config.MaxBatchSize,
+		batchInterval:   config.MaxBatchInterval,
 	}
 
 	go channel.acceptLoop()
@@ -41,28 +37,36 @@ func NewInMemoryChannel(endpointAddress string) InMemoryChannel {
 	return channel
 }
 
-func (channel *inMemoryChannel) EndpointAddress() string {
+func (channel *InMemoryChannel) EndpointAddress() string {
 	return channel.endpointAddress
 }
 
-func (channel *inMemoryChannel) Send(item Telemetry) {
+func (channel *InMemoryChannel) Send(item Telemetry) {
 	if item != nil {
 		channel.collectChan <- item
 	}
 }
 
-func (channel *inMemoryChannel) Flush() {
+func (channel *InMemoryChannel) Flush() {
 	channel.flushChan <- true
 }
 
-func (channel *inMemoryChannel) Stop() {
+func (channel *InMemoryChannel) Stop() {
 	close(channel.collectChan)
 }
 
-func (channel *inMemoryChannel) acceptLoop() {
-	var buffer TelemetryBufferItems
+func (channel *InMemoryChannel) acceptLoop() {
+	buffer := make(TelemetryBufferItems, 16)
 
 	for {
+		if len(buffer) > 16 {
+			// Start out with the size of the previous buffer
+			buffer = make(TelemetryBufferItems, len(buffer))
+		} else if len(buffer) > 0 {
+			// Start out with at least 16 slots
+			buffer = make(TelemetryBufferItems, 16)
+		}
+
 		// Wait for an event
 		select {
 		case event := <-channel.collectChan:
@@ -84,7 +88,7 @@ func (channel *inMemoryChannel) acceptLoop() {
 		}
 
 		// Delay until timeout passes
-		timer := time.After(submit_telemetry_every)
+		timer := time.NewTimer(channel.batchInterval)
 	waitLoop:
 		for {
 			select {
@@ -95,81 +99,92 @@ func (channel *inMemoryChannel) acceptLoop() {
 				}
 
 				buffer = append(buffer, event)
+				if len(buffer) >= channel.batchSize {
+					break waitLoop
+				}
 
 			case _ = <-channel.flushChan:
 				break waitLoop
 
-			case _ = <-timer:
+			case _ = <-timer.C:
 				// Timeout expired
 				break waitLoop
 			}
 		}
 
-		reqBody := buffer.serialize()
-		count := len(buffer)
-		buffer = buffer[:0]
+		if !timer.Stop() {
+			<-timer.C
+		}
 
-		if len(reqBody) > 0 {
-			go channel.transmitRetry(count, reqBody)
+		if len(buffer) > 0 {
+			go channel.transmitRetry(buffer)
 		}
 	}
 }
 
-func (channel *inMemoryChannel) transmitRetry(count int, reqBody []byte) {
+func (channel *InMemoryChannel) transmitRetry(items TelemetryBufferItems) {
+	var diagnostics bytes.Buffer
+	body := items.serialize()
+
 	for _, wait := range submit_retries {
-		if err := channel.transmit(count, reqBody); err == nil {
+		diagnostics.Reset()
+		err := channel.transmit(len(items), body, &diagnostics)
+		diagnosticsWriter.Write(diagnostics.String())
+
+		if err == nil {
 			return
 		}
 
 		time.Sleep(wait)
 	}
 
-	diagnosticsWriter.Write("Gave up transmitting payload; exhausted retries")
+	// One final try
+	diagnostics.Reset()
+	err := channel.transmit(len(items), body, &diagnostics)
+	diagnosticsWriter.Write(diagnostics.String())
+	if err != nil {
+		diagnosticsWriter.Write("Gave up transmitting payload; exhausted retries")
+	}
 }
 
-func (channel *inMemoryChannel) transmit(count int, reqBody []byte) error {
-	var dbg bytes.Buffer
-	fmt.Fprintf(&dbg, "\n----------- Transmitting %d items ---------\n\n", count)
+func (channel *InMemoryChannel) transmit(count int, body []byte, diag *bytes.Buffer) error {
+	fmt.Fprintf(diag, "\n----------- Transmitting %d items ---------\n\n", count)
 
 	start := time.Now()
 
-	req, err := http.NewRequest("POST", channel.endpointAddress, bytes.NewReader(reqBody))
+	req, err := http.NewRequest("POST", channel.endpointAddress, bytes.NewReader(body))
 	if err != nil {
 		// Requeue
-		fmt.Fprintf(&dbg, "Error from NewRequest: %s", err.Error())
-		diagnosticsWriter.Write(dbg.String())
+		fmt.Fprintf(diag, "Error from NewRequest: %s", err.Error())
 		return err
 	}
 
 	req.Header.Set("Content-Type", "application/x-json-stream")
 	req.Header.Set("Accept-Encoding", "gzip, deflate")
 
-	dbg.Write(reqBody)
+	diag.Write(body)
 
 	client := http.DefaultClient
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Fprintf(&dbg, "\nError from client.Do: %s", err.Error())
-		diagnosticsWriter.Write(dbg.String())
+		fmt.Fprintf(diag, "\nError from client.Do: %s", err.Error())
 		return err
 	}
 
 	duration := time.Since(start)
 
-	fmt.Fprintf(&dbg, "\nSent in %s\n", duration)
-	fmt.Fprintf(&dbg, "Response: %d", resp.StatusCode)
+	fmt.Fprintf(diag, "\nSent in %s\n", duration)
+	fmt.Fprintf(diag, "Response: %d", resp.StatusCode)
 
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Fprintf(&dbg, "Error reading response: %s", err.Error())
-		diagnosticsWriter.Write(dbg.String())
+		fmt.Fprintf(diag, "Error reading response: %s", err.Error())
 		return err
 	}
 
-	fmt.Fprintf(&dbg, " - %s\n", body)
-	fmt.Fprintf(&dbg, "\n-----------------------------------------\n")
-	diagnosticsWriter.Write(dbg.String())
+	fmt.Fprintf(diag, " - %s\n", respBody)
+	fmt.Fprintf(diag, "\n-----------------------------------------\n")
 
 	return nil
 }

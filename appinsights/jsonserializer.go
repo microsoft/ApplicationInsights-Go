@@ -4,16 +4,16 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"time"
 )
 
 func (items TelemetryBufferItems) serialize() []byte {
 	var result bytes.Buffer
+	encoder := json.NewEncoder(&result)
 
 	for _, item := range items {
 		end := result.Len()
-		if err := serialize(item, &result); err != nil {
+		if err := encoder.Encode(prepare(item)); err != nil {
 			diagnosticsWriter.Write(fmt.Sprintf("Telemetry item failed to serialize: %s", err.Error()))
 			result.Truncate(end)
 		}
@@ -22,7 +22,7 @@ func (items TelemetryBufferItems) serialize() []byte {
 	return result.Bytes()
 }
 
-func serialize(item Telemetry, writer io.Writer) error {
+func prepare(item Telemetry) *envelope {
 	data := &data{
 		BaseType: item.baseTypeName() + "Data",
 		BaseData: item.baseData(),
@@ -41,5 +41,5 @@ func serialize(item Telemetry, writer io.Writer) error {
 		envelope.Tags = tcontext.tags
 	}
 
-	return json.NewEncoder(writer).Encode(envelope)
+	return envelope
 }
