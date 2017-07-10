@@ -56,15 +56,15 @@ func (channel *InMemoryChannel) Stop() {
 }
 
 func (channel *InMemoryChannel) acceptLoop() {
-	buffer := make(TelemetryBufferItems, 16)
+	buffer := make(TelemetryBufferItems, 0, 16)
 
 	for {
 		if len(buffer) > 16 {
 			// Start out with the size of the previous buffer
-			buffer = make(TelemetryBufferItems, len(buffer))
+			buffer = make(TelemetryBufferItems, 0, cap(buffer))
 		} else if len(buffer) > 0 {
 			// Start out with at least 16 slots
-			buffer = make(TelemetryBufferItems, 16)
+			buffer = make(TelemetryBufferItems, 0, 16)
 		}
 
 		// Wait for an event
@@ -108,11 +108,12 @@ func (channel *InMemoryChannel) acceptLoop() {
 
 			case _ = <-timer.C:
 				// Timeout expired
+				timer = nil
 				break waitLoop
 			}
 		}
 
-		if !timer.Stop() {
+		if timer != nil && !timer.Stop() {
 			<-timer.C
 		}
 
