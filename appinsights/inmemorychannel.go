@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -18,16 +19,24 @@ type InMemoryChannel struct {
 	endpointAddress string
 	isDeveloperMode bool
 	collectChan     chan Telemetry
-	flushChan       chan bool
+	controlChan     chan *inMemoryChannelControl
 	batchSize       int
 	batchInterval   time.Duration
+	waitgroup       sync.WaitGroup
+}
+
+type inMemoryChannelControl struct {
+	flush    bool
+	stop     bool
+	timeout  time.Duration
+	callback chan bool
 }
 
 func NewInMemoryChannel(config *TelemetryConfiguration) *InMemoryChannel {
 	channel := &InMemoryChannel{
 		endpointAddress: config.EndpointUrl,
 		collectChan:     make(chan Telemetry),
-		flushChan:       make(chan bool),
+		controlChan:     make(chan *inMemoryChannelControl),
 		batchSize:       config.MaxBatchSize,
 		batchInterval:   config.MaxBatchInterval,
 	}
@@ -48,17 +57,41 @@ func (channel *InMemoryChannel) Send(item Telemetry) {
 }
 
 func (channel *InMemoryChannel) Flush() {
-	channel.flushChan <- true
+	channel.controlChan <- &inMemoryChannelControl{
+		flush: true,
+	}
 }
 
 func (channel *InMemoryChannel) Stop() {
-	close(channel.collectChan)
+	channel.controlChan <- &inMemoryChannelControl{
+		stop: true,
+	}
+}
+
+func (channel *InMemoryChannel) Close(flush bool, timeout time.Duration) chan bool {
+	callback := make(chan bool)
+
+	channel.controlChan <- &inMemoryChannelControl{
+		stop:     true,
+		flush:    flush,
+		timeout:  timeout,
+		callback: callback,
+	}
+
+	return callback
+}
+
+func (channel *InMemoryChannel) CloseSync(flush bool, timeout time.Duration) {
+	callback := channel.Close(flush, timeout)
+	<-callback
 }
 
 func (channel *InMemoryChannel) acceptLoop() {
 	buffer := make(TelemetryBufferItems, 0, 16)
+	stopping := false
 
-	for {
+mainLoop:
+	for !stopping {
 		if len(buffer) > 16 {
 			// Start out with the size of the previous buffer
 			buffer = make(TelemetryBufferItems, 0, cap(buffer))
@@ -72,20 +105,29 @@ func (channel *InMemoryChannel) acceptLoop() {
 		case event := <-channel.collectChan:
 			if event == nil {
 				// Channel closed, quit.
-				close(channel.flushChan)
 				return
 			}
 
 			buffer = append(buffer, event)
 
-		case _ = <-channel.flushChan:
-			// The buffer is empty.
-			break
+		case ctl := <-channel.controlChan:
+			// The buffer is empty, so there would be no point in flushing
+			if ctl.stop {
+				stopping = true
+			}
+			if ctl.callback != nil {
+				ctl.callback <- true
+				close(ctl.callback)
+			}
 		}
 
 		if len(buffer) == 0 {
 			continue
 		}
+
+		// Things that are used by the sender if we receive a control message
+		var retryTimeout time.Duration = 0
+		var callback chan bool
 
 		// Delay until timeout passes
 		timer := time.NewTimer(channel.batchInterval)
@@ -103,8 +145,23 @@ func (channel *InMemoryChannel) acceptLoop() {
 					break waitLoop
 				}
 
-			case _ = <-channel.flushChan:
-				break waitLoop
+			case ctl := <-channel.controlChan:
+				if ctl.stop {
+					stopping = true
+					if !ctl.flush {
+						// No flush? Just exit.
+						if ctl.callback != nil {
+							channel.signalWhenDone(ctl.callback)
+						}
+						break mainLoop
+					}
+				}
+
+				if ctl.flush {
+					retryTimeout = ctl.timeout
+					callback = ctl.callback
+					break waitLoop
+				}
 
 			case _ = <-timer.C:
 				// Timeout expired
@@ -118,14 +175,33 @@ func (channel *InMemoryChannel) acceptLoop() {
 		}
 
 		if len(buffer) > 0 {
-			go channel.transmitRetry(buffer)
+			// Buffer will be mutated very shortly- capture it before branching
+			// of the goroutine to avoid a very real race condition
+			go func(buffer TelemetryBufferItems) {
+				channel.waitgroup.Add(1)
+				defer channel.waitgroup.Done()
+
+				if callback != nil {
+					// If we have a callback, wait on the waitgroup now that it's
+					// incremented.
+					channel.signalWhenDone(callback)
+				}
+
+				channel.transmitRetry(buffer, retryTimeout)
+			}(buffer)
+		} else if callback != nil {
+			channel.signalWhenDone(callback)
 		}
 	}
+
+	close(channel.collectChan)
+	close(channel.controlChan)
 }
 
-func (channel *InMemoryChannel) transmitRetry(items TelemetryBufferItems) {
+func (channel *InMemoryChannel) transmitRetry(items TelemetryBufferItems, retryTimeout time.Duration) {
 	var diagnostics bytes.Buffer
 	body := items.serialize()
+	retryTimeRemaining := retryTimeout
 
 	for _, wait := range submit_retries {
 		diagnostics.Reset()
@@ -134,6 +210,21 @@ func (channel *InMemoryChannel) transmitRetry(items TelemetryBufferItems) {
 
 		if err == nil {
 			return
+		}
+
+		if retryTimeout > 0 {
+			// We're on a time schedule here.  Make sure we don't try longer
+			// than we have been allowed.
+			if retryTimeRemaining < wait {
+				// One more chance left -- we'll wait the max time we can
+				// and then retry on the way out.
+				time.Sleep(retryTimeRemaining)
+				break
+			} else {
+				// Still have time left to go through the rest of the regular
+				// retry schedule
+				retryTimeRemaining -= wait
+			}
 		}
 
 		time.Sleep(wait)
@@ -146,6 +237,14 @@ func (channel *InMemoryChannel) transmitRetry(items TelemetryBufferItems) {
 	if err != nil {
 		diagnosticsWriter.Write("Gave up transmitting payload; exhausted retries")
 	}
+}
+
+func (channel *InMemoryChannel) signalWhenDone(callback chan bool) {
+	go func() {
+		channel.waitgroup.Wait()
+		callback <- true
+		close(callback)
+	}()
 }
 
 func (channel *InMemoryChannel) transmit(count int, body []byte, diag *bytes.Buffer) error {
