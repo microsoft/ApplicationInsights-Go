@@ -1,7 +1,6 @@
 package appinsights
 
 import (
-	"bytes"
 	"fmt"
 	"testing"
 	"time"
@@ -15,14 +14,11 @@ func TestJsonSerializerSingle(t *testing.T) {
 	want := fmt.Sprintf(`{"name":"Microsoft.ApplicationInsights.Message","time":"%s","iKey":"","tags":{},"data":{"baseType":"MessageData","baseData":{"ver":2,"properties":null,"message":"testing","severityLevel":0}}}`, now.Format(time.RFC3339))
 	want += "\n"
 
-	var buf bytes.Buffer
-	err := serialize(item, &buf)
-	if err != nil {
-		t.Error(err)
-	}
+	items := TelemetryBufferItems{item}
+	buf := items.serialize()
 
-	if buf.String() != want {
-		t.Errorf("serialize() returned %q, want %q", buf.String(), want)
+	if string(buf) != want {
+		t.Errorf("serialize() returned %q, want %q", string(buf), want)
 	}
 }
 
