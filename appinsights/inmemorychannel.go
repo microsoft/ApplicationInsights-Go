@@ -1,10 +1,6 @@
 package appinsights
 
 import (
-	"bytes"
-	"fmt"
-	"io/ioutil"
-	"net/http"
 	"sync"
 	"time"
 )
@@ -104,8 +100,8 @@ mainLoop:
 		select {
 		case event := <-channel.collectChan:
 			if event == nil {
-				// Channel closed, quit.
-				return
+				// Channel closed?  Not intercepted by Send()?
+				panic("Received nil event")
 			}
 
 			buffer = append(buffer, event)
@@ -136,8 +132,8 @@ mainLoop:
 			select {
 			case event := <-channel.collectChan:
 				if event == nil {
-					// Channel closed, flush and exit.
-					break waitLoop
+					// Channel closed?  Not intercepted by Send()?
+					panic("Received nil event")
 				}
 
 				buffer = append(buffer, event)
@@ -199,16 +195,23 @@ mainLoop:
 }
 
 func (channel *InMemoryChannel) transmitRetry(items TelemetryBufferItems, retryTimeout time.Duration) {
-	var diagnostics bytes.Buffer
-	body := items.serialize()
+	payload := items.serialize()
 	retryTimeRemaining := retryTimeout
 
 	for _, wait := range submit_retries {
-		diagnostics.Reset()
-		err := channel.transmit(len(items), body, &diagnostics)
-		diagnosticsWriter.Write(diagnostics.String())
+		result, err := transmit(payload, items, channel.endpointAddress)
+		if err == nil && result.IsSuccess() {
+			return
+		}
 
-		if err == nil {
+		if result.CanRetry() {
+			// Filter down to failed items
+			payload, items = result.GetRetryItems(payload, items)
+			if len(payload) == 0 || len(items) == 0 {
+				return
+			}
+		} else {
+			diagnosticsWriter.Write("Telemetry transmission failed; cannot retry\n")
 			return
 		}
 
@@ -227,13 +230,15 @@ func (channel *InMemoryChannel) transmitRetry(items TelemetryBufferItems, retryT
 			}
 		}
 
+		if result.IsFailure() {
+			diagnosticsWriter.Printf("Telemetry transmission failed; retrying in %s\n", wait)
+		}
+
 		time.Sleep(wait)
 	}
 
 	// One final try
-	diagnostics.Reset()
-	err := channel.transmit(len(items), body, &diagnostics)
-	diagnosticsWriter.Write(diagnostics.String())
+	_, err := transmit(payload, items, channel.endpointAddress)
 	if err != nil {
 		diagnosticsWriter.Write("Gave up transmitting payload; exhausted retries")
 	}
@@ -245,46 +250,4 @@ func (channel *InMemoryChannel) signalWhenDone(callback chan bool) {
 		callback <- true
 		close(callback)
 	}()
-}
-
-func (channel *InMemoryChannel) transmit(count int, body []byte, diag *bytes.Buffer) error {
-	fmt.Fprintf(diag, "\n----------- Transmitting %d items ---------\n\n", count)
-
-	start := time.Now()
-
-	req, err := http.NewRequest("POST", channel.endpointAddress, bytes.NewReader(body))
-	if err != nil {
-		// Requeue
-		fmt.Fprintf(diag, "Error from NewRequest: %s", err.Error())
-		return err
-	}
-
-	req.Header.Set("Content-Type", "application/x-json-stream")
-	req.Header.Set("Accept-Encoding", "gzip, deflate")
-
-	diag.Write(body)
-
-	client := http.DefaultClient
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Fprintf(diag, "\nError from client.Do: %s", err.Error())
-		return err
-	}
-
-	duration := time.Since(start)
-
-	fmt.Fprintf(diag, "\nSent in %s\n", duration)
-	fmt.Fprintf(diag, "Response: %d", resp.StatusCode)
-
-	defer resp.Body.Close()
-	respBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Fprintf(diag, "Error reading response: %s", err.Error())
-		return err
-	}
-
-	fmt.Fprintf(diag, " - %s\n", respBody)
-	fmt.Fprintf(diag, "\n-----------------------------------------\n")
-
-	return nil
 }

@@ -1,5 +1,7 @@
 package appinsights
 
+import "fmt"
+
 type DiagnosticsMessageWriter interface {
 	Write(string)
 	appendListener(*diagnosticsMessageListener)
@@ -41,6 +43,14 @@ func (writer *diagnosticsMessageWriter) Write(message string) {
 	for _, c := range writer.listeners {
 		c <- message
 	}
+}
+
+func (writer *diagnosticsMessageWriter) Printf(message string, args ...interface{}) {
+	writer.Write(fmt.Sprintf(message, args...))
+}
+
+func (writer *diagnosticsMessageWriter) hasListeners() bool {
+	return len(writer.listeners) > 0
 }
 
 func (listener *diagnosticsMessageListener) ProcessMessages(process DiagnosticsMessageProcessor) {
