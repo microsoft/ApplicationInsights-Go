@@ -76,7 +76,7 @@ func transmit(payload []byte, items TelemetryBufferItems, endpoint string) (*tra
 
 	// Grab Retry-After header
 	if retryAfterValue, ok := resp.Header[http.CanonicalHeaderKey("Retry-After")]; ok && len(retryAfterValue) == 1 {
-		if retryAfterTime, err := time.Parse("", retryAfterValue[0]); err != nil {
+		if retryAfterTime, err := time.Parse(time.RFC1123, retryAfterValue[0]); err != nil {
 			result.retryAfter = &retryAfterTime
 		}
 	}
