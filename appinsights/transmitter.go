@@ -59,7 +59,6 @@ func transmit(payload []byte, items TelemetryBufferItems, endpoint string) (*tra
 	client := http.DefaultClient
 	resp, err := client.Do(req)
 	if err != nil {
-		diagnosticsWriter.Printf("Failed to transmit telemetry: %s\n", err.Error())
 		return nil, err
 	}
 

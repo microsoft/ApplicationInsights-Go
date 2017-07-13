@@ -200,11 +200,13 @@ func (channel *InMemoryChannel) transmitRetry(items TelemetryBufferItems, retryT
 
 	for _, wait := range submit_retries {
 		result, err := transmit(payload, items, channel.endpointAddress)
-		if err == nil && result.IsSuccess() {
+		if err == nil && result != nil && result.IsSuccess() {
 			return
 		}
 
-		if result.CanRetry() {
+		if err != nil {
+			diagnosticsWriter.Printf("Failed to transmit telemetry: %s; will retry\n", err.Error())
+		} else if result.CanRetry() {
 			// Filter down to failed items
 			payload, items = result.GetRetryItems(payload, items)
 			if len(payload) == 0 || len(items) == 0 {
@@ -230,7 +232,7 @@ func (channel *InMemoryChannel) transmitRetry(items TelemetryBufferItems, retryT
 			}
 		}
 
-		if result.IsFailure() {
+		if result != nil && result.IsFailure() {
 			diagnosticsWriter.Printf("Telemetry transmission failed; retrying in %s\n", wait)
 		}
 
