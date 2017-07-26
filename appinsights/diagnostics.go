@@ -46,7 +46,10 @@ func (writer *diagnosticsMessageWriter) Write(message string) {
 }
 
 func (writer *diagnosticsMessageWriter) Printf(message string, args ...interface{}) {
-	writer.Write(fmt.Sprintf(message, args...))
+	// Don't bother with Sprintf if nobody is listening
+	if writer.hasListeners() {
+		writer.Write(fmt.Sprintf(message, args...))
+	}
 }
 
 func (writer *diagnosticsMessageWriter) hasListeners() bool {

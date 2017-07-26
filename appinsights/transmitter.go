@@ -133,6 +133,12 @@ func (result *transmissionResult) IsPartialSuccess() bool {
 		result.response.itemsReceived != result.response.itemsAccepted
 }
 
+func (result *transmissionResult) IsThrottled() bool {
+	return result.statusCode == tooManyRequestsResponse ||
+		result.statusCode == tooManyRequestsOverExtendedTimeResponse ||
+		result.retryAfter != nil
+}
+
 func (result *itemTransmissionResult) CanRetry() bool {
 	return result.statusCode == requestTimeoutResponse ||
 		result.statusCode == serviceUnavailableResponse ||
