@@ -8,6 +8,5 @@ type TelemetryChannel interface {
 	Flush()
 	Stop()
 	IsThrottled() bool
-	Close(flush bool, retryTimeout time.Duration) chan bool
-	CloseSync(flush bool, retryTimeout time.Duration)
+	Close(flush, retry bool, retryTimeout time.Duration) chan bool
 }

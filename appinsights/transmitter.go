@@ -41,11 +41,11 @@ const (
 func transmit(payload []byte, items TelemetryBufferItems, endpoint string) (*transmissionResult, error) {
 	if endpoint == "" {
 		// Special case for tests: don't actually send telemetry to empty endpoint address
-		diagnosticsWriter.Write("Refusing to transmit telemetry to empty endpoint\n")
+		diagnosticsWriter.Write("Refusing to transmit telemetry to empty endpoint")
 		return &transmissionResult{statusCode: successResponse}, nil
 	}
 
-	diagnosticsWriter.Printf("\n----------- Transmitting %d items ---------\n\n", len(items))
+	diagnosticsWriter.Printf("----------- Transmitting %d items ---------", len(items))
 	startTime := time.Now()
 
 	req, err := http.NewRequest("POST", endpoint, bytes.NewReader(payload))
@@ -59,6 +59,7 @@ func transmit(payload []byte, items TelemetryBufferItems, endpoint string) (*tra
 	client := http.DefaultClient
 	resp, err := client.Do(req)
 	if err != nil {
+		diagnosticsWriter.Printf("Failed to transmit telemetry: %s", err.Error())
 		return nil, err
 	}
 
@@ -66,6 +67,7 @@ func transmit(payload []byte, items TelemetryBufferItems, endpoint string) (*tra
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
+		diagnosticsWriter.Printf("Failed to read response from server: %s", err.Error())
 		return nil, err
 	}
 
@@ -88,15 +90,15 @@ func transmit(payload []byte, items TelemetryBufferItems, endpoint string) (*tra
 
 	// Write diagnostics
 	if diagnosticsWriter.hasListeners() {
-		diagnosticsWriter.Printf("Telemetry transmitted in %s\n", duration)
-		diagnosticsWriter.Printf("Response: %d\n", result.statusCode)
+		diagnosticsWriter.Printf("Telemetry transmitted in %s", duration)
+		diagnosticsWriter.Printf("Response: %d", result.statusCode)
 		if result.response != nil {
-			diagnosticsWriter.Printf("Items accepted/received: %d/%d\n", result.response.itemsAccepted, result.response.itemsReceived)
+			diagnosticsWriter.Printf("Items accepted/received: %d/%d", result.response.itemsAccepted, result.response.itemsReceived)
 			if len(result.response.errors) > 0 {
-				diagnosticsWriter.Printf("Errors:\n")
+				diagnosticsWriter.Printf("Errors:")
 				for _, err := range result.response.errors {
-					diagnosticsWriter.Printf("#%d - %d %s\n", err.index, err.statusCode, err.message)
-					diagnosticsWriter.Printf("Telemetry item:\n\t%s\n", err.index, string(items[err.index:err.index+1].serialize()))
+					diagnosticsWriter.Printf("#%d - %d %s", err.index, err.statusCode, err.message)
+					diagnosticsWriter.Printf("Telemetry item:\n\t%s", err.index, string(items[err.index:err.index+1].serialize()))
 				}
 			}
 		}

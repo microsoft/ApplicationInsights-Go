@@ -23,9 +23,19 @@ type InMemoryChannel struct {
 }
 
 type inMemoryChannelControl struct {
-	flush    bool
-	stop     bool
-	timeout  time.Duration
+	// If true, flush the buffer.
+	flush bool
+
+	// If true, stop listening on the channel.  (Flush is required if any events are to be sent)
+	stop bool
+
+	// If stopping and flushing, this specifies whether to retry submissions on error.
+	retry bool
+
+	// If retrying, what is the max time to wait before finishing up?
+	timeout time.Duration
+
+	// If specified, a message will be sent on this channel when all pending telemetry items have been submitted
 	callback chan bool
 }
 
@@ -70,22 +80,18 @@ func (channel *InMemoryChannel) IsThrottled() bool {
 	return channel.throttle.IsThrottled()
 }
 
-func (channel *InMemoryChannel) Close(flush bool, timeout time.Duration) chan bool {
+func (channel *InMemoryChannel) Close(flush bool, retry bool, timeout time.Duration) chan bool {
 	callback := make(chan bool)
 
 	channel.controlChan <- &inMemoryChannelControl{
 		stop:     true,
 		flush:    flush,
 		timeout:  timeout,
+		retry:    retry,
 		callback: callback,
 	}
 
 	return callback
-}
-
-func (channel *InMemoryChannel) CloseSync(flush bool, timeout time.Duration) {
-	callback := channel.Close(flush, timeout)
-	<-callback
 }
 
 func (channel *InMemoryChannel) acceptLoop() {
@@ -127,6 +133,7 @@ mainLoop:
 
 		// Things that are used by the sender if we receive a control message
 		var retryTimeout time.Duration = 0
+		var retry bool
 		var callback chan bool
 
 		// Delay until timeout passes or buffer fills up
@@ -148,6 +155,7 @@ mainLoop:
 			case ctl := <-channel.controlChan:
 				if ctl.stop {
 					stopping = true
+					retry = ctl.retry
 					if !ctl.flush {
 						// No flush? Just exit.
 						channel.signalWhenDone(ctl.callback)
@@ -204,6 +212,7 @@ mainLoop:
 				case ctl := <-channel.controlChan:
 					if ctl.stop {
 						stopping = true
+						retry = ctl.retry
 						if !ctl.flush {
 							channel.signalWhenDone(ctl.callback)
 							break mainLoop
@@ -224,10 +233,9 @@ mainLoop:
 			diagnosticsWriter.Printf("Channel dropped %d events while throttled", dropped)
 		}
 
+		// Send
 		if len(buffer) > 0 {
-			// Buffer will be mutated very shortly- capture it before branching
-			// of the goroutine to avoid a very real race condition
-			go func(buffer TelemetryBufferItems) {
+			go func(buffer TelemetryBufferItems, callback chan bool, retry bool, retryTimeout time.Duration) {
 				channel.waitgroup.Add(1)
 				defer channel.waitgroup.Done()
 
@@ -237,8 +245,8 @@ mainLoop:
 					channel.signalWhenDone(callback)
 				}
 
-				channel.transmitRetry(buffer, retryTimeout)
-			}(buffer)
+				channel.transmitRetry(buffer, retry, retryTimeout)
+			}(buffer, callback, retry, retryTimeout)
 		} else if callback != nil {
 			channel.signalWhenDone(callback)
 		}
@@ -249,7 +257,7 @@ mainLoop:
 	channel.throttle.Stop()
 }
 
-func (channel *InMemoryChannel) transmitRetry(items TelemetryBufferItems, retryTimeout time.Duration) {
+func (channel *InMemoryChannel) transmitRetry(items TelemetryBufferItems, retry bool, retryTimeout time.Duration) {
 	payload := items.serialize()
 	retryTimeRemaining := retryTimeout
 
@@ -259,26 +267,32 @@ func (channel *InMemoryChannel) transmitRetry(items TelemetryBufferItems, retryT
 			return
 		}
 
-		// Check for success, determine if we need to retry anything
-		if err != nil {
-			diagnosticsWriter.Printf("Failed to transmit telemetry: %s; will retry\n", err.Error())
-		} else if result.CanRetry() {
-			// Filter down to failed items
-			payload, items = result.GetRetryItems(payload, items)
-			if len(payload) == 0 || len(items) == 0 {
-				return
-			}
-		} else {
-			diagnosticsWriter.Write("Telemetry transmission failed; cannot retry\n")
+		if !retry {
+			diagnosticsWriter.Write("Refusing to retry telemetry submission (retry==false)")
 			return
 		}
 
-		// Check for throttling
-		if result.IsThrottled() {
-			if result.retryAfter != nil {
-				channel.throttle.RetryAfter(*result.retryAfter)
+		// Check for success, determine if we need to retry anything
+		if result != nil {
+			if result.CanRetry() {
+				// Filter down to failed items
+				payload, items = result.GetRetryItems(payload, items)
+				if len(payload) == 0 || len(items) == 0 {
+					return
+				}
 			} else {
-				// TODO: Pick a time
+				diagnosticsWriter.Write("Cannot retry telemetry submission")
+				return
+			}
+
+			// Check for throttling
+			if result.IsThrottled() {
+				if result.retryAfter != nil {
+					diagnosticsWriter.Printf("Channel is throttled until %s", *result.retryAfter)
+					channel.throttle.RetryAfter(*result.retryAfter)
+				} else {
+					// TODO: Pick a time
+				}
 			}
 		}
 
@@ -297,10 +311,7 @@ func (channel *InMemoryChannel) transmitRetry(items TelemetryBufferItems, retryT
 			}
 		}
 
-		if result != nil && result.IsFailure() {
-			diagnosticsWriter.Printf("Telemetry transmission failed; retrying in %s\n", wait)
-		}
-
+		diagnosticsWriter.Printf("Waiting %s to retry submission", wait)
 		time.Sleep(wait)
 
 		// Wait if the channel is throttled and we're not on a schedule
