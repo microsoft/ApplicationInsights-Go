@@ -87,7 +87,7 @@ mainLoop:
 			}
 		}
 
-		duration := throttledUntil.Sub(time.Now())
+		duration := throttledUntil.Sub(currentClock.Now())
 		if duration < 0 {
 			continue
 		}
@@ -95,12 +95,12 @@ mainLoop:
 		var notify []chan bool
 
 		// --- Throttled and waiting ---
-		t := time.NewTimer(duration)
+		t := currentClock.NewTimer(duration)
 
 	throttleLoop:
 		for {
 			select {
-			case <-t.C:
+			case <-t.C():
 				for _, n := range notify {
 					n <- true
 				}
@@ -124,10 +124,10 @@ mainLoop:
 						throttledUntil = msg.timestamp
 
 						if !t.Stop() {
-							<-t.C
+							<-t.C()
 						}
 
-						t.Reset(throttledUntil.Sub(time.Now()))
+						t.Reset(throttledUntil.Sub(currentClock.Now()))
 					}
 				}
 			}

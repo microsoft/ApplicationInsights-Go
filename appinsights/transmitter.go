@@ -9,6 +9,16 @@ import (
 	"time"
 )
 
+type transmitter interface {
+	Transmit(payload []byte, items TelemetryBufferItems) (*transmissionResult, error)
+}
+
+type httpTransmitter struct {
+	endpoint string
+}
+
+type nullTransmitter struct {}
+
 type transmissionResult struct {
 	statusCode int
 	retryAfter *time.Time
@@ -38,17 +48,15 @@ const (
 	serviceUnavailableResponse              = 503
 )
 
-func transmit(payload []byte, items TelemetryBufferItems, endpoint string) (*transmissionResult, error) {
-	if endpoint == "" {
-		// Special case for tests: don't actually send telemetry to empty endpoint address
-		diagnosticsWriter.Write("Refusing to transmit telemetry to empty endpoint")
-		return &transmissionResult{statusCode: successResponse}, nil
-	}
+func newTransmitter(endpointAddress string) transmitter {
+	return &httpTransmitter{endpointAddress}
+}
 
+func (transmitter *httpTransmitter) Transmit(payload []byte, items TelemetryBufferItems) (*transmissionResult, error) {
 	diagnosticsWriter.Printf("----------- Transmitting %d items ---------", len(items))
 	startTime := time.Now()
 
-	req, err := http.NewRequest("POST", endpoint, bytes.NewReader(payload))
+	req, err := http.NewRequest("POST", transmitter.endpoint, bytes.NewReader(payload))
 	if err != nil {
 		return nil, err
 	}
@@ -105,6 +113,10 @@ func transmit(payload []byte, items TelemetryBufferItems, endpoint string) (*tra
 	}
 
 	return result, nil
+}
+
+func (transmitter *nullTransmitter) Transmit(payload []byte, items TelemetryBufferItems) (*transmissionResult, error) {
+	return &transmissionResult{statusCode: successResponse}, nil
 }
 
 func (result *transmissionResult) IsSuccess() bool {

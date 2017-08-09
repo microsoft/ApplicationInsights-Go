@@ -20,6 +20,7 @@ type InMemoryChannel struct {
 	batchInterval   time.Duration
 	waitgroup       sync.WaitGroup
 	throttle        *throttleManager
+	transmitter     transmitter
 }
 
 type inMemoryChannelControl struct {
@@ -47,6 +48,7 @@ func NewInMemoryChannel(config *TelemetryConfiguration) *InMemoryChannel {
 		batchSize:       config.MaxBatchSize,
 		batchInterval:   config.MaxBatchInterval,
 		throttle:        newThrottleManager(),
+		transmitter:     newTransmitter(config.EndpointUrl),
 	}
 
 	go channel.acceptLoop()
@@ -137,7 +139,7 @@ mainLoop:
 		var callback chan bool
 
 		// Delay until timeout passes or buffer fills up
-		timer := time.NewTimer(channel.batchInterval)
+		timer := currentClock.NewTimer(channel.batchInterval)
 	waitLoop:
 		for {
 			select {
@@ -169,7 +171,7 @@ mainLoop:
 					break waitLoop
 				}
 
-			case _ = <-timer.C:
+			case _ = <-timer.C():
 				// Timeout expired
 				timer = nil
 				break waitLoop
@@ -177,7 +179,7 @@ mainLoop:
 		}
 
 		if timer != nil && !timer.Stop() {
-			<-timer.C
+			<-timer.C()
 		}
 
 		// Hold up transmission if we're being throttled
@@ -262,7 +264,7 @@ func (channel *InMemoryChannel) transmitRetry(items TelemetryBufferItems, retry 
 	retryTimeRemaining := retryTimeout
 
 	for _, wait := range submit_retries {
-		result, err := transmit(payload, items, channel.endpointAddress)
+		result, err := channel.transmitter.Transmit(payload, items)
 		if err == nil && result != nil && result.IsSuccess() {
 			return
 		}
@@ -302,7 +304,7 @@ func (channel *InMemoryChannel) transmitRetry(items TelemetryBufferItems, retry 
 			if retryTimeRemaining < wait {
 				// One more chance left -- we'll wait the max time we can
 				// and then retry on the way out.
-				time.Sleep(retryTimeRemaining)
+				currentClock.Sleep(retryTimeRemaining)
 				break
 			} else {
 				// Still have time left to go through the rest of the regular
@@ -312,7 +314,7 @@ func (channel *InMemoryChannel) transmitRetry(items TelemetryBufferItems, retry 
 		}
 
 		diagnosticsWriter.Printf("Waiting %s to retry submission", wait)
-		time.Sleep(wait)
+		currentClock.Sleep(wait)
 
 		// Wait if the channel is throttled and we're not on a schedule
 		if channel.IsThrottled() && retryTimeout == 0 {
@@ -328,7 +330,7 @@ func (channel *InMemoryChannel) transmitRetry(items TelemetryBufferItems, retry 
 	}
 
 	// One final try
-	_, err := transmit(payload, items, channel.endpointAddress)
+	_, err := channel.transmitter.Transmit(payload, items)
 	if err != nil {
 		diagnosticsWriter.Write("Gave up transmitting payload; exhausted retries")
 	}
