@@ -17,7 +17,7 @@ type httpTransmitter struct {
 	endpoint string
 }
 
-type nullTransmitter struct {}
+type nullTransmitter struct{}
 
 type transmissionResult struct {
 	statusCode int
@@ -27,15 +27,15 @@ type transmissionResult struct {
 
 // Structures returned by data collector
 type backendResponse struct {
-	itemsReceived int
-	itemsAccepted int
-	errors        []*itemTransmissionResult
+	ItemsReceived int                       `json:"itemsReceived"`
+	ItemsAccepted int                       `json:"itemsAccepted"`
+	Errors        []*itemTransmissionResult `json:"errors"`
 }
 
 type itemTransmissionResult struct {
-	index      int
-	statusCode int
-	message    string
+	Index      int    `json:"index"`
+	StatusCode int    `json:"statusCode"`
+	Message    string `json:"message"`
 }
 
 const (
@@ -85,14 +85,14 @@ func (transmitter *httpTransmitter) Transmit(payload []byte, items TelemetryBuff
 
 	// Grab Retry-After header
 	if retryAfterValue, ok := resp.Header[http.CanonicalHeaderKey("Retry-After")]; ok && len(retryAfterValue) == 1 {
-		if retryAfterTime, err := time.Parse(time.RFC1123, retryAfterValue[0]); err != nil {
+		if retryAfterTime, err := time.Parse(time.RFC1123, retryAfterValue[0]); err == nil {
 			result.retryAfter = &retryAfterTime
 		}
 	}
 
 	// Parse body, if possible
 	response := &backendResponse{}
-	if err := json.Unmarshal(body, &response); err != nil {
+	if err := json.Unmarshal(body, &response); err == nil {
 		result.response = response
 	}
 
@@ -101,12 +101,12 @@ func (transmitter *httpTransmitter) Transmit(payload []byte, items TelemetryBuff
 		diagnosticsWriter.Printf("Telemetry transmitted in %s", duration)
 		diagnosticsWriter.Printf("Response: %d", result.statusCode)
 		if result.response != nil {
-			diagnosticsWriter.Printf("Items accepted/received: %d/%d", result.response.itemsAccepted, result.response.itemsReceived)
-			if len(result.response.errors) > 0 {
+			diagnosticsWriter.Printf("Items accepted/received: %d/%d", result.response.ItemsAccepted, result.response.ItemsReceived)
+			if len(result.response.Errors) > 0 {
 				diagnosticsWriter.Printf("Errors:")
-				for _, err := range result.response.errors {
-					diagnosticsWriter.Printf("#%d - %d %s", err.index, err.statusCode, err.message)
-					diagnosticsWriter.Printf("Telemetry item:\n\t%s", err.index, string(items[err.index:err.index+1].serialize()))
+				for _, err := range result.response.Errors {
+					diagnosticsWriter.Printf("#%d - %d %s", err.Index, err.StatusCode, err.Message)
+					diagnosticsWriter.Printf("Telemetry item:\n\t%s", err.Index, string(items[err.Index:err.Index+1].serialize()))
 				}
 			}
 		}
@@ -124,7 +124,7 @@ func (result *transmissionResult) IsSuccess() bool {
 		// Partial response but all items accepted
 		(result.statusCode == partialSuccessResponse &&
 			result.response != nil &&
-			result.response.itemsReceived == result.response.itemsAccepted)
+			result.response.ItemsReceived == result.response.ItemsAccepted)
 }
 
 func (result *transmissionResult) IsFailure() bool {
@@ -132,19 +132,23 @@ func (result *transmissionResult) IsFailure() bool {
 }
 
 func (result *transmissionResult) CanRetry() bool {
+	if result.IsSuccess() {
+		return false
+	}
+
 	return result.statusCode == partialSuccessResponse ||
-		(result.retryAfter != nil &&
-			(result.statusCode == requestTimeoutResponse ||
-				result.statusCode == serviceUnavailableResponse ||
-				result.statusCode == errorResponse ||
-				result.statusCode == tooManyRequestsResponse ||
-				result.statusCode == tooManyRequestsOverExtendedTimeResponse))
+		result.retryAfter != nil ||
+		(result.statusCode == requestTimeoutResponse ||
+			result.statusCode == serviceUnavailableResponse ||
+			result.statusCode == errorResponse ||
+			result.statusCode == tooManyRequestsResponse ||
+			result.statusCode == tooManyRequestsOverExtendedTimeResponse)
 }
 
 func (result *transmissionResult) IsPartialSuccess() bool {
 	return result.statusCode == partialSuccessResponse &&
 		result.response != nil &&
-		result.response.itemsReceived != result.response.itemsAccepted
+		result.response.ItemsReceived != result.response.ItemsAccepted
 }
 
 func (result *transmissionResult) IsThrottled() bool {
@@ -154,18 +158,18 @@ func (result *transmissionResult) IsThrottled() bool {
 }
 
 func (result *itemTransmissionResult) CanRetry() bool {
-	return result.statusCode == requestTimeoutResponse ||
-		result.statusCode == serviceUnavailableResponse ||
-		result.statusCode == errorResponse ||
-		result.statusCode == tooManyRequestsResponse ||
-		result.statusCode == tooManyRequestsOverExtendedTimeResponse
+	return result.StatusCode == requestTimeoutResponse ||
+		result.StatusCode == serviceUnavailableResponse ||
+		result.StatusCode == errorResponse ||
+		result.StatusCode == tooManyRequestsResponse ||
+		result.StatusCode == tooManyRequestsOverExtendedTimeResponse
 }
 
 func (result *transmissionResult) GetRetryItems(payload []byte, items TelemetryBufferItems) ([]byte, TelemetryBufferItems) {
 	if result.statusCode == partialSuccessResponse && result.response != nil {
 		// Make sure errors are ordered by index
-		sort.Slice(result.response.errors, func(i, j int) bool {
-			return result.response.errors[i].index < result.response.errors[j].index
+		sort.Slice(result.response.Errors, func(i, j int) bool {
+			return result.response.Errors[i].Index < result.response.Errors[j].Index
 		})
 
 		var resultPayload bytes.Buffer
@@ -174,10 +178,10 @@ func (result *transmissionResult) GetRetryItems(payload []byte, items TelemetryB
 		idx := 0
 
 		// Find each retryable error
-		for _, responseResult := range result.response.errors {
+		for _, responseResult := range result.response.Errors {
 			if responseResult.CanRetry() {
 				// Advance ptr to start of desired line
-				for ; idx < responseResult.index && ptr < len(payload); ptr++ {
+				for ; idx < responseResult.Index && ptr < len(payload); ptr++ {
 					if payload[idx] == '\n' {
 						idx++
 					}
@@ -186,7 +190,7 @@ func (result *transmissionResult) GetRetryItems(payload []byte, items TelemetryB
 				startIdx := idx
 
 				// Read to end of line
-				for ; idx == responseResult.index && ptr < len(payload); ptr++ {
+				for ; idx == responseResult.Index && ptr < len(payload); ptr++ {
 					if payload[idx] == '\n' {
 						idx++
 					}
@@ -194,7 +198,7 @@ func (result *transmissionResult) GetRetryItems(payload []byte, items TelemetryB
 
 				// Copy item into output buffer
 				resultPayload.Write(payload[startIdx:idx])
-				resultItems = append(resultItems, items[responseResult.index])
+				resultItems = append(resultItems, items[responseResult.Index])
 			}
 		}
 
