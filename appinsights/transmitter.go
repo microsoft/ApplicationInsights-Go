@@ -105,8 +105,10 @@ func (transmitter *httpTransmitter) Transmit(payload []byte, items TelemetryBuff
 			if len(result.response.Errors) > 0 {
 				diagnosticsWriter.Printf("Errors:")
 				for _, err := range result.response.Errors {
-					diagnosticsWriter.Printf("#%d - %d %s", err.Index, err.StatusCode, err.Message)
-					diagnosticsWriter.Printf("Telemetry item:\n\t%s", err.Index, string(items[err.Index:err.Index+1].serialize()))
+					if err.Index < len(items) {
+						diagnosticsWriter.Printf("#%d - %d %s", err.Index, err.StatusCode, err.Message)
+						diagnosticsWriter.Printf("Telemetry item:\n\t%s", err.Index, string(items[err.Index:err.Index+1].serialize()))
+					}
 				}
 			}
 		}

@@ -135,7 +135,7 @@ mainLoop:
 
 		// Things that are used by the sender if we receive a control message
 		var retryTimeout time.Duration = 0
-		var retry bool
+		var retry bool = true
 		var callback chan bool
 
 		// Delay until timeout passes or buffer fills up
@@ -237,15 +237,13 @@ mainLoop:
 
 		// Send
 		if len(buffer) > 0 {
+			channel.waitgroup.Add(1)
 			go func(buffer TelemetryBufferItems, callback chan bool, retry bool, retryTimeout time.Duration) {
-				channel.waitgroup.Add(1)
 				defer channel.waitgroup.Done()
 
-				if callback != nil {
-					// If we have a callback, wait on the waitgroup now that it's
-					// incremented.
-					channel.signalWhenDone(callback)
-				}
+				// If we have a callback, wait on the waitgroup now that it's
+				// incremented.
+				channel.signalWhenDone(callback)
 
 				channel.transmitRetry(buffer, retry, retryTimeout)
 			}(buffer, callback, retry, retryTimeout)
@@ -256,6 +254,9 @@ mainLoop:
 
 	close(channel.collectChan)
 	close(channel.controlChan)
+
+	// Throttle can't close until transmitters are done using it.
+	channel.waitgroup.Wait()
 	channel.throttle.Stop()
 }
 
