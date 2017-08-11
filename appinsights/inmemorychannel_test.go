@@ -90,17 +90,11 @@ func assertTimeApprox(t *testing.T, x, y time.Time) {
 	}
 }
 
-func slowInc(seconds int) {
-	const delay = time.Millisecond * time.Duration(5)
-
-	// Sleeps in tests are evil, but with all the async nonsense going
-	// on, no callbacks, and minimal control of the clock, I'm not
-	// really sure I have another choice.
-
-	time.Sleep(delay)
-	for i := 0; i < seconds; i++ {
-		fakeClock.Increment(time.Second)
-		time.Sleep(delay)
+func assertNotClosed(t *testing.T, ch chan bool) {
+	select {
+	case <-ch:
+		t.Fatal("Close signal was not expected to be received")
+	default:
 	}
 }
 
@@ -125,7 +119,7 @@ func TestSimpleSubmit(t *testing.T) {
 	tm := currentClock.Now()
 	transmitter.prepResponse(200)
 
-	slowInc(11)
+	slowTick(11)
 	req := transmitter.waitForRequest(t)
 
 	assertTimeApprox(t, req.timestamp, tm.Add(ten_seconds))
@@ -148,10 +142,10 @@ func TestMultipleSubmit(t *testing.T) {
 
 	for i := 0; i < 16; i++ {
 		client.TrackTrace(fmt.Sprintf("~msg-%x~", i))
-		slowInc(1)
+		slowTick(1)
 	}
 
-	slowInc(10)
+	slowTick(10)
 
 	req1 := transmitter.waitForRequest(t)
 	assertTimeApprox(t, req1.timestamp, start.Add(ten_seconds))
@@ -196,7 +190,7 @@ func TestFlush(t *testing.T) {
 
 	// Next one goes back to normal
 	client.TrackTrace("~next~")
-	slowInc(11)
+	slowTick(11)
 
 	req2 := transmitter.waitForRequest(t)
 	assertTimeApprox(t, req2.timestamp, tm.Add(ten_seconds))
@@ -215,7 +209,7 @@ func TestCloseNoFlush(t *testing.T) {
 
 	client.TrackTrace("Not sent")
 	client.Channel().Close(false, false, 0)
-	slowInc(20)
+	slowTick(20)
 	transmitter.assertNoRequest(t)
 }
 
@@ -248,7 +242,7 @@ func TestCloseFlushRetry(t *testing.T) {
 	tm := currentClock.Now()
 	ch := client.Channel().Close(true, true, time.Minute)
 
-	slowInc(30)
+	slowTick(30)
 
 	waitForClose(t, ch)
 
@@ -277,30 +271,40 @@ func TestCloseWithOngoingRetry(t *testing.T) {
 
 	// This message should get stuck, retried
 	client.TrackTrace("~msg-1~")
-	slowInc(11)
+	slowTick(11)
 
-	// This message will get flushed immediately
-	client.TrackTrace("~msg-2~")
-	ch := client.Channel().Close(true, true, time.Minute)
-
-	// Then, let's wait for the first message to go out...
-	slowInc(30)
-
-	waitForClose(t, ch)
-
-	// Check.
+	// Check first one came through
 	req1 := transmitter.waitForRequest(t)
 	if !strings.Contains(req1.payload, "~msg-1~") {
 		t.Error("First message unexpected payload")
 	}
 
+	// This message will get flushed immediately
+	client.TrackTrace("~msg-2~")
+	ch := client.Channel().Close(true, true, time.Minute)
+
+	// Let 2 go out, but not the retry for 1
+	slowTick(3)
+	
+	assertNotClosed(t, ch)
+	
 	req2 := transmitter.waitForRequest(t)
 	if !strings.Contains(req2.payload, "~msg-2~") {
 		t.Error("Second message unexpected payload")
 	}
+
+	// Then, let's wait for the first message to go out...
+	slowTick(20)
+
+	waitForClose(t, ch)
 
 	req3 := transmitter.waitForRequest(t)
 	if !strings.Contains(req3.payload, "~msg-1~") {
 		t.Error("Third message unexpected payload")
 	}
 }
+
+// Tests remaining to be written:
+//  - send on buffer full
+//  - retries, partial retries
+//  - throttling, on close
