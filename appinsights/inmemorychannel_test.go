@@ -285,9 +285,9 @@ func TestCloseWithOngoingRetry(t *testing.T) {
 
 	// Let 2 go out, but not the retry for 1
 	slowTick(3)
-	
+
 	assertNotClosed(t, ch)
-	
+
 	req2 := transmitter.waitForRequest(t)
 	if !strings.Contains(req2.payload, "~msg-2~") {
 		t.Error("Second message unexpected payload")
@@ -304,7 +304,124 @@ func TestCloseWithOngoingRetry(t *testing.T) {
 	}
 }
 
+func TestSendOnBufferFull(t *testing.T) {
+	mockClock()
+	defer resetClock()
+
+	config := NewTelemetryConfiguration("")
+	config.MaxBatchSize = 4
+	client, transmitter := newTestChannelServer(config)
+	defer transmitter.Close()
+	defer client.Channel().Close(false, false, 0)
+
+	transmitter.prepResponse(200, 200)
+
+	for i := 0; i < 5; i++ {
+		client.TrackTrace(fmt.Sprintf("~msg-%d~", i))
+	}
+
+	req1 := transmitter.waitForRequest(t)
+	assertTimeApprox(t, req1.timestamp, currentClock.Now())
+
+	for i := 0; i < 4; i++ {
+		if !strings.Contains(req1.payload, fmt.Sprintf("~msg-%d~", i)) || len(req1.items) != 4 {
+			t.Errorf("Payload does not contain expected message")
+		}
+	}
+
+	slowTick(5)
+	transmitter.assertNoRequest(t)
+	slowTick(5)
+
+	// The last one should have gone out as normal
+
+	req2 := transmitter.waitForRequest(t)
+	assertTimeApprox(t, req2.timestamp, currentClock.Now())
+	if !strings.Contains(req2.payload, "~msg-4~") || len(req2.items) != 1 {
+		t.Errorf("Payload does not contain expected message")
+	}
+}
+
+func TestRetryOnFailure(t *testing.T) {
+	mockClock()
+	defer resetClock()
+	client, transmitter := newTestChannelServer()
+	defer client.Channel().Close(false, false, 0)
+	defer transmitter.Close()
+
+	transmitter.prepResponse(500, 200)
+
+	client.TrackTrace("~msg-1~")
+	client.TrackTrace("~msg-2~")
+
+	tm := currentClock.Now()
+	slowTick(10)
+
+	req1 := transmitter.waitForRequest(t)
+	if !strings.Contains(req1.payload, "~msg-1~") || !strings.Contains(req1.payload, "~msg-2~") || len(req1.items) != 2 {
+		t.Error("Unexpected payload")
+	}
+
+	assertTimeApprox(t, req1.timestamp, tm.Add(ten_seconds))
+
+	slowTick(30)
+
+	req2 := transmitter.waitForRequest(t)
+	if req2.payload != req1.payload || len(req2.items) != 2 {
+		t.Error("Unexpected payload")
+	}
+
+	assertTimeApprox(t, req2.timestamp, tm.Add(ten_seconds).Add(submit_retries[0]))
+}
+
+func TestPartialRetry(t *testing.T) {
+	mockClock()
+	defer resetClock()
+	client, transmitter := newTestChannelServer()
+	defer client.Channel().Close(false, false, 0)
+	defer transmitter.Close()
+
+	client.TrackTrace("~ok-1~")
+	client.TrackTrace("~retry-1~")
+	client.TrackTrace("~ok-2~")
+	client.TrackTrace("~bad-1~")
+	client.TrackTrace("~retry-2~")
+
+	transmitter.responses <- &transmissionResult{
+		statusCode: 206,
+		response: &backendResponse{
+			ItemsAccepted: 2,
+			ItemsReceived: 5,
+			Errors: []*itemTransmissionResult{
+				&itemTransmissionResult{Index: 1, StatusCode: 500, Message: "Server Error"},
+				&itemTransmissionResult{Index: 2, StatusCode: 200, Message: "OK"},
+				&itemTransmissionResult{Index: 3, StatusCode: 400, Message: "Bad Request"},
+				&itemTransmissionResult{Index: 4, StatusCode: 408, Message: "Plz Retry"},
+			},
+		},
+	}
+
+	transmitter.prepResponse(200)
+
+	tm := currentClock.Now()
+	slowTick(30)
+
+	req1 := transmitter.waitForRequest(t)
+	assertTimeApprox(t, req1.timestamp, tm.Add(ten_seconds))
+	if len(req1.items) != 5 {
+		t.Error("Unexpected payload")
+	}
+
+	req2 := transmitter.waitForRequest(t)
+	assertTimeApprox(t, req2.timestamp, tm.Add(ten_seconds).Add(submit_retries[0]))
+	if len(req2.items) != 2 {
+		t.Error("Unexpected payload")
+	}
+
+	if strings.Contains(req2.payload, "~ok-") || strings.Contains(req2.payload, "~bad-") || !strings.Contains(req2.payload, "~retry-") {
+		t.Error("Unexpected payload")
+	}
+}
+
 // Tests remaining to be written:
-//  - send on buffer full
-//  - retries, partial retries
 //  - throttling, on close

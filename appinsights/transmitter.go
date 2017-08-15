@@ -184,22 +184,22 @@ func (result *transmissionResult) GetRetryItems(payload []byte, items TelemetryB
 			if responseResult.CanRetry() {
 				// Advance ptr to start of desired line
 				for ; idx < responseResult.Index && ptr < len(payload); ptr++ {
-					if payload[idx] == '\n' {
+					if payload[ptr] == '\n' {
 						idx++
 					}
 				}
 
-				startIdx := idx
+				startPtr := ptr
 
 				// Read to end of line
 				for ; idx == responseResult.Index && ptr < len(payload); ptr++ {
-					if payload[idx] == '\n' {
+					if payload[ptr] == '\n' {
 						idx++
 					}
 				}
 
 				// Copy item into output buffer
-				resultPayload.Write(payload[startIdx:idx])
+				resultPayload.Write(payload[startPtr:ptr])
 				resultItems = append(resultItems, items[responseResult.Index])
 			}
 		}
