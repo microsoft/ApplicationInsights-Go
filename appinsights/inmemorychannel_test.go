@@ -38,6 +38,17 @@ func (transmitter *testTransmitter) prepResponse(statusCodes ...int) {
 	}
 }
 
+func (transmitter *testTransmitter) prepThrottle(after time.Duration) time.Time {
+	retryAfter := currentClock.Now().Add(after)
+
+	transmitter.responses <- &transmissionResult{
+		statusCode: 408,
+		retryAfter: &retryAfter,
+	}
+
+	return retryAfter
+}
+
 func (transmitter *testTransmitter) waitForRequest(t *testing.T) *testTransmission {
 	select {
 	case req := <-transmitter.requests:
@@ -423,5 +434,125 @@ func TestPartialRetry(t *testing.T) {
 	}
 }
 
-// Tests remaining to be written:
-//  - throttling, on close
+func TestThrottleDropsMessages(t *testing.T) {
+	mockClock()
+	defer resetClock()
+	config := NewTelemetryConfiguration("")
+	config.MaxBatchSize = 4
+	client, transmitter := newTestChannelServer(config)
+	defer client.Channel().Close(false, false, 0)
+	defer transmitter.Close()
+
+	tm := currentClock.Now()
+	retryAfter := transmitter.prepThrottle(time.Minute)
+	transmitter.prepResponse(200, 200)
+
+	client.TrackTrace("~throttled~")
+	slowTick(10)
+
+	for i := 0; i < 20; i++ {
+		client.TrackTrace(fmt.Sprintf("~msg-%d~", i))
+	}
+
+	slowTick(60)
+
+	req1 := transmitter.waitForRequest(t)
+	assertTimeApprox(t, req1.timestamp, tm.Add(ten_seconds))
+	if len(req1.items) != 1 || !strings.Contains(req1.payload, "~throttled~") || strings.Contains(req1.payload, "~msg-") {
+		t.Error("Unexpected payload")
+	}
+
+	// Humm.. this might break- these two could flip places. But I haven't seen it happen yet.
+
+	req2 := transmitter.waitForRequest(t)
+	assertTimeApprox(t, req2.timestamp, retryAfter)
+	if len(req2.items) != 1 || !strings.Contains(req2.payload, "~throttled~") || strings.Contains(req2.payload, "~msg-") {
+		t.Error("Unexpected payload")
+	}
+
+	req3 := transmitter.waitForRequest(t)
+	assertTimeApprox(t, req3.timestamp, retryAfter)
+	if len(req3.items) != 4 || strings.Contains(req3.payload, "~throttled-") || !strings.Contains(req3.payload, "~msg-") {
+		t.Error("Unexpected payload")
+	}
+
+	transmitter.assertNoRequest(t)
+}
+
+func TestThrottleCannotFlush(t *testing.T) {
+	mockClock()
+	defer resetClock()
+	config := NewTelemetryConfiguration("")
+	config.MaxBatchSize = 4
+	client, transmitter := newTestChannelServer(config)
+	defer client.Channel().Close(false, false, 0)
+	defer transmitter.Close()
+
+	tm := currentClock.Now()
+	retryAfter := transmitter.prepThrottle(time.Minute)
+
+	transmitter.prepResponse(200, 200)
+
+	client.TrackTrace("~throttled~")
+	slowTick(10)
+
+	client.TrackTrace("~msg~")
+	client.Channel().Flush()
+
+	slowTick(60)
+
+	req1 := transmitter.waitForRequest(t)
+	assertTimeApprox(t, req1.timestamp, tm.Add(ten_seconds))
+
+	req2 := transmitter.waitForRequest(t)
+	assertTimeApprox(t, req2.timestamp, retryAfter)
+
+	req3 := transmitter.waitForRequest(t)
+	assertTimeApprox(t, req3.timestamp, retryAfter)
+
+	transmitter.assertNoRequest(t)
+}
+
+func TestThrottleFlushesOnClose(t *testing.T) {
+	mockClock()
+	defer resetClock()
+	config := NewTelemetryConfiguration("")
+	config.MaxBatchSize = 4
+	client, transmitter := newTestChannelServer(config)
+	defer transmitter.Close()
+
+	tm := currentClock.Now()
+	retryAfter := transmitter.prepThrottle(time.Minute)
+
+	transmitter.prepResponse(200, 200)
+
+	client.TrackTrace("~throttled~")
+	slowTick(10)
+
+	client.TrackTrace("~msg~")
+	ch := client.Channel().Close(true, true, 30*time.Second)
+
+	slowTick(60)
+
+	waitForClose(t, ch)
+
+	req1 := transmitter.waitForRequest(t)
+	assertTimeApprox(t, req1.timestamp, tm.Add(ten_seconds))
+	if !strings.Contains(req1.payload, "~throttled~") || len(req1.items) != 1 {
+		t.Error("Unexpected payload")
+	}
+
+	req2 := transmitter.waitForRequest(t)
+	assertTimeApprox(t, req2.timestamp, tm.Add(ten_seconds))
+	if !strings.Contains(req2.payload, "~msg~") || len(req2.items) != 1 {
+		t.Error("Unexpected payload")
+	}
+
+	req3 := transmitter.waitForRequest(t)
+	assertTimeApprox(t, req3.timestamp, retryAfter)
+	if !strings.Contains(req3.payload, "~throttled~") || len(req3.items) != 1 {
+		t.Error("Unexpected payload")
+	}
+
+	transmitter.assertNoRequest(t)
+}
