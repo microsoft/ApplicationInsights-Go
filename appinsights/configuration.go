@@ -13,7 +13,7 @@ func NewTelemetryConfiguration(instrumentationKey string) *TelemetryConfiguratio
 	return &TelemetryConfiguration{
 		InstrumentationKey: instrumentationKey,
 		EndpointUrl:        "https://dc.services.visualstudio.com/v2/track",
-		MaxBatchSize:       250,
+		MaxBatchSize:       1024,
 		MaxBatchInterval:   time.Duration(10) * time.Second,
 	}
 }
