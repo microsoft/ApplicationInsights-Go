@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+
+	"github.com/jjjordanmsft/ApplicationInsights-Go/appinsights/contracts"
 )
 
 func (items TelemetryBufferItems) serialize() []byte {
@@ -22,19 +24,20 @@ func (items TelemetryBufferItems) serialize() []byte {
 	return result.Bytes()
 }
 
-func prepare(item Telemetry) *envelope {
-	data := &data{
-		BaseType: item.baseTypeName() + "Data",
-		BaseData: item.baseData(),
-	}
-
+func prepare(item Telemetry) *contracts.Envelope {
 	context := item.Context()
+	tdata := item.TelemetryData()
 
-	envelope := &envelope{
-		Name: "Microsoft.ApplicationInsights." + item.baseTypeName(),
-		Time: item.Timestamp().Format(time.RFC3339),
+	envelope := &contracts.Envelope{
+		Name: tdata.EnvelopeName(),
+		Time: item.Time().Format(time.RFC3339),
 		IKey: context.InstrumentationKey(),
-		Data: data,
+		Data: &contracts.Data{
+			Base: contracts.Base{
+				BaseType: tdata.BaseType(),
+			},
+			BaseData: tdata,
+		},
 	}
 
 	if tcontext, ok := context.(*telemetryContext); ok {
