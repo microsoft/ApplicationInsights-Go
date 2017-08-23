@@ -67,72 +67,78 @@ func (throttle *throttleManager) Stop() {
 }
 
 func (throttle *throttleManager) run() {
-mainLoop:
 	for {
-		// --- Not throttled ---
-		var throttledUntil time.Time
-
-	notThrottledLoop:
-		for {
-			msg := <-throttle.msgs
-			if msg.query {
-				msg.result <- false
-			} else if msg.wait {
-				msg.result <- true
-			} else if msg.stop {
-				break mainLoop
-			} else if msg.throttle {
-				throttledUntil = msg.timestamp
-				break notThrottledLoop
-			}
+		throttledUntil, ok := throttle.waitForThrottle()
+		if !ok {
+			break
 		}
 
-		duration := throttledUntil.Sub(currentClock.Now())
-		if duration < 0 {
-			continue
-		}
-
-		var notify []chan bool
-
-		// --- Throttled and waiting ---
-		t := currentClock.NewTimer(duration)
-
-	throttleLoop:
-		for {
-			select {
-			case <-t.C():
-				for _, n := range notify {
-					n <- true
-				}
-
-				break throttleLoop
-			case msg := <-throttle.msgs:
-				if msg.query {
-					msg.result <- true
-				} else if msg.wait {
-					notify = append(notify, msg.result)
-				} else if msg.stop {
-					for _, n := range notify {
-						n <- false
-					}
-
-					msg.result <- true
-
-					break mainLoop
-				} else if msg.throttle {
-					if msg.timestamp.After(throttledUntil) {
-						throttledUntil = msg.timestamp
-
-						if !t.Stop() {
-							<-t.C()
-						}
-
-						t.Reset(throttledUntil.Sub(currentClock.Now()))
-					}
-				}
-			}
+		if !throttle.waitForReady(throttledUntil) {
+			break
 		}
 	}
 
 	close(throttle.msgs)
+}
+
+func (throttle *throttleManager) waitForThrottle() (time.Time, bool) {
+	for {
+		msg := <-throttle.msgs
+		if msg.query {
+			msg.result <- false
+		} else if msg.wait {
+			msg.result <- true
+		} else if msg.stop {
+			return time.Time{}, false
+		} else if msg.throttle {
+			return msg.timestamp, true
+		}
+	}
+}
+
+func (throttle *throttleManager) waitForReady(throttledUntil time.Time) bool {
+	duration := throttledUntil.Sub(currentClock.Now())
+	if duration <= 0 {
+		return true
+	}
+
+	var notify []chan bool
+
+	// --- Throttled and waiting ---
+	t := currentClock.NewTimer(duration)
+
+	for {
+		select {
+		case <-t.C():
+			for _, n := range notify {
+				n <- true
+			}
+
+			return true
+		case msg := <-throttle.msgs:
+			if msg.query {
+				msg.result <- true
+			} else if msg.wait {
+				notify = append(notify, msg.result)
+			} else if msg.stop {
+				for _, n := range notify {
+					n <- false
+				}
+
+				msg.result <- true
+
+				return false
+			} else if msg.throttle {
+				if msg.timestamp.After(throttledUntil) {
+					throttledUntil = msg.timestamp
+
+					if !t.Stop() {
+						<-t.C()
+					}
+
+					t.Reset(throttledUntil.Sub(currentClock.Now()))
+				}
+			}
+		}
+	}
 }
