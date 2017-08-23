@@ -28,17 +28,15 @@ func prepare(item Telemetry) *contracts.Envelope {
 	context := item.Context()
 	tdata := item.TelemetryData()
 
-	envelope := &contracts.Envelope{
-		Name: tdata.EnvelopeName(),
-		Time: item.Time().Format(time.RFC3339),
-		IKey: context.InstrumentationKey(),
-		Data: &contracts.Data{
-			Base: contracts.Base{
-				BaseType: tdata.BaseType(),
-			},
-			BaseData: tdata,
-		},
-	}
+	data := contracts.NewData()
+	data.BaseType = tdata.BaseType()
+	data.BaseData = tdata
+
+	envelope := contracts.NewEnvelope()
+	envelope.Name = tdata.EnvelopeName()
+	envelope.Time = item.Time().Format(time.RFC3339)
+	envelope.IKey = context.InstrumentationKey()
+	envelope.Data = data
 
 	if tcontext, ok := context.(*telemetryContext); ok {
 		envelope.Tags = tcontext.tags
