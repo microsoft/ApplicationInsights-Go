@@ -55,6 +55,12 @@ func (server *testServer) waitForRequest(t *testing.T) *testRequest {
 	}
 }
 
+type nullTransmitter struct{}
+
+func (transmitter *nullTransmitter) Transmit(payload []byte, items TelemetryBufferItems) (*transmissionResult, error) {
+	return &transmissionResult{statusCode: successResponse}, nil
+}
+
 func newTestClientServer() (transmitter, *testServer) {
 	server := &testServer{}
 	server.server = httptest.NewServer(server)
