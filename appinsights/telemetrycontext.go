@@ -163,7 +163,7 @@ func (context *telemetryContext) Internal() InternalContext {
 	return &internalContext{context: context}
 }
 
-func NewItemTelemetryContext() TelemetryContext {
+func NewTelemetryContext() TelemetryContext {
 	return &telemetryContext{
 		tags: make(map[string]string),
 	}

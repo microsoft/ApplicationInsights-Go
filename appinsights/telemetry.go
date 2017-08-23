@@ -46,7 +46,7 @@ func NewTraceTelemetry(message string, severityLevel contracts.SeverityLevel) *T
 		Data: data,
 		BaseTelemetry: BaseTelemetry{
 			Timestamp: time.Now(),
-			context:   NewItemTelemetryContext(),
+			context:   NewTelemetryContext(),
 		},
 	}
 }
@@ -68,7 +68,7 @@ func NewEventTelemetry(name string) *EventTelemetry {
 		Data: data,
 		BaseTelemetry: BaseTelemetry{
 			Timestamp: time.Now(),
-			context:   NewItemTelemetryContext(),
+			context:   NewTelemetryContext(),
 		},
 	}
 }
@@ -87,7 +87,7 @@ func NewMetricTelemetry(name string, value float64) *MetricTelemetry {
 	dataPoint.Name = name
 	dataPoint.Value = value
 	dataPoint.Count = 1
-	
+
 	data := contracts.NewMetricData()
 	data.Metrics = []*contracts.DataPoint{dataPoint}
 
@@ -95,7 +95,7 @@ func NewMetricTelemetry(name string, value float64) *MetricTelemetry {
 		Data: data,
 		BaseTelemetry: BaseTelemetry{
 			Timestamp: time.Now(),
-			context:   NewItemTelemetryContext(),
+			context:   NewTelemetryContext(),
 		},
 	}
 }
@@ -124,7 +124,7 @@ func NewRequestTelemetry(name, httpMethod, url string, timestamp time.Time, dura
 		Data: data,
 		BaseTelemetry: BaseTelemetry{
 			Timestamp: time.Now(),
-			context:   NewItemTelemetryContext(),
+			context:   NewTelemetryContext(),
 		},
 	}
 }

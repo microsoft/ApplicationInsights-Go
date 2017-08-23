@@ -32,7 +32,10 @@ func NewTelemetryClient(iKey string) TelemetryClient {
 
 func NewTelemetryClientFromConfig(config *TelemetryConfiguration) TelemetryClient {
 	channel := NewInMemoryChannel(config)
-	context := NewClientTelemetryContext(config.InstrumentationKey)
+	context := NewTelemetryContext()
+
+	config.setupContext(context.(*telemetryContext))
+
 	return &telemetryClient{
 		TelemetryConfiguration: config,
 		channel:                channel,
