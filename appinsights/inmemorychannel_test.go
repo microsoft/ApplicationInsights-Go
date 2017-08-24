@@ -101,7 +101,7 @@ func assertTimeApprox(t *testing.T, x, y time.Time) {
 	}
 }
 
-func assertNotClosed(t *testing.T, ch chan bool) {
+func assertNotClosed(t *testing.T, ch chan struct{}) {
 	select {
 	case <-ch:
 		t.Fatal("Close signal was not expected to be received")
@@ -109,10 +109,10 @@ func assertNotClosed(t *testing.T, ch chan bool) {
 	}
 }
 
-func waitForClose(t *testing.T, ch chan bool) bool {
+func waitForClose(t *testing.T, ch chan struct{}) bool {
 	select {
-	case res := <-ch:
-		return res
+	case <-ch:
+		return true
 	case <-time.After(time.Duration(100) * time.Second):
 		t.Fatal("Close signal not received in 100ms")
 		return false /* not reached */
@@ -124,7 +124,7 @@ func TestSimpleSubmit(t *testing.T) {
 	defer resetClock()
 	client, transmitter := newTestChannelServer()
 	defer transmitter.Close()
-	defer client.Channel().Close(false, false, 0)
+	defer client.Channel().Stop()
 
 	client.TrackTrace("~msg~")
 	tm := currentClock.Now()
@@ -145,7 +145,7 @@ func TestMultipleSubmit(t *testing.T) {
 	defer resetClock()
 	client, transmitter := newTestChannelServer()
 	defer transmitter.Close()
-	defer client.Channel().Close(false, false, 0)
+	defer client.Channel().Stop()
 
 	transmitter.prepResponse(200, 200)
 
@@ -182,7 +182,7 @@ func TestFlush(t *testing.T) {
 	defer resetClock()
 	client, transmitter := newTestChannelServer()
 	defer transmitter.Close()
-	defer client.Channel().Close(false, false, 0)
+	defer client.Channel().Stop()
 
 	transmitter.prepResponse(200, 200)
 
@@ -210,7 +210,7 @@ func TestFlush(t *testing.T) {
 	}
 }
 
-func TestCloseNoFlush(t *testing.T) {
+func TestStop(t *testing.T) {
 	mockClock()
 	defer resetClock()
 	client, transmitter := newTestChannelServer()
@@ -219,7 +219,7 @@ func TestCloseNoFlush(t *testing.T) {
 	transmitter.prepResponse(200)
 
 	client.TrackTrace("Not sent")
-	client.Channel().Close(false, false, 0)
+	client.Channel().Stop()
 	slowTick(20)
 	transmitter.assertNoRequest(t)
 }
@@ -233,7 +233,7 @@ func TestCloseFlush(t *testing.T) {
 	transmitter.prepResponse(200)
 
 	client.TrackTrace("~flushed~")
-	client.Channel().Close(true, false, 0)
+	client.Channel().Close()
 
 	req := transmitter.waitForRequest(t)
 	if !strings.Contains(req.payload, "~flushed~") {
@@ -251,7 +251,7 @@ func TestCloseFlushRetry(t *testing.T) {
 
 	client.TrackTrace("~flushed~")
 	tm := currentClock.Now()
-	ch := client.Channel().Close(true, true, time.Minute)
+	ch := client.Channel().Close(time.Minute)
 
 	slowTick(30)
 
@@ -292,7 +292,7 @@ func TestCloseWithOngoingRetry(t *testing.T) {
 
 	// This message will get flushed immediately
 	client.TrackTrace("~msg-2~")
-	ch := client.Channel().Close(true, true, time.Minute)
+	ch := client.Channel().Close(time.Minute)
 
 	// Let 2 go out, but not the retry for 1
 	slowTick(3)
@@ -323,7 +323,7 @@ func TestSendOnBufferFull(t *testing.T) {
 	config.MaxBatchSize = 4
 	client, transmitter := newTestChannelServer(config)
 	defer transmitter.Close()
-	defer client.Channel().Close(false, false, 0)
+	defer client.Channel().Stop()
 
 	transmitter.prepResponse(200, 200)
 
@@ -357,7 +357,7 @@ func TestRetryOnFailure(t *testing.T) {
 	mockClock()
 	defer resetClock()
 	client, transmitter := newTestChannelServer()
-	defer client.Channel().Close(false, false, 0)
+	defer client.Channel().Stop()
 	defer transmitter.Close()
 
 	transmitter.prepResponse(500, 200)
@@ -389,7 +389,7 @@ func TestPartialRetry(t *testing.T) {
 	mockClock()
 	defer resetClock()
 	client, transmitter := newTestChannelServer()
-	defer client.Channel().Close(false, false, 0)
+	defer client.Channel().Stop()
 	defer transmitter.Close()
 
 	client.TrackTrace("~ok-1~")
@@ -440,7 +440,7 @@ func TestThrottleDropsMessages(t *testing.T) {
 	config := NewTelemetryConfiguration("")
 	config.MaxBatchSize = 4
 	client, transmitter := newTestChannelServer(config)
-	defer client.Channel().Close(false, false, 0)
+	defer client.Channel().Stop()
 	defer transmitter.Close()
 
 	tm := currentClock.Now()
@@ -485,7 +485,7 @@ func TestThrottleCannotFlush(t *testing.T) {
 	config := NewTelemetryConfiguration("")
 	config.MaxBatchSize = 4
 	client, transmitter := newTestChannelServer(config)
-	defer client.Channel().Close(false, false, 0)
+	defer client.Channel().Stop()
 	defer transmitter.Close()
 
 	tm := currentClock.Now()
@@ -530,7 +530,7 @@ func TestThrottleFlushesOnClose(t *testing.T) {
 	slowTick(10)
 
 	client.TrackTrace("~msg~")
-	ch := client.Channel().Close(true, true, 30*time.Second)
+	ch := client.Channel().Close(30 * time.Second)
 
 	slowTick(60)
 

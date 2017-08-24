@@ -17,8 +17,6 @@ type httpTransmitter struct {
 	endpoint string
 }
 
-type nullTransmitter struct{}
-
 type transmissionResult struct {
 	statusCode int
 	retryAfter *time.Time
@@ -115,10 +113,6 @@ func (transmitter *httpTransmitter) Transmit(payload []byte, items TelemetryBuff
 	}
 
 	return result, nil
-}
-
-func (transmitter *nullTransmitter) Transmit(payload []byte, items TelemetryBufferItems) (*transmissionResult, error) {
-	return &transmissionResult{statusCode: successResponse}, nil
 }
 
 func (result *transmissionResult) IsSuccess() bool {
