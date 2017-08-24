@@ -39,7 +39,7 @@ type inMemoryChannelControl struct {
 	timeout time.Duration
 
 	// If specified, a message will be sent on this channel when all pending telemetry items have been submitted
-	callback chan bool
+	callback chan struct{}
 }
 
 func NewInMemoryChannel(config *TelemetryConfiguration) *InMemoryChannel {
@@ -63,39 +63,53 @@ func (channel *InMemoryChannel) EndpointAddress() string {
 }
 
 func (channel *InMemoryChannel) Send(item Telemetry) {
-	if item != nil {
+	if item != nil && channel.collectChan != nil {
 		channel.collectChan <- item
 	}
 }
 
 func (channel *InMemoryChannel) Flush() {
-	channel.controlChan <- &inMemoryChannelControl{
-		flush: true,
+	if channel.controlChan != nil {
+		channel.controlChan <- &inMemoryChannelControl{
+			flush: true,
+		}
 	}
 }
 
 func (channel *InMemoryChannel) Stop() {
-	channel.controlChan <- &inMemoryChannelControl{
-		stop: true,
+	if channel.controlChan != nil {
+		channel.controlChan <- &inMemoryChannelControl{
+			stop: true,
+		}
 	}
 }
 
 func (channel *InMemoryChannel) IsThrottled() bool {
-	return channel.throttle.IsThrottled()
+	return channel.throttle != nil && channel.throttle.IsThrottled()
 }
 
-func (channel *InMemoryChannel) Close(flush bool, retry bool, timeout time.Duration) chan bool {
-	callback := make(chan bool)
+func (channel *InMemoryChannel) Close(timeout ...time.Duration) chan struct{} {
+	if channel.controlChan != nil {
+		callback := make(chan struct{})
 
-	channel.controlChan <- &inMemoryChannelControl{
-		stop:     true,
-		flush:    flush,
-		timeout:  timeout,
-		retry:    retry,
-		callback: callback,
+		ctl := &inMemoryChannelControl{
+			stop:     true,
+			flush:    true,
+			retry:    false,
+			callback: callback,
+		}
+
+		if len(timeout) > 0 {
+			ctl.retry = true
+			ctl.timeout = timeout[0]
+		}
+
+		channel.controlChan <- ctl
+
+		return callback
+	} else {
+		return nil
 	}
-
-	return callback
 }
 
 func (channel *InMemoryChannel) acceptLoop() {
@@ -115,7 +129,7 @@ type inMemoryChannelState struct {
 	buffer       TelemetryBufferItems
 	retry        bool
 	retryTimeout time.Duration
-	callback     chan bool
+	callback     chan struct{}
 	timer        clock.Timer
 }
 
@@ -296,9 +310,14 @@ func (state *inMemoryChannelState) stop() {
 	close(state.channel.collectChan)
 	close(state.channel.controlChan)
 
+	state.channel.collectChan = nil
+	state.channel.controlChan = nil
+
 	// Throttle can't close until transmitters are done using it.
 	state.channel.waitgroup.Wait()
 	state.channel.throttle.Stop()
+
+	state.channel.throttle = nil
 }
 
 func (channel *InMemoryChannel) transmitRetry(items TelemetryBufferItems, retry bool, retryTimeout time.Duration) {
@@ -378,11 +397,10 @@ func (channel *InMemoryChannel) transmitRetry(items TelemetryBufferItems, retry 
 	}
 }
 
-func (channel *InMemoryChannel) signalWhenDone(callback chan bool) {
+func (channel *InMemoryChannel) signalWhenDone(callback chan struct{}) {
 	if callback != nil {
 		go func() {
 			channel.waitgroup.Wait()
-			callback <- true
 			close(callback)
 		}()
 	}
