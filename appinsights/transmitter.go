@@ -25,10 +25,13 @@ type transmissionResult struct {
 
 // Structures returned by data collector
 type backendResponse struct {
-	ItemsReceived int                       `json:"itemsReceived"`
-	ItemsAccepted int                       `json:"itemsAccepted"`
-	Errors        []*itemTransmissionResult `json:"errors"`
+	ItemsReceived int                     `json:"itemsReceived"`
+	ItemsAccepted int                     `json:"itemsAccepted"`
+	Errors        itemTransmissionResults `json:"errors"`
 }
+
+// This needs to be its own type because it implements sort.Interface
+type itemTransmissionResults []*itemTransmissionResult
 
 type itemTransmissionResult struct {
 	Index      int    `json:"index"`
@@ -164,9 +167,7 @@ func (result *itemTransmissionResult) CanRetry() bool {
 func (result *transmissionResult) GetRetryItems(payload []byte, items TelemetryBufferItems) ([]byte, TelemetryBufferItems) {
 	if result.statusCode == partialSuccessResponse && result.response != nil {
 		// Make sure errors are ordered by index
-		sort.Slice(result.response.Errors, func(i, j int) bool {
-			return result.response.Errors[i].Index < result.response.Errors[j].Index
-		})
+		sort.Sort(result.response.Errors)
 
 		var resultPayload bytes.Buffer
 		resultItems := make(TelemetryBufferItems, 0)
@@ -204,4 +205,20 @@ func (result *transmissionResult) GetRetryItems(payload []byte, items TelemetryB
 	} else {
 		return payload[:0], items[:0]
 	}
+}
+
+// sort.Interface implementation for Errors[] list
+
+func (results itemTransmissionResults) Len() int {
+	return len(results)
+}
+
+func (results itemTransmissionResults) Less(i, j int) bool {
+	return results[i].Index < results[j].Index
+}
+
+func (results itemTransmissionResults) Swap(i, j int) {
+	tmp := results[i]
+	results[i] = results[j]
+	results[j] = tmp
 }
