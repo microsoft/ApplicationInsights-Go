@@ -36,15 +36,6 @@ type AvailabilityData struct {
 	Measurements map[string]float64 `json:"measurements"`
 }
 
-// Creates a new AvailabilityData instance with default values set by the schema.
-func NewAvailabilityData() *AvailabilityData {
-	return &AvailabilityData{
-		Ver:          2,
-		Properties:   make(map[string]string),
-		Measurements: make(map[string]float64),
-	}
-}
-
 // Returns the name used when this is embedded within an Envelope container.
 func (data *AvailabilityData) EnvelopeName() string {
 	return "Microsoft.ApplicationInsights.Availability"
@@ -53,4 +44,13 @@ func (data *AvailabilityData) EnvelopeName() string {
 // Returns the base type when placed within a Data object container.
 func (data *AvailabilityData) BaseType() string {
 	return "AvailabilityData"
+}
+
+// Creates a new AvailabilityData instance with default values set by the schema.
+func NewAvailabilityData() *AvailabilityData {
+	return &AvailabilityData{
+		Ver:          2,
+		Properties:   make(map[string]string),
+		Measurements: make(map[string]float64),
+	}
 }

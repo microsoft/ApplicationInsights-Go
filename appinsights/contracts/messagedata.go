@@ -22,14 +22,6 @@ type MessageData struct {
 	Properties map[string]string `json:"properties"`
 }
 
-// Creates a new MessageData instance with default values set by the schema.
-func NewMessageData() *MessageData {
-	return &MessageData{
-		Ver:        2,
-		Properties: make(map[string]string),
-	}
-}
-
 // Returns the name used when this is embedded within an Envelope container.
 func (data *MessageData) EnvelopeName() string {
 	return "Microsoft.ApplicationInsights.Message"
@@ -38,4 +30,12 @@ func (data *MessageData) EnvelopeName() string {
 // Returns the base type when placed within a Data object container.
 func (data *MessageData) BaseType() string {
 	return "MessageData"
+}
+
+// Creates a new MessageData instance with default values set by the schema.
+func NewMessageData() *MessageData {
+	return &MessageData{
+		Ver:        2,
+		Properties: make(map[string]string),
+	}
 }

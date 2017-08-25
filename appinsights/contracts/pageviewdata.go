@@ -18,6 +18,16 @@ type PageViewData struct {
 	Duration string `json:"duration"`
 }
 
+// Returns the name used when this is embedded within an Envelope container.
+func (data *PageViewData) EnvelopeName() string {
+	return "Microsoft.ApplicationInsights.PageView"
+}
+
+// Returns the base type when placed within a Data object container.
+func (data *PageViewData) BaseType() string {
+	return "PageViewData"
+}
+
 // Creates a new PageViewData instance with default values set by the schema.
 func NewPageViewData() *PageViewData {
 	return &PageViewData{
@@ -27,14 +37,4 @@ func NewPageViewData() *PageViewData {
 			Measurements: make(map[string]float64),
 		},
 	}
-}
-
-// Returns the name used when this is embedded within an Envelope container.
-func (data *PageViewData) EnvelopeName() string {
-	return "Microsoft.ApplicationInsights.PageView"
-}
-
-// Returns the base type when placed within a Data object container.
-func (data *PageViewData) BaseType() string {
-	return "PageViewData"
 }

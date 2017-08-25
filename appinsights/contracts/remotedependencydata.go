@@ -48,16 +48,6 @@ type RemoteDependencyData struct {
 	Measurements map[string]float64 `json:"measurements"`
 }
 
-// Creates a new RemoteDependencyData instance with default values set by the schema.
-func NewRemoteDependencyData() *RemoteDependencyData {
-	return &RemoteDependencyData{
-		Ver:          2,
-		Success:      true,
-		Properties:   make(map[string]string),
-		Measurements: make(map[string]float64),
-	}
-}
-
 // Returns the name used when this is embedded within an Envelope container.
 func (data *RemoteDependencyData) EnvelopeName() string {
 	return "Microsoft.ApplicationInsights.RemoteDependency"
@@ -66,4 +56,14 @@ func (data *RemoteDependencyData) EnvelopeName() string {
 // Returns the base type when placed within a Data object container.
 func (data *RemoteDependencyData) BaseType() string {
 	return "RemoteDependencyData"
+}
+
+// Creates a new RemoteDependencyData instance with default values set by the schema.
+func NewRemoteDependencyData() *RemoteDependencyData {
+	return &RemoteDependencyData{
+		Ver:          2,
+		Success:      true,
+		Properties:   make(map[string]string),
+		Measurements: make(map[string]float64),
+	}
 }

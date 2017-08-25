@@ -45,15 +45,6 @@ type RequestData struct {
 	Measurements map[string]float64 `json:"measurements"`
 }
 
-// Creates a new RequestData instance with default values set by the schema.
-func NewRequestData() *RequestData {
-	return &RequestData{
-		Ver:          2,
-		Properties:   make(map[string]string),
-		Measurements: make(map[string]float64),
-	}
-}
-
 // Returns the name used when this is embedded within an Envelope container.
 func (data *RequestData) EnvelopeName() string {
 	return "Microsoft.ApplicationInsights.Request"
@@ -62,4 +53,13 @@ func (data *RequestData) EnvelopeName() string {
 // Returns the base type when placed within a Data object container.
 func (data *RequestData) BaseType() string {
 	return "RequestData"
+}
+
+// Creates a new RequestData instance with default values set by the schema.
+func NewRequestData() *RequestData {
+	return &RequestData{
+		Ver:          2,
+		Properties:   make(map[string]string),
+		Measurements: make(map[string]float64),
+	}
 }

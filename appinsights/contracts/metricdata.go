@@ -19,14 +19,6 @@ type MetricData struct {
 	Properties map[string]string `json:"properties"`
 }
 
-// Creates a new MetricData instance with default values set by the schema.
-func NewMetricData() *MetricData {
-	return &MetricData{
-		Ver:        2,
-		Properties: make(map[string]string),
-	}
-}
-
 // Returns the name used when this is embedded within an Envelope container.
 func (data *MetricData) EnvelopeName() string {
 	return "Microsoft.ApplicationInsights.Metric"
@@ -35,4 +27,12 @@ func (data *MetricData) EnvelopeName() string {
 // Returns the base type when placed within a Data object container.
 func (data *MetricData) BaseType() string {
 	return "MetricData"
+}
+
+// Creates a new MetricData instance with default values set by the schema.
+func NewMetricData() *MetricData {
+	return &MetricData{
+		Ver:        2,
+		Properties: make(map[string]string),
+	}
 }

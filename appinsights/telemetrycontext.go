@@ -127,6 +127,12 @@ type internalContext struct {
 	context *telemetryContext
 }
 
+func NewTelemetryContext() TelemetryContext {
+	return &telemetryContext{
+		tags: make(map[string]string),
+	}
+}
+
 func (context *telemetryContext) InstrumentationKey() string {
 	return context.iKey
 }
@@ -161,19 +167,6 @@ func (context *telemetryContext) Cloud() CloudContext {
 
 func (context *telemetryContext) Internal() InternalContext {
 	return &internalContext{context: context}
-}
-
-func NewTelemetryContext() TelemetryContext {
-	return &telemetryContext{
-		tags: make(map[string]string),
-	}
-}
-
-func NewClientTelemetryContext(ikey string) TelemetryContext {
-	return &telemetryContext{
-		iKey: ikey,
-		tags: make(map[string]string),
-	}
 }
 
 func (context *telemetryContext) getStringTag(key string) string {

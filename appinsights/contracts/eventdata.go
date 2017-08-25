@@ -22,15 +22,6 @@ type EventData struct {
 	Measurements map[string]float64 `json:"measurements"`
 }
 
-// Creates a new EventData instance with default values set by the schema.
-func NewEventData() *EventData {
-	return &EventData{
-		Ver:          2,
-		Properties:   make(map[string]string),
-		Measurements: make(map[string]float64),
-	}
-}
-
 // Returns the name used when this is embedded within an Envelope container.
 func (data *EventData) EnvelopeName() string {
 	return "Microsoft.ApplicationInsights.Event"
@@ -39,4 +30,13 @@ func (data *EventData) EnvelopeName() string {
 // Returns the base type when placed within a Data object container.
 func (data *EventData) BaseType() string {
 	return "EventData"
+}
+
+// Creates a new EventData instance with default values set by the schema.
+func NewEventData() *EventData {
+	return &EventData{
+		Ver:          2,
+		Properties:   make(map[string]string),
+		Measurements: make(map[string]float64),
+	}
 }
