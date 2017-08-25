@@ -5,6 +5,7 @@ import "time"
 type TelemetryClient interface {
 	Context() TelemetryContext
 	InstrumentationKey() string
+	Channel() TelemetryChannel
 	IsEnabled() bool
 	SetIsEnabled(bool)
 	Track(Telemetry)
@@ -14,7 +15,7 @@ type TelemetryClient interface {
 	TrackMetricTelemetry(*MetricTelemetry)
 	TrackTrace(string)
 	TrackTraceTelemetry(*TraceTelemetry)
-	TrackRequest(string, time.Time, time.Duration, string, bool)
+	TrackRequest(string, string, string, time.Time, time.Duration, string, bool)
 	TrackRequestTelemetry(*RequestTelemetry)
 }
 
@@ -26,8 +27,11 @@ type telemetryClient struct {
 }
 
 func NewTelemetryClient(iKey string) TelemetryClient {
-	config := NewTelemetryConfiguration(iKey)
-	channel := NewInMemoryChannel(config.EndpointUrl)
+	return NewTelemetryClientFromConfig(NewTelemetryConfiguration(iKey))
+}
+
+func NewTelemetryClientFromConfig(config *TelemetryConfiguration) TelemetryClient {
+	channel := NewInMemoryChannel(config)
 	context := NewClientTelemetryContext()
 	return &telemetryClient{
 		TelemetryConfiguration: config,
@@ -39,6 +43,10 @@ func NewTelemetryClient(iKey string) TelemetryClient {
 
 func (tc *telemetryClient) Context() TelemetryContext {
 	return tc.context
+}
+
+func (tc *telemetryClient) Channel() TelemetryChannel {
+	return tc.channel
 }
 
 func (tc *telemetryClient) InstrumentationKey() string {
@@ -111,8 +119,8 @@ func (tc *telemetryClient) TrackTraceTelemetry(trace *TraceTelemetry) {
 	tc.Track(item)
 }
 
-func (tc *telemetryClient) TrackRequest(name string, timestamp time.Time, duration time.Duration, responseCode string, success bool) {
-	item := NewRequestTelemetry(name, timestamp, duration, responseCode, success)
+func (tc *telemetryClient) TrackRequest(name, method, url string, timestamp time.Time, duration time.Duration, responseCode string, success bool) {
+	item := NewRequestTelemetry(name, method, url, timestamp, duration, responseCode, success)
 	tc.TrackRequestTelemetry(item)
 }
 

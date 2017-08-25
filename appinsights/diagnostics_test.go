@@ -1,42 +1,53 @@
 package appinsights
 
-import "testing"
-import "sync"
-
-func TestDiagnosticsWriterIsSingleton(t *testing.T) {
-	diagWriter1 := getDiagnosticsMessageWriter()
-	diagWriter2 := getDiagnosticsMessageWriter()
-
-	if diagWriter1 != diagWriter2 {
-		t.Errorf("getDiagnosticsMessageWriter() returned difference instances.")
-	}
-}
+import (
+	"testing"
+	"time"
+)
 
 func TestMessageSentToConsumers(t *testing.T) {
-	diagWriter := getDiagnosticsMessageWriter()
+	original := "~~~test_message~~~"
 
-	original := "test"
+	// There may be spurious messages sent by a transmitter's goroutine from another test,
+	// so just check that we do get the test message *at some point*.
 
-	var wg sync.WaitGroup
-	wg.Add(2)
-
+	listener1chan := make(chan bool)
 	listener1 := NewDiagnosticsMessageListener()
 	go listener1.ProcessMessages(func(message string) {
-		if message != original {
-			t.Errorf("listener1 returned difference messages, want '%s' got '%s'.", original, message)
+		if message == original {
+			listener1chan <- true
 		}
-		wg.Done()
 	})
 
+	listener2chan := make(chan bool)
 	listener2 := NewDiagnosticsMessageListener()
 	go listener2.ProcessMessages(func(message string) {
-		if message != original {
-			t.Errorf("listener2 returned difference messages, want '%s' got '%s'.", original, message)
+		if message == original {
+			listener2chan <- true
 		}
-		wg.Done()
 	})
 
-	diagWriter.Write(original)
+	diagnosticsWriter.Write(original)
 
-	wg.Wait()
+	listener1recvd := false
+	listener2recvd := false
+	timeout := false
+	timer := time.After(time.Second)
+	for !(listener1recvd && listener2recvd) && !timeout {
+		select {
+		case <-listener1chan:
+			listener1recvd = true
+		case <-listener2chan:
+			listener2recvd = true
+		case <-timer:
+			timeout = true
+		}
+	}
+
+	if timeout {
+		t.Errorf("Message failed to be delivered to both listeners")
+	}
+
+	// Clean up
+	diagnosticsWriter.listeners = diagnosticsWriter.listeners[:0]
 }

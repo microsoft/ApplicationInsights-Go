@@ -1,0 +1,3 @@
+[submodule "appinsights/vendor/code.cloudfoundry.org/clock"]
+	path = vendor/code.cloudfoundry.org/clock
+	url = https://github.com/cloudfoundry/clock

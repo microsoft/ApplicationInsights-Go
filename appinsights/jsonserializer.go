@@ -1,23 +1,28 @@
 package appinsights
 
-import "bytes"
-import "encoding/json"
-import "log"
-import "time"
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"time"
+)
 
-func (items TelemetryBufferItems) serialize() string {
+func (items TelemetryBufferItems) serialize() []byte {
 	var result bytes.Buffer
+	encoder := json.NewEncoder(&result)
 
-	for i := range items {
-		item := items[i]
-		result.WriteString(serialize(item))
-		result.WriteString("\n")
+	for _, item := range items {
+		end := result.Len()
+		if err := encoder.Encode(prepare(item)); err != nil {
+			diagnosticsWriter.Write(fmt.Sprintf("Telemetry item failed to serialize: %s", err.Error()))
+			result.Truncate(end)
+		}
 	}
 
-	return result.String()
+	return result.Bytes()
 }
 
-func serialize(item Telemetry) string {
+func prepare(item Telemetry) *envelope {
 	data := &data{
 		BaseType: item.baseTypeName() + "Data",
 		BaseData: item.baseData(),
@@ -32,13 +37,9 @@ func serialize(item Telemetry) string {
 		Data: data,
 	}
 
-	envelope.Tags = context.(*telemetryContext).tags
-
-	jsonBytes, err := json.Marshal(envelope)
-	if err != nil {
-		log.Fatal(err)
-		return ""
+	if tcontext, ok := context.(*telemetryContext); ok {
+		envelope.Tags = tcontext.tags
 	}
 
-	return string(jsonBytes)
+	return envelope
 }

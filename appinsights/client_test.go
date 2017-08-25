@@ -3,8 +3,10 @@ package appinsights
 import "testing"
 
 func TestClientBurstPerformance(t *testing.T) {
-	telemetryClient := NewTelemetryClient("")
+	client := NewTelemetryClient("")
+	client.(*telemetryClient).channel.(*InMemoryChannel).transmitter = &nullTransmitter{}
+
 	for i := 0; i < 1000000; i++ {
-		telemetryClient.TrackTrace("A message")
+		client.TrackTrace("A message")
 	}
 }

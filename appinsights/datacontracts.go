@@ -1,12 +1,16 @@
 package appinsights
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type Telemetry interface {
 	Timestamp() time.Time
 	Context() TelemetryContext
 	baseTypeName() string
 	baseData() Domain
+	SetProperty(string, string)
 }
 
 type BaseTelemetry struct {
@@ -53,6 +57,13 @@ func (item *TraceTelemetry) baseData() Domain {
 	return item.data
 }
 
+func (item *TraceTelemetry) SetProperty(key, value string) {
+	if item.data.Properties == nil {
+		item.data.Properties = make(map[string]string)
+	}
+	item.data.Properties[key] = value
+}
+
 type EventTelemetry struct {
 	BaseTelemetry
 	data *eventData
@@ -90,6 +101,13 @@ func (item *EventTelemetry) baseTypeName() string {
 
 func (item *EventTelemetry) baseData() Domain {
 	return item.data
+}
+
+func (item *EventTelemetry) SetProperty(key, value string) {
+	if item.data.Properties == nil {
+		item.data.Properties = make(map[string]string)
+	}
+	item.data.Properties[key] = value
 }
 
 type MetricTelemetry struct {
@@ -138,19 +156,29 @@ func (item *MetricTelemetry) baseData() Domain {
 	return item.data
 }
 
+func (item *MetricTelemetry) SetProperty(key, value string) {
+	if item.data.Properties == nil {
+		item.data.Properties = make(map[string]string)
+	}
+	item.data.Properties[key] = value
+}
+
 type RequestTelemetry struct {
 	BaseTelemetry
 	data *requestData
 }
 
-func NewRequestTelemetry(name string, timestamp time.Time, duration time.Duration, responseCode string, success bool) *RequestTelemetry {
+func NewRequestTelemetry(name, httpMethod, url string, timestamp time.Time, duration time.Duration, responseCode string, success bool) *RequestTelemetry {
 	now := time.Now()
 	data := &requestData{
 		Name:         name,
 		StartTime:    timestamp.Format(time.RFC3339Nano),
-		Duration:     duration.String(),
+		Duration:     formatDuration(duration),
 		ResponseCode: responseCode,
 		Success:      success,
+		HttpMethod:   httpMethod,
+		Url:          url,
+		Id:           randomId(),
 	}
 
 	data.Ver = 2
@@ -179,4 +207,21 @@ func (item *RequestTelemetry) baseTypeName() string {
 
 func (item *RequestTelemetry) baseData() Domain {
 	return item.data
+}
+
+func (item *RequestTelemetry) SetProperty(key, value string) {
+	if item.data.Properties == nil {
+		item.data.Properties = make(map[string]string)
+	}
+	item.data.Properties[key] = value
+}
+
+func formatDuration(d time.Duration) string {
+	ticks := int64(d/(time.Nanosecond*100)) % 10000000
+	seconds := int64(d/time.Second) % 60
+	minutes := int64(d/time.Minute) % 60
+	hours := int64(d/time.Hour) % 24
+	days := int64(d / (time.Hour * 24))
+
+	return fmt.Sprintf("%d.%02d:%02d:%02d.%07d", days, hours, minutes, seconds, ticks)
 }

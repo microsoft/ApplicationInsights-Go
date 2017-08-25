@@ -1,5 +1,7 @@
 package appinsights
 
+import "fmt"
+
 type DiagnosticsMessageWriter interface {
 	Write(string)
 	appendListener(*diagnosticsMessageListener)
@@ -19,12 +21,8 @@ type diagnosticsMessageListener struct {
 	channel chan string
 }
 
-var writer *diagnosticsMessageWriter = &diagnosticsMessageWriter{
+var diagnosticsWriter *diagnosticsMessageWriter = &diagnosticsMessageWriter{
 	listeners: make([]chan string, 0),
-}
-
-func getDiagnosticsMessageWriter() DiagnosticsMessageWriter {
-	return writer
 }
 
 func NewDiagnosticsMessageListener() DiagnosticsMessageListener {
@@ -32,7 +30,7 @@ func NewDiagnosticsMessageListener() DiagnosticsMessageListener {
 		channel: make(chan string),
 	}
 
-	writer.appendListener(listener)
+	diagnosticsWriter.appendListener(listener)
 
 	return listener
 }
@@ -45,6 +43,17 @@ func (writer *diagnosticsMessageWriter) Write(message string) {
 	for _, c := range writer.listeners {
 		c <- message
 	}
+}
+
+func (writer *diagnosticsMessageWriter) Printf(message string, args ...interface{}) {
+	// Don't bother with Sprintf if nobody is listening
+	if writer.hasListeners() {
+		writer.Write(fmt.Sprintf(message, args...))
+	}
+}
+
+func (writer *diagnosticsMessageWriter) hasListeners() bool {
+	return len(writer.listeners) > 0
 }
 
 func (listener *diagnosticsMessageListener) ProcessMessages(process DiagnosticsMessageProcessor) {
