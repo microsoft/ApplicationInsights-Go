@@ -2,6 +2,7 @@ package appinsights
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -57,11 +58,23 @@ func (transmitter *httpTransmitter) Transmit(payload []byte, items TelemetryBuff
 	diagnosticsWriter.Printf("----------- Transmitting %d items ---------", len(items))
 	startTime := time.Now()
 
-	req, err := http.NewRequest("POST", transmitter.endpoint, bytes.NewReader(payload))
+	// Compress the payload
+	var postBody bytes.Buffer
+	gzipWriter := gzip.NewWriter(&postBody)
+	if _, err := gzipWriter.Write(payload); err != nil {
+		diagnosticsWriter.Printf("Failed to compress the payload: %s", err.Error())
+		gzipWriter.Close()
+		return nil, err
+	}
+
+	gzipWriter.Close()
+
+	req, err := http.NewRequest("POST", transmitter.endpoint, &postBody)
 	if err != nil {
 		return nil, err
 	}
 
+	req.Header.Set("Content-Encoding", "gzip")
 	req.Header.Set("Content-Type", "application/x-json-stream")
 	req.Header.Set("Accept-Encoding", "gzip, deflate")
 
