@@ -2,10 +2,7 @@ package appinsights
 
 // NOTE: This file was automatically generated.
 
-import (
-	"github.com/jjjordanmsft/ApplicationInsights-Go/appinsights/contracts"
-	"strconv"
-)
+import "strconv"
 
 type TelemetryContext interface {
 	InstrumentationKey() string
