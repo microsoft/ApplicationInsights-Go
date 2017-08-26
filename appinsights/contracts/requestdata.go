@@ -39,10 +39,10 @@ type RequestData struct {
 	Url string `json:"url"`
 
 	// Collection of custom properties.
-	Properties map[string]string `json:"properties"`
+	Properties map[string]string `json:"properties,omitempty"`
 
 	// Collection of custom measurements.
-	Measurements map[string]float64 `json:"measurements"`
+	Measurements map[string]float64 `json:"measurements,omitempty"`
 }
 
 // Returns the name used when this is embedded within an Envelope container.

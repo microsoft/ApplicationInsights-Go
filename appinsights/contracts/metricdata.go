@@ -16,7 +16,7 @@ type MetricData struct {
 	Metrics []*DataPoint `json:"metrics"`
 
 	// Collection of custom properties.
-	Properties map[string]string `json:"properties"`
+	Properties map[string]string `json:"properties,omitempty"`
 }
 
 // Returns the name used when this is embedded within an Envelope container.

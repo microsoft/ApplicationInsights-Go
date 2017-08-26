@@ -27,7 +27,7 @@ type ExceptionDetails struct {
 	Stack string `json:"stack"`
 
 	// List of stack frames. Either stack or parsedStack should have a value.
-	ParsedStack []*StackFrame `json:"parsedStack"`
+	ParsedStack []*StackFrame `json:"parsedStack,omitempty"`
 }
 
 // Creates a new ExceptionDetails instance with default values set by the schema.

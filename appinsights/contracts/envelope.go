@@ -38,7 +38,7 @@ type Envelope struct {
 
 	// Key/value collection of context properties. See ContextTagKeys for
 	// information on available properties.
-	Tags map[string]string `json:"tags"`
+	Tags map[string]string `json:"tags,omitempty"`
 
 	// Telemetry data item.
 	Data interface{} `json:"data"`
