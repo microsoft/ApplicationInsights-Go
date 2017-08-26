@@ -112,18 +112,17 @@ type RequestTelemetry struct {
 func NewRequestTelemetry(name, httpMethod, url string, timestamp time.Time, duration time.Duration, responseCode string, success bool) *RequestTelemetry {
 	data := contracts.NewRequestData()
 	data.Name = name
-	data.StartTime = timestamp.Format(time.RFC3339Nano)
 	data.Duration = formatDuration(duration)
 	data.ResponseCode = responseCode
 	data.Success = success
-	data.HttpMethod = httpMethod
+	//data.HttpMethod = httpMethod
 	data.Url = url
 	data.Id = randomId()
 
 	return &RequestTelemetry{
 		Data: data,
 		BaseTelemetry: BaseTelemetry{
-			Timestamp: time.Now(),
+			Timestamp: timestamp,
 			context:   NewTelemetryContext(),
 		},
 	}
