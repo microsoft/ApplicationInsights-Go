@@ -7,7 +7,7 @@ This project provides a Go SDK for Application Insights. [Application Insights](
 ## Requirements ##
 **Install**
 ```
-go get github.com/Microsoft/ApplicationInsights-Go
+go get github.com/Microsoft/ApplicationInsights-Go/appinsights
 ```
 **Get an instrumentation key**
 >**Note**: an instrumentation key is required before any data can be sent. Please see the "[Getting an Application Insights Instrumentation Key](https://github.com/Microsoft/AppInsights-Home/wiki#getting-an-application-insights-instrumentation-key)" section of the wiki for more information. To try the SDK without an instrumentation key, set the instrumentationKey config value to a non-empty string.
@@ -15,7 +15,7 @@ go get github.com/Microsoft/ApplicationInsights-Go
 ## Usage ##
 
 ```go
-import "github.com/Microsoft/ApplicationInsights-Go"
+import "github.com/Microsoft/ApplicationInsights-Go/appinsights"
 
 client := appinsights.NewTelemetryClient("<instrumentation key>")
 client.TrackEvent("custom event")

@@ -1,6 +1,8 @@
 package appinsights
 
 import (
+	"bytes"
+	"compress/gzip"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -91,7 +93,29 @@ func TestBasicTransmit(t *testing.T) {
 		t.Error("request.Method")
 	}
 
-	if string(req.body) != "foobar" {
+	cencoding := req.request.Header[http.CanonicalHeaderKey("Content-Encoding")]
+	if len(cencoding) != 1 || cencoding[0] != "gzip" {
+		t.Errorf("Content-encoding: %q", cencoding)
+	}
+
+	// Check for gzip magic number
+	if len(req.body) < 2 || req.body[0] != 0x1f || req.body[1] != 0x8b {
+		t.Fatalf("Missing gzip magic number")
+	}
+
+	// Decompress payload
+	reader, err := gzip.NewReader(bytes.NewReader(req.body))
+	if err != nil {
+		t.Fatalf("Couldn't create gzip reader: %s", err.Error())
+	}
+
+	body, err := ioutil.ReadAll(reader)
+	reader.Close()
+	if err != nil {
+		t.Fatalf("Couldn't read compressed data: %s", err.Error())
+	}
+
+	if string(body) != "foobar" {
 		t.Error("body")
 	}
 

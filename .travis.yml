@@ -1,8 +1,8 @@
 language: go
 
 go:
-  - 1.5
   - 1.6
+  - 1.8
   - tip
 
 sudo: false
@@ -10,7 +10,6 @@ sudo: false
 os:
   - osx
   - linux
-  - windows
 
 script:
   - go test -v ./appinsights/...

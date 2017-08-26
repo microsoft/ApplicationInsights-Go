@@ -24,7 +24,7 @@ func NewTelemetryConfiguration(instrumentationKey string) *TelemetryConfiguratio
 
 func (config *TelemetryConfiguration) setupContext(context *telemetryContext) {
 	context.iKey = config.InstrumentationKey
-	context.Internal().SetSdkVersion("go:" + version)
+	context.Internal().SetSdkVersion(sdkName + ":" + Version)
 	context.Device().SetOsVersion(runtime.GOOS)
 
 	if hostname, err := os.Hostname(); err == nil {
