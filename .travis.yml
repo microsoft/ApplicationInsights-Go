@@ -1,19 +1,15 @@
 language: go
 
 go:
-  - 1.5
   - 1.6
+  - 1.8
   - tip
-
-env:
-  - GO15VENDOREXPERIMENT=1
 
 sudo: false
 
 os:
   - osx
   - linux
-  - windows
 
 script:
   - go test -v ./appinsights/...
