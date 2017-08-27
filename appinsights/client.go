@@ -71,7 +71,7 @@ func (tc *telemetryClient) Track(item Telemetry) {
 		itemContext := item.Context()
 		itemContext.iKey = iKey
 
-		for tagkey, tagval := range itemContext.Tags {
+		for tagkey, tagval := range tc.context.Tags {
 			if _, ok := itemContext.Tags[tagkey]; !ok {
 				itemContext.Tags[tagkey] = tagval
 			}
