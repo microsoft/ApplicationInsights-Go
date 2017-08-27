@@ -45,7 +45,7 @@ func NewTraceTelemetry(message string, severityLevel contracts.SeverityLevel) *T
 	return &TraceTelemetry{
 		Data: data,
 		BaseTelemetry: BaseTelemetry{
-			Timestamp: time.Now(),
+			Timestamp: currentClock.Now(),
 			context:   NewTelemetryContext(),
 		},
 	}
@@ -67,7 +67,7 @@ func NewEventTelemetry(name string) *EventTelemetry {
 	return &EventTelemetry{
 		Data: data,
 		BaseTelemetry: BaseTelemetry{
-			Timestamp: time.Now(),
+			Timestamp: currentClock.Now(),
 			context:   NewTelemetryContext(),
 		},
 	}
@@ -94,7 +94,7 @@ func NewMetricTelemetry(name string, value float64) *MetricTelemetry {
 	return &MetricTelemetry{
 		Data: data,
 		BaseTelemetry: BaseTelemetry{
-			Timestamp: time.Now(),
+			Timestamp: currentClock.Now(),
 			context:   NewTelemetryContext(),
 		},
 	}
