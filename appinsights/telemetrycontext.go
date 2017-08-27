@@ -1,34 +1,40 @@
 package appinsights
 
+import "strconv"
+
 type TelemetryContext struct {
 	iKey string
 	Tags map[string]string
 }
 
-func NewTelemetryContext *TelemetryContext {
+func NewTelemetryContext() *TelemetryContext {
 	return &TelemetryContext{
 		Tags: make(map[string]string),
 	}
 }
 
-func (context *telemetryContext) getStringTag(key string) string {
-	if result, ok := context.tags[key]; ok {
+func (context *TelemetryContext) InstrumentationKey() string {
+	return context.iKey
+}
+
+func (context *TelemetryContext) getStringTag(key string) string {
+	if result, ok := context.Tags[key]; ok {
 		return result
 	}
 
 	return ""
 }
 
-func (context *telemetryContext) setStringTag(key, value string) {
+func (context *TelemetryContext) setStringTag(key, value string) {
 	if value != "" {
-		context.tags[key] = value
+		context.Tags[key] = value
 	} else {
-		delete(context.tags, key)
+		delete(context.Tags, key)
 	}
 }
 
-func (context *telemetryContext) getBoolTag(key string) bool {
-	if result, ok := context.tags[key]; ok {
+func (context *TelemetryContext) getBoolTag(key string) bool {
+	if result, ok := context.Tags[key]; ok {
 		if value, err := strconv.ParseBool(result); err == nil {
 			return value
 		}
@@ -37,10 +43,10 @@ func (context *telemetryContext) getBoolTag(key string) bool {
 	return false
 }
 
-func (context *telemetryContext) setBoolTag(key string, value bool) {
+func (context *TelemetryContext) setBoolTag(key string, value bool) {
 	if value {
-		context.tags[key] = "true"
+		context.Tags[key] = "true"
 	} else {
-		delete(context.tags, key)
+		delete(context.Tags, key)
 	}
 }

@@ -2,8 +2,6 @@ package appinsights
 
 // NOTE: This file was automatically generated.
 
-import "strconv"
-
 type ApplicationContext interface {
 	GetVer() string
 	SetVer(value string)

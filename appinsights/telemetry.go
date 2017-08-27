@@ -16,20 +16,20 @@ type TelemetryData interface {
 
 type Telemetry interface {
 	Time() time.Time
-	Context() TelemetryContext
+	Context() *TelemetryContext
 	TelemetryData() TelemetryData
 }
 
 type BaseTelemetry struct {
 	Timestamp time.Time
-	context   TelemetryContext
+	context   *TelemetryContext
 }
 
 func (item *BaseTelemetry) Time() time.Time {
 	return item.Timestamp
 }
 
-func (item *BaseTelemetry) Context() TelemetryContext {
+func (item *BaseTelemetry) Context() *TelemetryContext {
 	return item.context
 }
 

@@ -22,7 +22,7 @@ func NewTelemetryConfiguration(instrumentationKey string) *TelemetryConfiguratio
 	}
 }
 
-func (config *TelemetryConfiguration) setupContext(context *telemetryContext) {
+func (config *TelemetryConfiguration) setupContext(context *TelemetryContext) {
 	context.iKey = config.InstrumentationKey
 	context.Internal().SetSdkVersion(sdkName + ":" + Version)
 	context.Device().SetOsVersion(runtime.GOOS)

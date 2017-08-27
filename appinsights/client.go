@@ -7,7 +7,7 @@ import (
 )
 
 type TelemetryClient interface {
-	Context() TelemetryContext
+	Context() *TelemetryContext
 	InstrumentationKey() string
 	Channel() TelemetryChannel
 	IsEnabled() bool
@@ -22,7 +22,7 @@ type TelemetryClient interface {
 type telemetryClient struct {
 	TelemetryConfiguration *TelemetryConfiguration
 	channel                TelemetryChannel
-	context                TelemetryContext
+	context                *TelemetryContext
 	isEnabled              bool
 }
 
@@ -34,7 +34,7 @@ func NewTelemetryClientFromConfig(config *TelemetryConfiguration) TelemetryClien
 	channel := NewInMemoryChannel(config)
 	context := NewTelemetryContext()
 
-	config.setupContext(context.(*telemetryContext))
+	config.setupContext(context)
 
 	return &telemetryClient{
 		TelemetryConfiguration: config,
@@ -44,7 +44,7 @@ func NewTelemetryClientFromConfig(config *TelemetryConfiguration) TelemetryClien
 	}
 }
 
-func (tc *telemetryClient) Context() TelemetryContext {
+func (tc *telemetryClient) Context() *TelemetryContext {
 	return tc.context
 }
 
@@ -68,14 +68,12 @@ func (tc *telemetryClient) Track(item Telemetry) {
 	if tc.isEnabled {
 		iKey := tc.context.InstrumentationKey()
 
-		itemContext := item.Context().(*telemetryContext)
+		itemContext := item.Context()
 		itemContext.iKey = iKey
 
-		if clientContext, ok := tc.context.(*telemetryContext); ok {
-			for tagkey, tagval := range clientContext.tags {
-				if _, ok := itemContext.tags[tagkey]; !ok {
-					itemContext.tags[tagkey] = tagval
-				}
+		for tagkey, tagval := range itemContext.Tags {
+			if _, ok := itemContext.Tags[tagkey]; !ok {
+				itemContext.Tags[tagkey] = tagval
 			}
 		}
 

@@ -37,10 +37,7 @@ func prepare(item Telemetry) *contracts.Envelope {
 	envelope.Time = item.Time().Format(time.RFC3339)
 	envelope.IKey = context.InstrumentationKey()
 	envelope.Data = data
-
-	if tcontext, ok := context.(*telemetryContext); ok {
-		envelope.Tags = tcontext.tags
-	}
+	envelope.Tags = context.Tags
 
 	return envelope
 }
