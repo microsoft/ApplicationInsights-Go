@@ -16,7 +16,7 @@ type TelemetryClient interface {
 	TrackEvent(string)
 	TrackMetric(string, float64)
 	TrackTrace(string)
-	TrackRequest(string, string, string, time.Time, time.Duration, string, bool)
+	TrackRequest(string, string, time.Duration, string)
 }
 
 type telemetryClient struct {
@@ -68,7 +68,7 @@ func (tc *telemetryClient) Track(item Telemetry) {
 	if tc.isEnabled {
 		iKey := tc.context.InstrumentationKey()
 
-		itemContext := item.Context()
+		itemContext := item.TelemetryContext()
 		itemContext.iKey = iKey
 
 		for tagkey, tagval := range tc.context.Tags {
@@ -93,6 +93,6 @@ func (tc *telemetryClient) TrackTrace(message string) {
 	tc.Track(NewTraceTelemetry(message, contracts.Information))
 }
 
-func (tc *telemetryClient) TrackRequest(name, method, url string, timestamp time.Time, duration time.Duration, responseCode string, success bool) {
-	tc.Track(NewRequestTelemetry(name, method, url, timestamp, duration, responseCode, success))
+func (tc *telemetryClient) TrackRequest(method, url string, duration time.Duration, responseCode string) {
+	tc.Track(NewRequestTelemetry(method, url, duration, responseCode))
 }

@@ -24,14 +24,14 @@ func newConcurrentRandom() *concurrentRandom {
 }
 
 func (generator *concurrentRandom) run() {
-	buf := make([]byte, 8)
+	buf := make([]byte, 9)
 	for {
 		generator.random.Read(buf)
 		generator.channel <- base64.StdEncoding.EncodeToString(buf)
 	}
 }
 
-func randomId() string {
+func RandomId() string {
 	if randomGenerator == nil {
 		r := newConcurrentRandom()
 		if atomic.CompareAndSwapPointer((*unsafe.Pointer)(unsafe.Pointer(&randomGenerator)), unsafe.Pointer(nil), unsafe.Pointer(r)) {

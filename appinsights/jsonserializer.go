@@ -25,7 +25,7 @@ func (items TelemetryBufferItems) serialize() []byte {
 }
 
 func prepare(item Telemetry) *contracts.Envelope {
-	context := item.Context()
+	context := item.TelemetryContext()
 	tdata := item.TelemetryData()
 
 	data := contracts.NewData()
