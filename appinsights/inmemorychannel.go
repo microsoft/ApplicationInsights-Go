@@ -167,6 +167,7 @@ func (state *inMemoryChannelState) start() bool {
 		state.channel.signalWhenDone(ctl.callback)
 
 		if ctl.stop {
+			state.stopping = true
 			return false
 		}
 	}
