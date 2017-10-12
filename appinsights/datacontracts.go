@@ -26,7 +26,8 @@ type TraceTelemetry struct {
 func NewTraceTelemetry(message string, severityLevel SeverityLevel) *TraceTelemetry {
 	now := time.Now()
 	data := &messageData{
-		Message: message,
+		Message:       message,
+		SeverityLevel: severityLevel,
 	}
 
 	data.Ver = 2
