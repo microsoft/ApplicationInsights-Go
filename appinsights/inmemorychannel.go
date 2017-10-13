@@ -88,7 +88,7 @@ func (channel *InMemoryChannel) IsThrottled() bool {
 	return channel.throttle != nil && channel.throttle.IsThrottled()
 }
 
-func (channel *InMemoryChannel) Close(timeout ...time.Duration) chan struct{} {
+func (channel *InMemoryChannel) Close(timeout ...time.Duration) <-chan struct{} {
 	if channel.controlChan != nil {
 		callback := make(chan struct{})
 
@@ -167,6 +167,7 @@ func (state *inMemoryChannelState) start() bool {
 		state.channel.signalWhenDone(ctl.callback)
 
 		if ctl.stop {
+			state.stopping = true
 			return false
 		}
 	}
