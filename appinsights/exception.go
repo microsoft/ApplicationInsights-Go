@@ -83,12 +83,16 @@ func GetCallstack(skip int) []*contracts.StackFrame {
 
 			/* Break up function into assembly/function */
 			lastSlash := strings.LastIndexByte(frame.Function, '/')
-			if lastSlash >= 0 {
-				firstDot := strings.IndexByte(frame.Function[lastSlash:], '.')
-				if firstDot >= 0 {
-					stackFrame.Assembly = frame.Function[:lastSlash+firstDot]
-					stackFrame.Method = frame.Function[lastSlash+firstDot+1:]
-				}
+			if lastSlash < 0 {
+				// e.g. "runtime.gopanic"
+				// The below works with lastSlash=0
+				lastSlash = 0
+			}
+
+			firstDot := strings.IndexByte(frame.Function[lastSlash:], '.')
+			if firstDot >= 0 {
+				stackFrame.Assembly = frame.Function[:lastSlash+firstDot]
+				stackFrame.Method = frame.Function[lastSlash+firstDot+1:]
 			}
 		}
 
