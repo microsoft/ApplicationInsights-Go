@@ -4,5 +4,5 @@ package appinsights
 
 const (
 	sdkName = "go"
-	Version = "0.3.1-pre"
+	Version = "0.4.0-pre"
 )
