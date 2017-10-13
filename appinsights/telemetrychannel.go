@@ -43,5 +43,5 @@ type TelemetryChannel interface {
 	// telemetry or are prone to being throttled.  When exiting, you
 	// should select on the result channel and your own timer to avoid
 	// long delays.
-	Close(retryTimeout ...time.Duration) chan struct{}
+	Close(retryTimeout ...time.Duration) <-chan struct{}
 }

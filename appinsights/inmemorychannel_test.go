@@ -101,7 +101,7 @@ func assertTimeApprox(t *testing.T, x, y time.Time) {
 	}
 }
 
-func assertNotClosed(t *testing.T, ch chan struct{}) {
+func assertNotClosed(t *testing.T, ch <-chan struct{}) {
 	select {
 	case <-ch:
 		t.Fatal("Close signal was not expected to be received")
@@ -109,7 +109,7 @@ func assertNotClosed(t *testing.T, ch chan struct{}) {
 	}
 }
 
-func waitForClose(t *testing.T, ch chan struct{}) bool {
+func waitForClose(t *testing.T, ch <-chan struct{}) bool {
 	select {
 	case <-ch:
 		return true
