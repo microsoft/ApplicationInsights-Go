@@ -47,7 +47,10 @@ func TestJsonSerializerMultiple(t *testing.T) {
 	buffer = append(buffer, NewTraceTelemetry("testing", Verbose))
 	buffer = append(buffer, NewEventTelemetry("an-event"))
 	buffer = append(buffer, NewMetricTelemetry("a-metric", 567))
-	buffer = append(buffer, NewRequestTelemetry("req-name", "method", "my-url", currentClock.Now(), time.Minute, "204", true))
+
+	req := NewRequestTelemetry("method", "my-url", time.Minute, "204")
+	req.Name = "req-name"
+	buffer = append(buffer, req)
 
 	j, err := parsePayload(buffer.serialize())
 	if err != nil {
@@ -88,7 +91,7 @@ func TestJsonSerializerMultiple(t *testing.T) {
 
 	// Request
 	j[3].assertPath(t, "name", "Microsoft.ApplicationInsights.Request")
-	j[3].assertPath(t, "time", nowString)
+	j[3].assertPath(t, "time", now.Add(-time.Minute).Format(time.RFC3339)) // Constructor subtracts duration
 	j[3].assertPath(t, "sampleRate", 100)
 	j[3].assertPath(t, "data.baseType", "RequestData")
 	j[3].assertPath(t, "data.baseData.name", "req-name")

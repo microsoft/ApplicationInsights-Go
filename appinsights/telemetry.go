@@ -50,15 +50,6 @@ type TraceTelemetry struct {
 	SeverityLevel contracts.SeverityLevel
 }
 
-func (trace *TraceTelemetry) TelemetryData() TelemetryData {
-	data := contracts.NewMessageData()
-	data.Message = trace.Message
-	data.Properties = trace.Properties
-	data.SeverityLevel = trace.SeverityLevel
-
-	return data
-}
-
 func NewTraceTelemetry(message string, severityLevel contracts.SeverityLevel) *TraceTelemetry {
 	return &TraceTelemetry{
 		Message:       message,
@@ -71,18 +62,18 @@ func NewTraceTelemetry(message string, severityLevel contracts.SeverityLevel) *T
 	}
 }
 
+func (trace *TraceTelemetry) TelemetryData() TelemetryData {
+	data := contracts.NewMessageData()
+	data.Message = trace.Message
+	data.Properties = trace.Properties
+	data.SeverityLevel = trace.SeverityLevel
+
+	return data
+}
+
 type EventTelemetry struct {
 	BaseTelemetry
 	Name string
-}
-
-func (event *EventTelemetry) TelemetryData() TelemetryData {
-	data := contracts.NewEventData()
-	data.Name = event.Name
-	data.Properties = event.Properties
-	data.Measurements = event.Measurements
-
-	return data
 }
 
 func NewEventTelemetry(name string) *EventTelemetry {
@@ -97,10 +88,31 @@ func NewEventTelemetry(name string) *EventTelemetry {
 	}
 }
 
+func (event *EventTelemetry) TelemetryData() TelemetryData {
+	data := contracts.NewEventData()
+	data.Name = event.Name
+	data.Properties = event.Properties
+	data.Measurements = event.Measurements
+
+	return data
+}
+
 type MetricTelemetry struct {
 	BaseTelemetry
 	Name  string
 	Value float64
+}
+
+func NewMetricTelemetry(name string, value float64) *MetricTelemetry {
+	return &MetricTelemetry{
+		Name:  name,
+		Value: value,
+		BaseTelemetry: BaseTelemetry{
+			Timestamp:  currentClock.Now(),
+			Context:    NewTelemetryContext(),
+			Properties: make(map[string]string),
+		},
+	}
 }
 
 func (metric *MetricTelemetry) TelemetryData() TelemetryData {
@@ -116,10 +128,13 @@ func (metric *MetricTelemetry) TelemetryData() TelemetryData {
 	return data
 }
 
-func NewMetricTelemetry(name string, value float64) *MetricTelemetry {
-	return &MetricTelemetry{
-		Name:  name,
-		Value: value,
+type MetricsTelemetry struct {
+	BaseTelemetry
+	Metrics []*contracts.DataPoint
+}
+
+func NewMetricsTelemetry() *MetricsTelemetry {
+	return &MetricsTelemetry{
 		BaseTelemetry: BaseTelemetry{
 			Timestamp:  currentClock.Now(),
 			Context:    NewTelemetryContext(),
@@ -128,9 +143,39 @@ func NewMetricTelemetry(name string, value float64) *MetricTelemetry {
 	}
 }
 
-type MetricsTelemetry struct {
-	BaseTelemetry
-	Metrics []*contracts.DataPoint
+func (metrics *MetricsTelemetry) AddMeasurement(name string, value float64) {
+	dataPoint := contracts.NewDataPoint()
+	dataPoint.Name = name
+	dataPoint.Kind = Measurement
+	dataPoint.Value = value
+	dataPoint.Count = 1
+
+	metrics.Metrics = append(metrics.Metrics, dataPoint)
+}
+
+func (metrics *MetricsTelemetry) AddAggregation(name string, value, min, max, stddev float64, count int) {
+	dataPoint := contracts.NewDataPoint()
+	dataPoint.Name = name
+	dataPoint.Kind = Aggregation
+	dataPoint.Value = value
+	dataPoint.Min = min
+	dataPoint.Max = max
+	dataPoint.StdDev = stddev
+	dataPoint.Count = count
+
+	metrics.Metrics = append(metrics.Metrics, dataPoint)
+}
+
+func (metrics *MetricsTelemetry) AddMeasurements(measurements map[string]float64) {
+	for k, v := range measurements {
+		dataPoint := contracts.NewDataPoint()
+		dataPoint.Name = k
+		dataPoint.Kind = Measurement
+		dataPoint.Value = v
+		dataPoint.Count = 1
+
+		metrics.Metrics = append(metrics.Metrics, dataPoint)
+	}
 }
 
 func (metrics *MetricsTelemetry) TelemetryData() TelemetryData {
@@ -138,27 +183,6 @@ func (metrics *MetricsTelemetry) TelemetryData() TelemetryData {
 	data.Metrics = metrics.Metrics
 	data.Properties = metrics.Properties
 	return data
-}
-
-func NewMetricsTelemetry(values map[string]float64) *MetricsTelemetry {
-	var dataPoints []*contracts.DataPoint
-	for k, v := range values {
-		dataPoint := contracts.NewDataPoint()
-		dataPoint.Name = k
-		dataPoint.Value = v
-		dataPoint.Count = 1
-
-		dataPoints = append(dataPoints, dataPoint)
-	}
-
-	return &MetricsTelemetry{
-		Metrics: dataPoints,
-		BaseTelemetry: BaseTelemetry{
-			Timestamp:  currentClock.Now(),
-			Context:    NewTelemetryContext(),
-			Properties: make(map[string]string),
-		},
-	}
 }
 
 type RequestTelemetry struct {
@@ -169,23 +193,6 @@ type RequestTelemetry struct {
 	Duration     time.Duration
 	ResponseCode string
 	Success      bool
-}
-
-func (request *RequestTelemetry) TelemetryData() TelemetryData {
-	data := contracts.NewRequestData()
-	data.Name = request.Name
-	data.Duration = formatDuration(request.Duration)
-	data.ResponseCode = request.ResponseCode
-	data.Success = request.Success
-	data.Url = request.Url
-
-	if request.Id == "" {
-		data.Id = RandomId()
-	}
-
-	data.Properties = request.Properties
-	data.Measurements = request.Measurements
-	return data
 }
 
 func NewRequestTelemetry(method, url string, duration time.Duration, responseCode string) *RequestTelemetry {
@@ -209,6 +216,138 @@ func NewRequestTelemetry(method, url string, duration time.Duration, responseCod
 			Measurements: make(map[string]float64),
 		},
 	}
+}
+
+func (request *RequestTelemetry) TelemetryData() TelemetryData {
+	data := contracts.NewRequestData()
+	data.Name = request.Name
+	data.Duration = formatDuration(request.Duration)
+	data.ResponseCode = request.ResponseCode
+	data.Success = request.Success
+	data.Url = request.Url
+
+	if request.Id == "" {
+		data.Id = RandomId()
+	} else {
+		data.Id = request.Id
+	}
+
+	data.Properties = request.Properties
+	data.Measurements = request.Measurements
+	return data
+}
+
+type RemoteDependencyTelemetry struct {
+	BaseTelemetry
+	Name       string
+	Id         string
+	ResultCode string
+	Duration   time.Duration
+	Success    bool
+	Data       string
+	Type       string
+	Target     string
+}
+
+func NewRemoteDependencyTelemetry(dependencyType, target string, success bool) *RemoteDependencyTelemetry {
+	return &RemoteDependencyTelemetry{
+		Type:    dependencyType,
+		Target:  target,
+		Success: success,
+		BaseTelemetry: BaseTelemetry{
+			Timestamp:    currentClock.Now(),
+			Context:      NewTelemetryContext(),
+			Properties:   make(map[string]string),
+			Measurements: make(map[string]float64),
+		},
+	}
+}
+
+func (telem *RemoteDependencyTelemetry) MarkTime(startTime, endTime time.Time) {
+	telem.Timestamp = startTime
+	telem.Duration = endTime.Sub(startTime)
+}
+
+func (telem *RemoteDependencyTelemetry) TelemetryData() TelemetryData {
+	data := contracts.NewRemoteDependencyData()
+	data.Name = telem.Name
+	data.Id = telem.Id
+	data.ResultCode = telem.ResultCode
+	data.Duration = formatDuration(telem.Duration)
+	data.Success = telem.Success
+	data.Data = telem.Data
+	data.Target = telem.Target
+	data.Properties = telem.Properties
+	data.Measurements = telem.Measurements
+
+	return data
+}
+
+type AvailabilityTelemetry struct {
+	BaseTelemetry
+	Id          string
+	Name        string
+	Duration    time.Duration
+	Success     bool
+	RunLocation string
+	Message     string
+}
+
+func NewAvailabilityTelemetry(name string, duration time.Duration, success bool) *AvailabilityTelemetry {
+	return &AvailabilityTelemetry{
+		Name:     name,
+		Duration: duration,
+		Success:  success,
+		Id:       RandomId(),
+		BaseTelemetry: BaseTelemetry{
+			Timestamp:    currentClock.Now(),
+			Context:      NewTelemetryContext(),
+			Properties:   make(map[string]string),
+			Measurements: make(map[string]float64),
+		},
+	}
+}
+
+func (telem *AvailabilityTelemetry) TelemetryData() TelemetryData {
+	data := contracts.NewAvailabilityData()
+	data.Id = telem.Id
+	data.Name = telem.Name
+	data.Duration = formatDuration(telem.Duration)
+	data.Success = telem.Success
+	data.RunLocation = telem.RunLocation
+	data.Message = telem.Message
+	data.Properties = telem.Properties
+	data.Measurements = telem.Measurements
+	return data
+}
+
+type PageViewTelemetry struct {
+	BaseTelemetry
+	Url      string
+	Duration time.Duration
+	Name     string
+}
+
+func NewPageViewTelemetry(url string) *PageViewTelemetry {
+	return &PageViewTelemetry{
+		Url: url,
+		BaseTelemetry: BaseTelemetry{
+			Timestamp:    currentClock.Now(),
+			Context:      NewTelemetryContext(),
+			Properties:   make(map[string]string),
+			Measurements: make(map[string]float64),
+		},
+	}
+}
+
+func (telem *PageViewTelemetry) TelemetryData() TelemetryData {
+	data := contracts.NewPageViewData()
+	data.Url = telem.Url
+	data.Duration = formatDuration(telem.Duration)
+	data.Name = telem.Name
+	data.Properties = telem.Properties
+	data.Measurements = telem.Measurements
+	return data
 }
 
 func formatDuration(d time.Duration) string {
