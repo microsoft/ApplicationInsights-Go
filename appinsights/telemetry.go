@@ -222,14 +222,7 @@ func NewAggregateMetricTelemetry(name string) *AggregateMetricTelemetry {
 // This can be used for all the data at once or incrementally.  Calculates
 // Min, Max, Sum, Count, and StdDev (by way of Variance).
 func (agg *AggregateMetricTelemetry) AddData(values []float64) {
-	if len(values) == 0 {
-		return
-	}
-
-	if agg.Count == 0 {
-		agg.Min = values[0]
-		agg.Max = values[0]
-	} else if agg.StdDev != 0.0 {
+	if agg.StdDev != 0.0 {
 		// If StdDev is non-zero, then square it to produce
 		// the variance, which is better for incremental calculations,
 		// and then zero it out.
@@ -237,9 +230,44 @@ func (agg *AggregateMetricTelemetry) AddData(values []float64) {
 		agg.StdDev = 0.0
 	}
 
+	vsum := agg.addData(values, agg.Variance*float64(agg.Count))
+	if agg.Count > 0 {
+		agg.Variance = vsum / float64(agg.Count)
+	}
+}
+
+// Adds sampled data points to the aggregate totals included in this telemetry item.
+// This can be used for all the data at once or incrementally.  Differs from AddData
+// in how it calculates standard deviation, and should not be used interchangeably
+// with AddData.
+func (agg *AggregateMetricTelemetry) AddSampledData(values []float64) {
+	if agg.StdDev != 0.0 {
+		// If StdDev is non-zero, then square it to produce
+		// the variance, which is better for incremental calculations,
+		// and then zero it out.
+		agg.Variance = agg.StdDev * agg.StdDev
+		agg.StdDev = 0.0
+	}
+
+	vsum := agg.addData(values, agg.Variance*float64(agg.Count-1))
+	if agg.Count > 1 {
+		// Sampled values should divide by n-1
+		agg.Variance = vsum / float64(agg.Count-1)
+	}
+}
+
+func (agg *AggregateMetricTelemetry) addData(values []float64, vsum float64) float64 {
+	if len(values) == 0 {
+		return vsum
+	}
+
 	// Running tally of the mean is important for incremental variance computation.
 	var mean float64
-	if agg.Count > 0 {
+
+	if agg.Count == 0 {
+		agg.Min = values[0]
+		agg.Max = values[0]
+	} else {
 		mean = agg.Value / float64(agg.Count)
 	}
 
@@ -256,11 +284,13 @@ func (agg *AggregateMetricTelemetry) AddData(values []float64) {
 			agg.Max = x
 		}
 
-		// Compute incremental variance with algorithm from Knuth's TAOCP
+		// Welford's algorithm to compute variance.  The divide occurs in the caller.
 		newMean := agg.Value / float64(agg.Count)
-		agg.Variance += (x - mean) * (x - newMean)
+		vsum += (x - mean) * (x - newMean)
 		mean = newMean
 	}
+
+	return vsum
 }
 
 func (agg *AggregateMetricTelemetry) TelemetryData() TelemetryData {
