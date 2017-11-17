@@ -67,8 +67,8 @@ func testExceptionCallstack(t *testing.T, n int) *contracts.ExceptionDetails {
 
 	expected := collatzFrames(n)
 
-	if frend - frstart != len(expected) {
-		t.Errorf("Wrong number of Collatz frames found.  Got %d, want %d.", frend - frstart, len(expected))
+	if frend-frstart != len(expected) {
+		t.Errorf("Wrong number of Collatz frames found.  Got %d, want %d.", frend-frstart, len(expected))
 		return ex
 	}
 

@@ -12,13 +12,13 @@ import (
 // occurred during execution of the monitored application.
 type ExceptionTelemetry struct {
 	BaseTelemetry
-	
+
 	// Panic message: string, error, or Stringer
-	Error         interface{}
-	
+	Error interface{}
+
 	// List of stack frames. Use GetCallstack to generate this data.
-	Frames        []*contracts.StackFrame
-	
+	Frames []*contracts.StackFrame
+
 	// Severity level.
 	SeverityLevel contracts.SeverityLevel
 }
@@ -79,7 +79,7 @@ func GetCallstack(skip int) []*contracts.StackFrame {
 		skip = 0
 	}
 
-	stack := make([]uintptr, 64 + skip)
+	stack := make([]uintptr, 64+skip)
 	depth := runtime.Callers(skip+1, stack)
 	if depth == 0 {
 		return stackFrames
