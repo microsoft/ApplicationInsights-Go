@@ -166,6 +166,7 @@ func (metric *MetricTelemetry) TelemetryData() TelemetryData {
 	dataPoint.Name = metric.Name
 	dataPoint.Value = metric.Value
 	dataPoint.Count = 1
+	dataPoint.Kind = contracts.Measurement
 
 	data := contracts.NewMetricData()
 	data.Metrics = []*contracts.DataPoint{dataPoint}
@@ -350,7 +351,7 @@ type RequestTelemetry struct {
 func NewRequestTelemetry(method, url string, duration time.Duration, responseCode string) *RequestTelemetry {
 	success := true
 	code, err := strconv.Atoi(responseCode)
-	if err != nil {
+	if err == nil {
 		success = code < 400 || code == 401
 	}
 
@@ -466,6 +467,7 @@ func (telem *RemoteDependencyTelemetry) TelemetryData() TelemetryData {
 	data.Target = telem.Target
 	data.Properties = telem.Properties
 	data.Measurements = telem.Measurements
+	data.Type = telem.Type
 
 	return data
 }

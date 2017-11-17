@@ -8,13 +8,25 @@ import (
 	"strings"
 )
 
+// Exception telemetry items represent a handled or unhandled exception that
+// occurred during execution of the monitored application.
 type ExceptionTelemetry struct {
 	BaseTelemetry
+	
+	// Panic message: string, error, or Stringer
 	Error         interface{}
+	
+	// List of stack frames. Use GetCallstack to generate this data.
 	Frames        []*contracts.StackFrame
+	
+	// Severity level.
 	SeverityLevel contracts.SeverityLevel
 }
 
+// Creates a new exception telemetry item with the specified error and the
+// current callstack. This should be used directly from a function that
+// handles a recover(), or to report an unexpected error return value from
+// a function.
 func NewExceptionTelemetry(err interface{}) *ExceptionTelemetry {
 	return &ExceptionTelemetry{
 		Error:         err,
@@ -57,10 +69,17 @@ func (telem *ExceptionTelemetry) TelemetryData() TelemetryData {
 	return data
 }
 
+// Generates a callstack suitable for inclusion in Application Insights
+// exception telemetry for the current goroutine, skipping a number of frames
+// specified by skip.
 func GetCallstack(skip int) []*contracts.StackFrame {
 	var stackFrames []*contracts.StackFrame
 
-	stack := make([]uintptr, 64)
+	if skip < 0 {
+		skip = 0
+	}
+
+	stack := make([]uintptr, 64 + skip)
 	depth := runtime.Callers(skip+1, stack)
 	if depth == 0 {
 		return stackFrames
