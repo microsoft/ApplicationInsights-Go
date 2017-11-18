@@ -1,6 +1,10 @@
 package appinsights
 
-import "strconv"
+import (
+	"github.com/jjjordanmsft/ApplicationInsights-Go/appinsights/contracts"
+	"strconv"
+	"time"
+)
 
 type TelemetryContext struct {
 	iKey string
@@ -15,6 +19,40 @@ func NewTelemetryContext() *TelemetryContext {
 
 func (context *TelemetryContext) InstrumentationKey() string {
 	return context.iKey
+}
+
+func (context *TelemetryContext) envelop(item Telemetry) *contracts.Envelope {
+	tdata := item.TelemetryData()
+	data := contracts.NewData()
+	data.BaseType = tdata.BaseType()
+	data.BaseData = tdata
+
+	envelope := contracts.NewEnvelope()
+	envelope.Name = tdata.EnvelopeName()
+	envelope.Data = data
+	envelope.IKey = context.iKey
+
+	timestamp := item.Time()
+	if timestamp.IsZero() {
+		timestamp = currentClock.Now()
+	}
+
+	envelope.Time = timestamp.Format(time.RFC3339)
+
+	if itemContext := item.TelemetryContext(); context != nil {
+		envelope.Tags = itemContext.Tags
+
+		// Copy in default tag values.
+		if context != itemContext {
+			for tagkey, tagval := range context.Tags {
+				if _, ok := itemContext.Tags[tagkey]; !ok {
+					envelope.Tags[tagkey] = tagval
+				}
+			}
+		}
+	}
+
+	return envelope
 }
 
 func (context *TelemetryContext) getStringTag(key string) string {

@@ -400,7 +400,7 @@ func TestGetRetryItems(t *testing.T) {
 }
 
 func makePayload() ([]byte, TelemetryBufferItems) {
-	buffer := TelemetryBufferItems{
+	buffer := telemetryBuffer(
 		NewTraceTelemetry("msg1", 0),
 		NewTraceTelemetry("msg2", 1),
 		NewTraceTelemetry("msg3", 2),
@@ -408,7 +408,7 @@ func makePayload() ([]byte, TelemetryBufferItems) {
 		NewTraceTelemetry("msg5", 4),
 		NewTraceTelemetry("msg6", 0),
 		NewTraceTelemetry("msg7", 1),
-	}
+	)
 
 	return buffer.serialize(), buffer
 }

@@ -3,11 +3,11 @@ package appinsights
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
-	"time"
 
 	"github.com/jjjordanmsft/ApplicationInsights-Go/appinsights/contracts"
 )
+
+type TelemetryBufferItems []*contracts.Envelope
 
 func (items TelemetryBufferItems) serialize() []byte {
 	var result bytes.Buffer
@@ -15,29 +15,11 @@ func (items TelemetryBufferItems) serialize() []byte {
 
 	for _, item := range items {
 		end := result.Len()
-		if err := encoder.Encode(prepare(item)); err != nil {
-			diagnosticsWriter.Write(fmt.Sprintf("Telemetry item failed to serialize: %s", err.Error()))
+		if err := encoder.Encode(item); err != nil {
+			diagnosticsWriter.Printf("Telemetry item failed to serialize: %s", err.Error())
 			result.Truncate(end)
 		}
 	}
 
 	return result.Bytes()
-}
-
-func prepare(item Telemetry) *contracts.Envelope {
-	context := item.TelemetryContext()
-	tdata := item.TelemetryData()
-
-	data := contracts.NewData()
-	data.BaseType = tdata.BaseType()
-	data.BaseData = tdata
-
-	envelope := contracts.NewEnvelope()
-	envelope.Name = tdata.EnvelopeName()
-	envelope.Time = item.Time().Format(time.RFC3339)
-	envelope.IKey = context.InstrumentationKey()
-	envelope.Data = data
-	envelope.Tags = context.Tags
-
-	return envelope
 }

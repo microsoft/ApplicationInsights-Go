@@ -5,18 +5,17 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/clock"
+	"github.com/jjjordanmsft/ApplicationInsights-Go/appinsights/contracts"
 )
 
 var (
 	submit_retries = []time.Duration{time.Duration(10 * time.Second), time.Duration(30 * time.Second), time.Duration(60 * time.Second)}
 )
 
-type TelemetryBufferItems []Telemetry
-
 type InMemoryChannel struct {
 	endpointAddress string
 	isDeveloperMode bool
-	collectChan     chan Telemetry
+	collectChan     chan *contracts.Envelope
 	controlChan     chan *inMemoryChannelControl
 	batchSize       int
 	batchInterval   time.Duration
@@ -45,7 +44,7 @@ type inMemoryChannelControl struct {
 func NewInMemoryChannel(config *TelemetryConfiguration) *InMemoryChannel {
 	channel := &InMemoryChannel{
 		endpointAddress: config.EndpointUrl,
-		collectChan:     make(chan Telemetry),
+		collectChan:     make(chan *contracts.Envelope),
 		controlChan:     make(chan *inMemoryChannelControl),
 		batchSize:       config.MaxBatchSize,
 		batchInterval:   config.MaxBatchInterval,
@@ -62,7 +61,7 @@ func (channel *InMemoryChannel) EndpointAddress() string {
 	return channel.endpointAddress
 }
 
-func (channel *InMemoryChannel) Send(item Telemetry) {
+func (channel *InMemoryChannel) Send(item *contracts.Envelope) {
 	if item != nil && channel.collectChan != nil {
 		channel.collectChan <- item
 	}

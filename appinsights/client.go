@@ -66,18 +66,7 @@ func (tc *telemetryClient) SetIsEnabled(isEnabled bool) {
 
 func (tc *telemetryClient) Track(item Telemetry) {
 	if tc.isEnabled {
-		iKey := tc.context.InstrumentationKey()
-
-		itemContext := item.TelemetryContext()
-		itemContext.iKey = iKey
-
-		for tagkey, tagval := range tc.context.Tags {
-			if _, ok := itemContext.Tags[tagkey]; !ok {
-				itemContext.Tags[tagkey] = tagval
-			}
-		}
-
-		tc.channel.Send(item)
+		tc.channel.Send(tc.context.envelop(item))
 	}
 }
 
