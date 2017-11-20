@@ -39,7 +39,7 @@ func (context *TelemetryContext) envelop(item Telemetry) *contracts.Envelope {
 
 	envelope.Time = timestamp.Format(time.RFC3339)
 
-	if itemContext := item.TelemetryContext(); context != nil {
+	if itemContext := item.TelemetryContext(); itemContext != nil && itemContext != context {
 		envelope.Tags = itemContext.Tags
 
 		// Copy in default tag values.

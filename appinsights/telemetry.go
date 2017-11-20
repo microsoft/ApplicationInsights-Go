@@ -523,7 +523,6 @@ func (telem *AvailabilityTelemetry) MarkTime(startTime, endTime time.Time) {
 
 func (telem *AvailabilityTelemetry) TelemetryData() TelemetryData {
 	data := contracts.NewAvailabilityData()
-	data.Id = telem.Id
 	data.Name = telem.Name
 	data.Duration = formatDuration(telem.Duration)
 	data.Success = telem.Success
@@ -531,6 +530,13 @@ func (telem *AvailabilityTelemetry) TelemetryData() TelemetryData {
 	data.Message = telem.Message
 	data.Properties = telem.Properties
 	data.Measurements = telem.Measurements
+
+	if telem.Id != "" {
+		data.Id = telem.Id
+	} else {
+		data.Id = RandomId()
+	}
+
 	return data
 }
 

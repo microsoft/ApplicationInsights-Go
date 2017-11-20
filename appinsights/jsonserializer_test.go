@@ -11,9 +11,359 @@ import (
 	"time"
 )
 
+const test_ikey = "01234567-0000-89ab-cdef-000000000000"
+
+func TestJsonSerializerEvents(t *testing.T) {
+	mockClock(time.Unix(1511001321, 0))
+	defer resetClock()
+
+	var buffer TelemetryBufferItems
+
+	buffer.add(
+		NewTraceTelemetry("testing", Error),
+		NewEventTelemetry("an-event"),
+		NewMetricTelemetry("a-metric", 567),
+	)
+
+	req := NewRequestTelemetry("method", "my-url", time.Minute, "204")
+	req.Name = "req-name"
+	req.Id = "my-id"
+	buffer.add(req)
+
+	agg := NewAggregateMetricTelemetry("agg-metric")
+	agg.AddData([]float64{1, 2, 3})
+	buffer.add(agg)
+
+	remdep := NewRemoteDependencyTelemetry("http", "www.bing.com", false)
+	remdep.Data = "some-data"
+	remdep.ResultCode = "arg"
+	remdep.Duration = 4 * time.Second
+	remdep.Properties["hi"] = "hello"
+	buffer.add(remdep)
+
+	avail := NewAvailabilityTelemetry("webtest", 8*time.Second, true)
+	avail.RunLocation = "jupiter"
+	avail.Message = "ok."
+	avail.Measurements["measure"] = 88.0
+	buffer.add(avail)
+
+	view := NewPageViewTelemetry("http://bing.com")
+	view.Duration = 4 * time.Minute
+	view.Name = "name"
+	buffer.add(view)
+
+	j, err := parsePayload(buffer.serialize())
+	if err != nil {
+		t.Errorf("Error parsing payload: %s", err.Error())
+	}
+
+	if len(j) != 8 {
+		t.Fatal("Unexpected event count")
+	}
+
+	// Trace
+	j[0].assertPath(t, "iKey", test_ikey)
+	j[0].assertPath(t, "name", "Microsoft.ApplicationInsights.Message")
+	j[0].assertPath(t, "time", "2017-11-18T10:35:21Z")
+	j[0].assertPath(t, "sampleRate", 100.0)
+	j[0].assertPath(t, "data.baseType", "MessageData")
+	j[0].assertPath(t, "data.baseData.message", "testing")
+	j[0].assertPath(t, "data.baseData.severityLevel", 3)
+	j[0].assertPath(t, "data.baseData.ver", 2)
+
+	// Event
+	j[1].assertPath(t, "iKey", test_ikey)
+	j[1].assertPath(t, "name", "Microsoft.ApplicationInsights.Event")
+	j[1].assertPath(t, "time", "2017-11-18T10:35:21Z")
+	j[1].assertPath(t, "sampleRate", 100.0)
+	j[1].assertPath(t, "data.baseType", "EventData")
+	j[1].assertPath(t, "data.baseData.name", "an-event")
+	j[1].assertPath(t, "data.baseData.ver", 2)
+
+	// Metric
+	j[2].assertPath(t, "iKey", test_ikey)
+	j[2].assertPath(t, "name", "Microsoft.ApplicationInsights.Metric")
+	j[2].assertPath(t, "time", "2017-11-18T10:35:21Z")
+	j[2].assertPath(t, "sampleRate", 100.0)
+	j[2].assertPath(t, "data.baseType", "MetricData")
+	j[2].assertPath(t, "data.baseData.metrics.<len>", 1)
+	j[2].assertPath(t, "data.baseData.metrics.[0].value", 567)
+	j[2].assertPath(t, "data.baseData.metrics.[0].count", 1)
+	j[2].assertPath(t, "data.baseData.metrics.[0].kind", 0)
+	j[2].assertPath(t, "data.baseData.metrics.[0].name", "a-metric")
+	j[2].assertPath(t, "data.baseData.ver", 2)
+
+	// Request
+	j[3].assertPath(t, "iKey", test_ikey)
+	j[3].assertPath(t, "name", "Microsoft.ApplicationInsights.Request")
+	j[3].assertPath(t, "time", "2017-11-18T10:34:21Z") // Constructor subtracts duration
+	j[3].assertPath(t, "sampleRate", 100.0)
+	j[3].assertPath(t, "data.baseType", "RequestData")
+	j[3].assertPath(t, "data.baseData.name", "req-name")
+	j[3].assertPath(t, "data.baseData.duration", "0.00:01:00.0000000")
+	j[3].assertPath(t, "data.baseData.responseCode", "204")
+	j[3].assertPath(t, "data.baseData.success", true)
+	j[3].assertPath(t, "data.baseData.id", "my-id")
+	j[3].assertPath(t, "data.baseData.url", "my-url")
+	j[3].assertPath(t, "data.baseData.ver", 2)
+
+	if id, err := j[3].getPath("data.baseData.id"); err != nil {
+		t.Errorf("Id not present")
+	} else if len(id.(string)) == 0 {
+		t.Errorf("Empty request id")
+	}
+
+	// Aggregate metric
+	j[4].assertPath(t, "iKey", test_ikey)
+	j[4].assertPath(t, "name", "Microsoft.ApplicationInsights.Metric")
+	j[4].assertPath(t, "time", "2017-11-18T10:35:21Z")
+	j[4].assertPath(t, "sampleRate", 100.0)
+	j[4].assertPath(t, "data.baseType", "MetricData")
+	j[4].assertPath(t, "data.baseData.metrics.<len>", 1)
+	j[4].assertPath(t, "data.baseData.metrics.[0].value", 6)
+	j[4].assertPath(t, "data.baseData.metrics.[0].count", 3)
+	j[4].assertPath(t, "data.baseData.metrics.[0].kind", 1)
+	j[4].assertPath(t, "data.baseData.metrics.[0].min", 1)
+	j[4].assertPath(t, "data.baseData.metrics.[0].max", 3)
+	j[4].assertPath(t, "data.baseData.metrics.[0].stdDev", 0.8164)
+	j[4].assertPath(t, "data.baseData.metrics.[0].name", "agg-metric")
+	j[4].assertPath(t, "data.baseData.ver", 2)
+
+	// Remote dependency
+	j[5].assertPath(t, "iKey", test_ikey)
+	j[5].assertPath(t, "name", "Microsoft.ApplicationInsights.RemoteDependency")
+	j[5].assertPath(t, "time", "2017-11-18T10:35:21Z")
+	j[5].assertPath(t, "sampleRate", 100.0)
+	j[5].assertPath(t, "data.baseType", "RemoteDependencyData")
+	j[5].assertPath(t, "data.baseData.name", "")
+	j[5].assertPath(t, "data.baseData.id", "")
+	j[5].assertPath(t, "data.baseData.resultCode", "arg")
+	j[5].assertPath(t, "data.baseData.duration", "0.00:00:04.0000000")
+	j[5].assertPath(t, "data.baseData.success", false)
+	j[5].assertPath(t, "data.baseData.data", "some-data")
+	j[5].assertPath(t, "data.baseData.target", "www.bing.com")
+	j[5].assertPath(t, "data.baseData.type", "http")
+	j[5].assertPath(t, "data.baseData.properties.hi", "hello")
+	j[5].assertPath(t, "data.baseData.ver", 2)
+
+	// Availability
+	j[6].assertPath(t, "iKey", test_ikey)
+	j[6].assertPath(t, "name", "Microsoft.ApplicationInsights.Availability")
+	j[6].assertPath(t, "time", "2017-11-18T10:35:21Z")
+	j[6].assertPath(t, "sampleRate", 100.0)
+	j[6].assertPath(t, "data.baseType", "AvailabilityData")
+	j[6].assertPath(t, "data.baseData.name", "webtest")
+	j[6].assertPath(t, "data.baseData.duration", "0.00:00:08.0000000")
+	j[6].assertPath(t, "data.baseData.success", true)
+	j[6].assertPath(t, "data.baseData.runLocation", "jupiter")
+	j[6].assertPath(t, "data.baseData.message", "ok.")
+	j[6].assertPath(t, "data.baseData.ver", 2)
+	j[6].assertPath(t, "data.baseData.measurements.measure", 88)
+
+	if id, err := j[6].getPath("data.baseData.id"); err != nil {
+		t.Errorf("Id not present")
+	} else if len(id.(string)) == 0 {
+		t.Errorf("Empty request id")
+	}
+
+	// Page view
+	j[7].assertPath(t, "iKey", test_ikey)
+	j[7].assertPath(t, "name", "Microsoft.ApplicationInsights.PageView")
+	j[7].assertPath(t, "time", "2017-11-18T10:35:21Z")
+	j[7].assertPath(t, "sampleRate", 100.0)
+	j[7].assertPath(t, "data.baseType", "PageViewData")
+	j[7].assertPath(t, "data.baseData.name", "name")
+	j[7].assertPath(t, "data.baseData.url", "http://bing.com")
+	j[7].assertPath(t, "data.baseData.duration", "0.00:04:00.0000000")
+	j[7].assertPath(t, "data.baseData.ver", 2)
+}
+
+func TestJsonSerializerNakedEvents(t *testing.T) {
+	mockClock(time.Unix(1511001321, 0))
+	defer resetClock()
+
+	var buffer TelemetryBufferItems
+
+	buffer.add(
+		&TraceTelemetry{
+			Message:       "Naked telemetry",
+			SeverityLevel: Warning,
+		},
+		&EventTelemetry{
+			Name: "Naked event",
+		},
+		&MetricTelemetry{
+			Name:  "my-metric",
+			Value: 456.0,
+		},
+		&AggregateMetricTelemetry{
+			Name:   "agg-metric",
+			Value:  50,
+			Min:    2,
+			Max:    7,
+			Count:  9,
+			StdDev: 3,
+		},
+		&RequestTelemetry{
+			Name:         "req-name",
+			Url:          "req-url",
+			Duration:     time.Minute,
+			ResponseCode: "Response",
+			Success:      true,
+			Source:       "localhost",
+		},
+		&RemoteDependencyTelemetry{
+			Name:       "dep-name",
+			ResultCode: "ok.",
+			Duration:   time.Hour,
+			Success:    true,
+			Data:       "dep-data",
+			Type:       "dep-type",
+			Target:     "dep-target",
+		},
+		&AvailabilityTelemetry{
+			Name:        "avail-name",
+			Duration:    3 * time.Minute,
+			Success:     true,
+			RunLocation: "run-loc",
+			Message:     "avail-msg",
+		},
+		&PageViewTelemetry{
+			Url:      "page-view-url",
+			Duration: 4 * time.Second,
+			Name:     "page-view-name",
+		},
+	)
+
+	j, err := parsePayload(buffer.serialize())
+	if err != nil {
+		t.Errorf("Error parsing payload: %s", err.Error())
+	}
+
+	if len(j) != 8 {
+		t.Fatal("Unexpected event count")
+	}
+
+	// Trace
+	j[0].assertPath(t, "iKey", test_ikey)
+	j[0].assertPath(t, "name", "Microsoft.ApplicationInsights.Message")
+	j[0].assertPath(t, "time", "2017-11-18T10:35:21Z")
+	j[0].assertPath(t, "sampleRate", 100)
+	j[0].assertPath(t, "data.baseType", "MessageData")
+	j[0].assertPath(t, "data.baseData.message", "Naked telemetry")
+	j[0].assertPath(t, "data.baseData.severityLevel", 2)
+	j[0].assertPath(t, "data.baseData.ver", 2)
+
+	// Event
+	j[1].assertPath(t, "iKey", test_ikey)
+	j[1].assertPath(t, "name", "Microsoft.ApplicationInsights.Event")
+	j[1].assertPath(t, "time", "2017-11-18T10:35:21Z")
+	j[1].assertPath(t, "sampleRate", 100)
+	j[1].assertPath(t, "data.baseType", "EventData")
+	j[1].assertPath(t, "data.baseData.name", "Naked event")
+	j[1].assertPath(t, "data.baseData.ver", 2)
+
+	// Metric
+	j[2].assertPath(t, "iKey", test_ikey)
+	j[2].assertPath(t, "name", "Microsoft.ApplicationInsights.Metric")
+	j[2].assertPath(t, "time", "2017-11-18T10:35:21Z")
+	j[2].assertPath(t, "sampleRate", 100)
+	j[2].assertPath(t, "data.baseType", "MetricData")
+	j[2].assertPath(t, "data.baseData.metrics.<len>", 1)
+	j[2].assertPath(t, "data.baseData.metrics.[0].value", 456)
+	j[2].assertPath(t, "data.baseData.metrics.[0].count", 1)
+	j[2].assertPath(t, "data.baseData.metrics.[0].kind", 0)
+	j[2].assertPath(t, "data.baseData.metrics.[0].name", "my-metric")
+	j[2].assertPath(t, "data.baseData.ver", 2)
+
+	// Aggregate metric
+	j[3].assertPath(t, "iKey", test_ikey)
+	j[3].assertPath(t, "name", "Microsoft.ApplicationInsights.Metric")
+	j[3].assertPath(t, "time", "2017-11-18T10:35:21Z")
+	j[3].assertPath(t, "sampleRate", 100.0)
+	j[3].assertPath(t, "data.baseType", "MetricData")
+	j[3].assertPath(t, "data.baseData.metrics.<len>", 1)
+	j[3].assertPath(t, "data.baseData.metrics.[0].value", 50)
+	j[3].assertPath(t, "data.baseData.metrics.[0].count", 9)
+	j[3].assertPath(t, "data.baseData.metrics.[0].kind", 1)
+	j[3].assertPath(t, "data.baseData.metrics.[0].min", 2)
+	j[3].assertPath(t, "data.baseData.metrics.[0].max", 7)
+	j[3].assertPath(t, "data.baseData.metrics.[0].stdDev", 3)
+	j[3].assertPath(t, "data.baseData.metrics.[0].name", "agg-metric")
+	j[3].assertPath(t, "data.baseData.ver", 2)
+
+	// Request
+	j[4].assertPath(t, "iKey", test_ikey)
+	j[4].assertPath(t, "name", "Microsoft.ApplicationInsights.Request")
+	j[4].assertPath(t, "time", "2017-11-18T10:35:21Z") // Context takes current time since it's not supplied
+	j[4].assertPath(t, "sampleRate", 100.0)
+	j[4].assertPath(t, "data.baseType", "RequestData")
+	j[4].assertPath(t, "data.baseData.name", "req-name")
+	j[4].assertPath(t, "data.baseData.duration", "0.00:01:00.0000000")
+	j[4].assertPath(t, "data.baseData.responseCode", "Response")
+	j[4].assertPath(t, "data.baseData.success", true)
+	j[4].assertPath(t, "data.baseData.url", "req-url")
+	j[4].assertPath(t, "data.baseData.source", "localhost")
+	j[4].assertPath(t, "data.baseData.ver", 2)
+
+	if id, err := j[4].getPath("data.baseData.id"); err != nil {
+		t.Errorf("Id not present")
+	} else if len(id.(string)) == 0 {
+		t.Errorf("Empty request id")
+	}
+
+	// Remote dependency
+	j[5].assertPath(t, "iKey", test_ikey)
+	j[5].assertPath(t, "name", "Microsoft.ApplicationInsights.RemoteDependency")
+	j[5].assertPath(t, "time", "2017-11-18T10:35:21Z")
+	j[5].assertPath(t, "sampleRate", 100.0)
+	j[5].assertPath(t, "data.baseType", "RemoteDependencyData")
+	j[5].assertPath(t, "data.baseData.name", "dep-name")
+	j[5].assertPath(t, "data.baseData.id", "")
+	j[5].assertPath(t, "data.baseData.resultCode", "ok.")
+	j[5].assertPath(t, "data.baseData.duration", "0.01:00:00.0000000")
+	j[5].assertPath(t, "data.baseData.success", true)
+	j[5].assertPath(t, "data.baseData.data", "dep-data")
+	j[5].assertPath(t, "data.baseData.target", "dep-target")
+	j[5].assertPath(t, "data.baseData.type", "dep-type")
+	j[5].assertPath(t, "data.baseData.ver", 2)
+
+	// Availability
+	j[6].assertPath(t, "iKey", test_ikey)
+	j[6].assertPath(t, "name", "Microsoft.ApplicationInsights.Availability")
+	j[6].assertPath(t, "time", "2017-11-18T10:35:21Z")
+	j[6].assertPath(t, "sampleRate", 100.0)
+	j[6].assertPath(t, "data.baseType", "AvailabilityData")
+	j[6].assertPath(t, "data.baseData.name", "avail-name")
+	j[6].assertPath(t, "data.baseData.duration", "0.00:03:00.0000000")
+	j[6].assertPath(t, "data.baseData.success", true)
+	j[6].assertPath(t, "data.baseData.runLocation", "run-loc")
+	j[6].assertPath(t, "data.baseData.message", "avail-msg")
+	j[6].assertPath(t, "data.baseData.ver", 2)
+
+	if id, err := j[6].getPath("data.baseData.id"); err != nil {
+		t.Errorf("Id not present")
+	} else if len(id.(string)) == 0 {
+		t.Errorf("Empty request id")
+	}
+
+	// Page view
+	j[7].assertPath(t, "iKey", test_ikey)
+	j[7].assertPath(t, "name", "Microsoft.ApplicationInsights.PageView")
+	j[7].assertPath(t, "time", "2017-11-18T10:35:21Z")
+	j[7].assertPath(t, "sampleRate", 100.0)
+	j[7].assertPath(t, "data.baseType", "PageViewData")
+	j[7].assertPath(t, "data.baseData.name", "page-view-name")
+	j[7].assertPath(t, "data.baseData.url", "page-view-url")
+	j[7].assertPath(t, "data.baseData.duration", "0.00:00:04.0000000")
+	j[7].assertPath(t, "data.baseData.ver", 2)
+}
+
+// Test helpers...
+
 func telemetryBuffer(items ...Telemetry) TelemetryBufferItems {
 	ctx := NewTelemetryContext()
-	ctx.iKey = "00000000-0000-0000-0000-000000000000"
+	ctx.iKey = test_ikey
 
 	var result TelemetryBufferItems
 	for _, item := range items {
@@ -25,105 +375,6 @@ func telemetryBuffer(items ...Telemetry) TelemetryBufferItems {
 
 func (buffer *TelemetryBufferItems) add(items ...Telemetry) {
 	*buffer = append(*buffer, telemetryBuffer(items...)...)
-}
-
-func TestJsonSerializerSingle(t *testing.T) {
-	mockClock()
-	defer resetClock()
-
-	item := NewTraceTelemetry("testing", Verbose)
-	nowString := currentClock.Now().Format(time.RFC3339)
-
-	j, err := parsePayload(telemetryBuffer(item).serialize())
-	if err != nil {
-		t.Errorf("Error parsing payload: %s", err.Error())
-	}
-
-	if len(j) != 1 {
-		t.Fatal("Unexpected event count")
-	}
-
-	j[0].assertPath(t, "name", "Microsoft.ApplicationInsights.Message")
-	j[0].assertPath(t, "time", nowString)
-	j[0].assertPath(t, "sampleRate", 100)
-	j[0].assertPath(t, "data.baseType", "MessageData")
-	j[0].assertPath(t, "data.baseData.message", "testing")
-	j[0].assertPath(t, "data.baseData.severityLevel", 0)
-	j[0].assertPath(t, "data.baseData.ver", 2)
-}
-
-func TestJsonSerializerMultiple(t *testing.T) {
-	mockClock()
-	defer resetClock()
-
-	var buffer TelemetryBufferItems
-	now := currentClock.Now()
-	nowString := now.Format(time.RFC3339)
-
-	buffer.add(
-		NewTraceTelemetry("testing", Error),
-		NewEventTelemetry("an-event"),
-		NewMetricTelemetry("a-metric", 567),
-	)
-
-	req := NewRequestTelemetry("method", "my-url", time.Minute, "204")
-	req.Name = "req-name"
-	buffer.add(req)
-
-	j, err := parsePayload(buffer.serialize())
-	if err != nil {
-		t.Errorf("Error parsing payload: %s", err.Error())
-	}
-
-	if len(j) != 4 {
-		t.Fatal("Unexpected event count")
-	}
-
-	// Trace
-	j[0].assertPath(t, "name", "Microsoft.ApplicationInsights.Message")
-	j[0].assertPath(t, "time", nowString)
-	j[0].assertPath(t, "sampleRate", 100.0)
-	j[0].assertPath(t, "data.baseType", "MessageData")
-	j[0].assertPath(t, "data.baseData.message", "testing")
-	j[0].assertPath(t, "data.baseData.severityLevel", 3)
-	j[0].assertPath(t, "data.baseData.ver", 2)
-
-	// Event
-	j[1].assertPath(t, "name", "Microsoft.ApplicationInsights.Event")
-	j[1].assertPath(t, "time", nowString)
-	j[1].assertPath(t, "sampleRate", 100.0)
-	j[1].assertPath(t, "data.baseType", "EventData")
-	j[1].assertPath(t, "data.baseData.name", "an-event")
-	j[1].assertPath(t, "data.baseData.ver", 2)
-
-	// Metric
-	j[2].assertPath(t, "name", "Microsoft.ApplicationInsights.Metric")
-	j[2].assertPath(t, "time", nowString)
-	j[2].assertPath(t, "sampleRate", 100.0)
-	j[2].assertPath(t, "data.baseType", "MetricData")
-	j[2].assertPath(t, "data.baseData.metrics.<len>", 1)
-	j[2].assertPath(t, "data.baseData.metrics.[0].value", 567)
-	j[2].assertPath(t, "data.baseData.metrics.[0].count", 1)
-	j[2].assertPath(t, "data.baseData.metrics.[0].kind", 0)
-	j[2].assertPath(t, "data.baseData.ver", 2)
-
-	// Request
-	j[3].assertPath(t, "name", "Microsoft.ApplicationInsights.Request")
-	j[3].assertPath(t, "time", now.Add(-time.Minute).Format(time.RFC3339)) // Constructor subtracts duration
-	j[3].assertPath(t, "sampleRate", 100.0)
-	j[3].assertPath(t, "data.baseType", "RequestData")
-	j[3].assertPath(t, "data.baseData.name", "req-name")
-	j[3].assertPath(t, "data.baseData.duration", "0.00:01:00.0000000")
-	j[3].assertPath(t, "data.baseData.responseCode", "204")
-	j[3].assertPath(t, "data.baseData.success", true)
-	j[3].assertPath(t, "data.baseData.url", "my-url")
-	j[3].assertPath(t, "data.baseData.ver", 2)
-
-	if id, err := j[3].getPath("data.baseData.id"); err != nil {
-		t.Errorf("Id not present")
-	} else if len(id.(string)) == 0 {
-		t.Errorf("Empty request id")
-	}
 }
 
 type jsonMessage map[string]interface{}
@@ -150,7 +401,7 @@ func parsePayload(payload []byte) (jsonPayload, error) {
 }
 
 func (msg jsonMessage) assertPath(t *testing.T, path string, value interface{}) {
-	const tolerance = 0.0000001
+	const tolerance = 0.0001
 	v, err := msg.getPath(path)
 	if err != nil {
 		t.Error(err.Error())

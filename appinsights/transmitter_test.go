@@ -100,7 +100,7 @@ func TestBasicTransmit(t *testing.T) {
 
 	// Check for gzip magic number
 	if len(req.body) < 2 || req.body[0] != 0x1f || req.body[1] != 0x8b {
-		t.Fatalf("Missing gzip magic number")
+		t.Fatal("Missing gzip magic number")
 	}
 
 	// Decompress payload

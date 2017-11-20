@@ -9,8 +9,13 @@ import (
 
 var fakeClock *fakeclock.FakeClock
 
-func mockClock() {
-	fakeClock = fakeclock.NewFakeClock(time.Now().Round(time.Minute))
+func mockClock(timestamp ...time.Time) {
+	if len(timestamp) > 0 {
+		fakeClock = fakeclock.NewFakeClock(timestamp[0])
+	} else {
+		fakeClock = fakeclock.NewFakeClock(time.Now().Round(time.Minute))
+	}
+
 	currentClock = fakeClock
 }
 
