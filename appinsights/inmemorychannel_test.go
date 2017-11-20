@@ -556,3 +556,73 @@ func TestThrottleFlushesOnClose(t *testing.T) {
 
 	transmitter.assertNoRequest(t)
 }
+
+func TestThrottleAbandonsMessageOnStop(t *testing.T) {
+	mockClock()
+	defer resetClock()
+	config := NewTelemetryConfiguration("")
+	config.MaxBatchSize = 4
+	client, transmitter := newTestChannelServer(config)
+	defer transmitter.Close()
+
+	transmitter.prepThrottle(time.Minute)
+	transmitter.prepResponse(200, 200, 200, 200)
+
+	client.TrackTrace("~throttled~")
+	slowTick(10)
+	client.TrackTrace("~dropped~")
+	slowTick(10)
+	client.Channel().Stop()
+	slowTick(45)
+
+	// ~throttled~ will get retried after throttle is done; ~dropped~ should get lost.
+	for i := 0; i < 2; i++ {
+		req := transmitter.waitForRequest(t)
+		if strings.Contains(req.payload, "~dropped~") || len(req.items) != 1 {
+			t.Fatal("Dropped should have never been sent")
+		}
+	}
+
+	transmitter.assertNoRequest(t)
+}
+
+func TestThrottleStacking(t *testing.T) {
+	mockClock()
+	defer resetClock()
+	config := NewTelemetryConfiguration("")
+	config.MaxBatchSize = 1
+	client, transmitter := newTestChannelServer(config)
+	defer transmitter.Close()
+
+	// It's easy to hit a race in this test. There are two places that check for
+	// a throttle: one in the channel accept loop, the other in transmitRetry.
+	// For this test, I want both to hit the one in transmitRetry and then each
+	// make further attempts in lock-step from there.
+
+	start := currentClock.Now()
+	client.TrackTrace("~throttle-1~")
+	client.TrackTrace("~throttle-2~")
+
+	// Per above, give both time to get to transmitRetry, then send out responses
+	// simultaneously.
+	slowTick(10)
+
+	transmitter.prepThrottle(20 * time.Second)
+	second_tm := transmitter.prepThrottle(time.Minute)
+
+	transmitter.prepResponse(200, 200, 200)
+
+	slowTick(65)
+
+	req1 := transmitter.waitForRequest(t)
+	assertTimeApprox(t, req1.timestamp, start)
+	req2 := transmitter.waitForRequest(t)
+	assertTimeApprox(t, req2.timestamp, start)
+
+	req3 := transmitter.waitForRequest(t)
+	assertTimeApprox(t, req3.timestamp, second_tm)
+	req4 := transmitter.waitForRequest(t)
+	assertTimeApprox(t, req4.timestamp, second_tm)
+
+	transmitter.assertNoRequest(t)
+}

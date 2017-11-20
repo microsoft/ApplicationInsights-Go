@@ -188,6 +188,10 @@ func (state *inMemoryChannelState) waitToSend() bool {
 	// Delay until timeout passes or buffer fills up
 	state.timer.Reset(state.channel.batchInterval)
 	for {
+		if len(state.buffer) >= state.channel.batchSize {
+			return state.send()
+		}
+
 		select {
 		case event := <-state.channel.collectChan:
 			if event == nil {
@@ -196,9 +200,6 @@ func (state *inMemoryChannelState) waitToSend() bool {
 			}
 
 			state.buffer = append(state.buffer, event)
-			if len(state.buffer) >= state.channel.batchSize {
-				return state.send()
-			}
 
 		case ctl := <-state.channel.controlChan:
 			if ctl.stop {

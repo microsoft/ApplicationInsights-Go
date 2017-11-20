@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 )
@@ -230,6 +231,67 @@ func TestThrottledTransmit(t *testing.T) {
 	if (*result.retryAfter).Unix() != 1502322237 {
 		t.Error("retryAfter.Unix")
 	}
+}
+
+func TestTransmitDiagnostics(t *testing.T) {
+	client, server := newTestClientServer()
+	defer server.Close()
+
+	listener := NewDiagnosticsMessageListener()
+	var msgs []string
+	notify := make(chan bool)
+	go listener.ProcessMessages(func(message string) {
+		if message == "PING" {
+			notify <- true
+		} else {
+			msgs = append(msgs, message)
+		}
+	})
+	defer resetDiagnosticsListeners()
+
+	server.responseCode = errorResponse
+	server.responseData = []byte(`{"itemsReceived":1, "itemsAccepted":0, "errors":[{"index": 0, "statusCode": 500, "message": "Hello"}]}`)
+	server.responseHeaders["Content-type"] = "application/json"
+	_, err := client.Transmit([]byte("foobar"), make(TelemetryBufferItems, 0))
+	server.waitForRequest(t)
+
+	// Wait for diagnostics to catch up.
+	diagnosticsWriter.Write("PING")
+	<-notify
+
+	if err != nil {
+		t.Errorf("err: %s", err.Error())
+	}
+
+	// The last line should say "Errors:" and not include the error because the telemetry item wasn't submitted.
+	if !strings.Contains(msgs[len(msgs)-1], "Errors:") {
+		t.Errorf("Last line should say 'Errors:', with no errors listed.  Instead: %s", msgs[len(msgs)-1])
+	}
+
+	// Go again but include telemetry items this time.
+	server.responseCode = errorResponse
+	server.responseData = []byte(`{"itemsReceived":1, "itemsAccepted":0, "errors":[{"index": 0, "statusCode": 500, "message": "Hello"}]}`)
+	server.responseHeaders["Content-type"] = "application/json"
+	_, err = client.Transmit([]byte("foobar"), telemetryBuffer(NewTraceTelemetry("World", Warning)))
+	server.waitForRequest(t)
+
+	// Wait for diagnostics to catch up.
+	diagnosticsWriter.Write("PING")
+	<-notify
+
+	if err != nil {
+		t.Errorf("err: %s", err.Error())
+	}
+
+	if !strings.Contains(msgs[len(msgs)-2], "500 Hello") {
+		t.Error("Telemetry error should be prefaced with result code and message")
+	}
+
+	if !strings.Contains(msgs[len(msgs)-1], "World") {
+		t.Error("Raw telemetry item should be found on last line")
+	}
+
+	close(notify)
 }
 
 type resultProperties struct {

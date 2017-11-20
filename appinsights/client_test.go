@@ -19,13 +19,37 @@ func BenchmarkClientBurstPerformance(b *testing.B) {
 	<-client.Channel().Close(time.Minute)
 }
 
-func TestDefaultTags(t *testing.T) {
-	client := NewTelemetryClient("")
-	client.Context().Tags["test"] = "OK"
-	telem := NewTraceTelemetry("Hello world.", Verbose)
-	envelope := client.Context().envelop(telem)
-	if envelope.Tags["test"] != "OK" {
-		t.Error("Default client tags did not propagate to telemetry")
+func TestClientProperties(t *testing.T) {
+	client := NewTelemetryClient(test_ikey)
+	defer client.Channel().Close()
+
+	if _, ok := client.Channel().(*InMemoryChannel); !ok {
+		t.Error("Client's Channel() is not InMemoryChannel")
+	}
+
+	if ikey := client.InstrumentationKey(); ikey != test_ikey {
+		t.Error("Client's InstrumentationKey is not expected")
+	}
+
+	if ikey := client.Context().InstrumentationKey(); ikey != test_ikey {
+		t.Error("Context's InstrumentationKey is not expected")
+	}
+
+	if client.Context() == nil {
+		t.Error("Client.Context == nil")
+	}
+
+	if client.IsEnabled() == false {
+		t.Error("Client.IsEnabled == false")
+	}
+
+	client.SetIsEnabled(false)
+	if client.IsEnabled() == true {
+		t.Error("Client.SetIsEnabled had no effect")
+	}
+
+	if client.Channel().EndpointAddress() != "https://dc.services.visualstudio.com/v2/track" {
+		t.Error("Client.Channel.EndpointAddress was incorrect")
 	}
 }
 

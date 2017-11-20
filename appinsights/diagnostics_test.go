@@ -49,5 +49,9 @@ func TestMessageSentToConsumers(t *testing.T) {
 	}
 
 	// Clean up
+	resetDiagnosticsListeners()
+}
+
+func resetDiagnosticsListeners() {
 	diagnosticsWriter.listeners = diagnosticsWriter.listeners[:0]
 }
