@@ -52,6 +52,16 @@ func (context *TelemetryContext) envelop(item Telemetry) *contracts.Envelope {
 		}
 	}
 
+	// Sanitize.
+	for _, warn := range tdata.Sanitize() {
+		diagnosticsWriter.Printf("Telemetry data warning: %s", warn)
+	}
+	if envelope.Tags != nil {
+		for _, warn := range contracts.SanitizeContextKeys(envelope.Tags) {
+			diagnosticsWriter.Printf("Telemetry tag warning: %s", warn)
+		}
+	}
+
 	return envelope
 }
 

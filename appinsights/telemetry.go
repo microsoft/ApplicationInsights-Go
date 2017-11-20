@@ -13,6 +13,7 @@ import (
 type TelemetryData interface {
 	EnvelopeName() string
 	BaseType() string
+	Sanitize() []string
 }
 
 // Interface implemented by telemetry items, mostly useful for passing to
