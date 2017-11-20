@@ -10,6 +10,12 @@ type Base struct {
 	BaseType string `json:"baseType"`
 }
 
+func (data *Base) Sanitize() []string {
+	var warnings []string
+
+	return warnings
+}
+
 // Creates a new Base instance with default values set by the schema.
 func NewBase() *Base {
 	return &Base{}

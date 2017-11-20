@@ -32,6 +32,17 @@ type DataPoint struct {
 	StdDev float64 `json:"stdDev"`
 }
 
+func (data *DataPoint) Sanitize() []string {
+	var warnings []string
+
+	if len(data.Name) > 1024 {
+		data.Name = data.Name[:1024]
+		warnings = append(warnings, "DataPoint.Name exceeded maximum length of 1024")
+	}
+
+	return warnings
+}
+
 // Creates a new DataPoint instance with default values set by the schema.
 func NewDataPoint() *DataPoint {
 	return &DataPoint{

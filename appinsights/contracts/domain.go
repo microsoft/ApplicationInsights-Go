@@ -6,6 +6,12 @@ package contracts
 type Domain struct {
 }
 
+func (data *Domain) Sanitize() []string {
+	var warnings []string
+
+	return warnings
+}
+
 // Creates a new Domain instance with default values set by the schema.
 func NewDomain() *Domain {
 	return &Domain{}

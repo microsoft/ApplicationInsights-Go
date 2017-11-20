@@ -30,6 +30,31 @@ type ExceptionDetails struct {
 	ParsedStack []*StackFrame `json:"parsedStack,omitempty"`
 }
 
+func (data *ExceptionDetails) Sanitize() []string {
+	var warnings []string
+
+	if len(data.TypeName) > 1024 {
+		data.TypeName = data.TypeName[:1024]
+		warnings = append(warnings, "ExceptionDetails.TypeName exceeded maximum length of 1024")
+	}
+
+	if len(data.Message) > 32768 {
+		data.Message = data.Message[:32768]
+		warnings = append(warnings, "ExceptionDetails.Message exceeded maximum length of 32768")
+	}
+
+	if len(data.Stack) > 32768 {
+		data.Stack = data.Stack[:32768]
+		warnings = append(warnings, "ExceptionDetails.Stack exceeded maximum length of 32768")
+	}
+
+	for _, ptr := range data.ParsedStack {
+		warnings = append(warnings, ptr.Sanitize()...)
+	}
+
+	return warnings
+}
+
 // Creates a new ExceptionDetails instance with default values set by the schema.
 func NewExceptionDetails() *ExceptionDetails {
 	return &ExceptionDetails{

@@ -22,6 +22,27 @@ type StackFrame struct {
 	Line int `json:"line"`
 }
 
+func (data *StackFrame) Sanitize() []string {
+	var warnings []string
+
+	if len(data.Method) > 1024 {
+		data.Method = data.Method[:1024]
+		warnings = append(warnings, "StackFrame.Method exceeded maximum length of 1024")
+	}
+
+	if len(data.Assembly) > 1024 {
+		data.Assembly = data.Assembly[:1024]
+		warnings = append(warnings, "StackFrame.Assembly exceeded maximum length of 1024")
+	}
+
+	if len(data.FileName) > 1024 {
+		data.FileName = data.FileName[:1024]
+		warnings = append(warnings, "StackFrame.FileName exceeded maximum length of 1024")
+	}
+
+	return warnings
+}
+
 // Creates a new StackFrame instance with default values set by the schema.
 func NewStackFrame() *StackFrame {
 	return &StackFrame{}

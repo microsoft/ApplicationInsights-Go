@@ -32,11 +32,44 @@ func (data *EventData) BaseType() string {
 	return "EventData"
 }
 
+func (data *EventData) Sanitize() []string {
+	var warnings []string
+
+	if len(data.Name) > 512 {
+		data.Name = data.Name[:512]
+		warnings = append(warnings, "EventData.Name exceeded maximum length of 512")
+	}
+
+	if data.Properties != nil {
+		for k, v := range data.Properties {
+			if len(v) > 8192 {
+				data.Properties[k] = v[:8192]
+				warnings = append(warnings, "EventData.Properties has value with length exceeding max of 8192: "+k)
+			}
+			if len(k) > 150 {
+				data.Properties[k[:150]] = data.Properties[k]
+				delete(data.Properties, k)
+				warnings = append(warnings, "EventData.Properties has key with length exceeding max of 150: "+k)
+			}
+		}
+	}
+
+	if data.Measurements != nil {
+		for k, v := range data.Measurements {
+			if len(k) > 150 {
+				data.Measurements[k[:150]] = v
+				delete(data.Measurements, k)
+				warnings = append(warnings, "EventData.Measurements has key with length exceeding max of 150: "+k)
+			}
+		}
+	}
+
+	return warnings
+}
+
 // Creates a new EventData instance with default values set by the schema.
 func NewEventData() *EventData {
 	return &EventData{
-		Ver:          2,
-		Properties:   make(map[string]string),
-		Measurements: make(map[string]float64),
+		Ver: 2,
 	}
 }

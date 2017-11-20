@@ -32,10 +32,34 @@ func (data *MessageData) BaseType() string {
 	return "MessageData"
 }
 
+func (data *MessageData) Sanitize() []string {
+	var warnings []string
+
+	if len(data.Message) > 32768 {
+		data.Message = data.Message[:32768]
+		warnings = append(warnings, "MessageData.Message exceeded maximum length of 32768")
+	}
+
+	if data.Properties != nil {
+		for k, v := range data.Properties {
+			if len(v) > 8192 {
+				data.Properties[k] = v[:8192]
+				warnings = append(warnings, "MessageData.Properties has value with length exceeding max of 8192: "+k)
+			}
+			if len(k) > 150 {
+				data.Properties[k[:150]] = data.Properties[k]
+				delete(data.Properties, k)
+				warnings = append(warnings, "MessageData.Properties has key with length exceeding max of 150: "+k)
+			}
+		}
+	}
+
+	return warnings
+}
+
 // Creates a new MessageData instance with default values set by the schema.
 func NewMessageData() *MessageData {
 	return &MessageData{
-		Ver:        2,
-		Properties: make(map[string]string),
+		Ver: 2,
 	}
 }

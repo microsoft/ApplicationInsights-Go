@@ -2,320 +2,370 @@ package appinsights
 
 // NOTE: This file was automatically generated.
 
-type ApplicationContext interface {
-	GetVer() string
-	SetVer(value string)
-}
-
-type DeviceContext interface {
-	GetId() string
-	SetId(value string)
-	GetLocale() string
-	SetLocale(value string)
-	GetModel() string
-	SetModel(value string)
-	GetOemName() string
-	SetOemName(value string)
-	GetOsVersion() string
-	SetOsVersion(value string)
-	GetType() string
-	SetType(value string)
-}
-
-type LocationContext interface {
-	GetIp() string
-	SetIp(value string)
-}
-
-type OperationContext interface {
-	GetId() string
-	SetId(value string)
-	GetName() string
-	SetName(value string)
-	GetParentId() string
-	SetParentId(value string)
-	GetSyntheticSource() string
-	SetSyntheticSource(value string)
-	GetCorrelationVector() string
-	SetCorrelationVector(value string)
-}
-
-type SessionContext interface {
-	GetId() string
-	SetId(value string)
-	GetIsFirst() string
-	SetIsFirst(value string)
-}
-
-type UserContext interface {
-	GetAccountId() string
-	SetAccountId(value string)
-	GetId() string
-	SetId(value string)
-	GetAuthUserId() string
-	SetAuthUserId(value string)
-}
-
-type CloudContext interface {
-	GetRole() string
-	SetRole(value string)
-	GetRoleInstance() string
-	SetRoleInstance(value string)
-}
-
-type InternalContext interface {
-	GetSdkVersion() string
-	SetSdkVersion(value string)
-	GetAgentVersion() string
-	SetAgentVersion(value string)
-	GetNodeName() string
-	SetNodeName(value string)
-}
-
-type applicationContext struct {
+type ApplicationContext struct {
 	context *TelemetryContext
 }
 
-type deviceContext struct {
+type DeviceContext struct {
 	context *TelemetryContext
 }
 
-type locationContext struct {
+type LocationContext struct {
 	context *TelemetryContext
 }
 
-type operationContext struct {
+type OperationContext struct {
 	context *TelemetryContext
 }
 
-type sessionContext struct {
+type SessionContext struct {
 	context *TelemetryContext
 }
 
-type userContext struct {
+type UserContext struct {
 	context *TelemetryContext
 }
 
-type cloudContext struct {
+type CloudContext struct {
 	context *TelemetryContext
 }
 
-type internalContext struct {
+type InternalContext struct {
 	context *TelemetryContext
 }
 
-func (context *TelemetryContext) Application() ApplicationContext {
-	return &applicationContext{context: context}
+func (context *TelemetryContext) Application() *ApplicationContext {
+	return &ApplicationContext{context: context}
 }
 
-func (context *TelemetryContext) Device() DeviceContext {
-	return &deviceContext{context: context}
+func (context *TelemetryContext) Device() *DeviceContext {
+	return &DeviceContext{context: context}
 }
 
-func (context *TelemetryContext) Location() LocationContext {
-	return &locationContext{context: context}
+func (context *TelemetryContext) Location() *LocationContext {
+	return &LocationContext{context: context}
 }
 
-func (context *TelemetryContext) Operation() OperationContext {
-	return &operationContext{context: context}
+func (context *TelemetryContext) Operation() *OperationContext {
+	return &OperationContext{context: context}
 }
 
-func (context *TelemetryContext) Session() SessionContext {
-	return &sessionContext{context: context}
+func (context *TelemetryContext) Session() *SessionContext {
+	return &SessionContext{context: context}
 }
 
-func (context *TelemetryContext) User() UserContext {
-	return &userContext{context: context}
+func (context *TelemetryContext) User() *UserContext {
+	return &UserContext{context: context}
 }
 
-func (context *TelemetryContext) Cloud() CloudContext {
-	return &cloudContext{context: context}
+func (context *TelemetryContext) Cloud() *CloudContext {
+	return &CloudContext{context: context}
 }
 
-func (context *TelemetryContext) Internal() InternalContext {
-	return &internalContext{context: context}
+func (context *TelemetryContext) Internal() *InternalContext {
+	return &InternalContext{context: context}
 }
 
-func (context *applicationContext) GetVer() string {
+// Application version. Information in the application context fields is
+// always about the application that is sending the telemetry.
+func (context *ApplicationContext) GetVer() string {
 	return context.context.getStringTag("ai.application.ver")
 }
 
-func (context *applicationContext) SetVer(value string) {
+// Application version. Information in the application context fields is
+// always about the application that is sending the telemetry.
+func (context *ApplicationContext) SetVer(value string) {
 	context.context.setStringTag("ai.application.ver", value)
 }
 
-func (context *deviceContext) GetId() string {
+// Unique client device id. Computer name in most cases.
+func (context *DeviceContext) GetId() string {
 	return context.context.getStringTag("ai.device.id")
 }
 
-func (context *deviceContext) SetId(value string) {
+// Unique client device id. Computer name in most cases.
+func (context *DeviceContext) SetId(value string) {
 	context.context.setStringTag("ai.device.id", value)
 }
 
-func (context *deviceContext) GetLocale() string {
+// Device locale using <language>-<REGION> pattern, following RFC 5646.
+// Example 'en-US'.
+func (context *DeviceContext) GetLocale() string {
 	return context.context.getStringTag("ai.device.locale")
 }
 
-func (context *deviceContext) SetLocale(value string) {
+// Device locale using <language>-<REGION> pattern, following RFC 5646.
+// Example 'en-US'.
+func (context *DeviceContext) SetLocale(value string) {
 	context.context.setStringTag("ai.device.locale", value)
 }
 
-func (context *deviceContext) GetModel() string {
+// Model of the device the end user of the application is using. Used for
+// client scenarios. If this field is empty then it is derived from the user
+// agent.
+func (context *DeviceContext) GetModel() string {
 	return context.context.getStringTag("ai.device.model")
 }
 
-func (context *deviceContext) SetModel(value string) {
+// Model of the device the end user of the application is using. Used for
+// client scenarios. If this field is empty then it is derived from the user
+// agent.
+func (context *DeviceContext) SetModel(value string) {
 	context.context.setStringTag("ai.device.model", value)
 }
 
-func (context *deviceContext) GetOemName() string {
+// Client device OEM name taken from the browser.
+func (context *DeviceContext) GetOemName() string {
 	return context.context.getStringTag("ai.device.oemName")
 }
 
-func (context *deviceContext) SetOemName(value string) {
+// Client device OEM name taken from the browser.
+func (context *DeviceContext) SetOemName(value string) {
 	context.context.setStringTag("ai.device.oemName", value)
 }
 
-func (context *deviceContext) GetOsVersion() string {
+// Operating system name and version of the device the end user of the
+// application is using. If this field is empty then it is derived from the
+// user agent. Example 'Windows 10 Pro 10.0.10586.0'
+func (context *DeviceContext) GetOsVersion() string {
 	return context.context.getStringTag("ai.device.osVersion")
 }
 
-func (context *deviceContext) SetOsVersion(value string) {
+// Operating system name and version of the device the end user of the
+// application is using. If this field is empty then it is derived from the
+// user agent. Example 'Windows 10 Pro 10.0.10586.0'
+func (context *DeviceContext) SetOsVersion(value string) {
 	context.context.setStringTag("ai.device.osVersion", value)
 }
 
-func (context *deviceContext) GetType() string {
+// The type of the device the end user of the application is using. Used
+// primarily to distinguish JavaScript telemetry from server side telemetry.
+// Examples: 'PC', 'Phone', 'Browser'. 'PC' is the default value.
+func (context *DeviceContext) GetType() string {
 	return context.context.getStringTag("ai.device.type")
 }
 
-func (context *deviceContext) SetType(value string) {
+// The type of the device the end user of the application is using. Used
+// primarily to distinguish JavaScript telemetry from server side telemetry.
+// Examples: 'PC', 'Phone', 'Browser'. 'PC' is the default value.
+func (context *DeviceContext) SetType(value string) {
 	context.context.setStringTag("ai.device.type", value)
 }
 
-func (context *locationContext) GetIp() string {
+// The IP address of the client device. IPv4 and IPv6 are supported.
+// Information in the location context fields is always about the end user.
+// When telemetry is sent from a service, the location context is about the
+// user that initiated the operation in the service.
+func (context *LocationContext) GetIp() string {
 	return context.context.getStringTag("ai.location.ip")
 }
 
-func (context *locationContext) SetIp(value string) {
+// The IP address of the client device. IPv4 and IPv6 are supported.
+// Information in the location context fields is always about the end user.
+// When telemetry is sent from a service, the location context is about the
+// user that initiated the operation in the service.
+func (context *LocationContext) SetIp(value string) {
 	context.context.setStringTag("ai.location.ip", value)
 }
 
-func (context *operationContext) GetId() string {
+// A unique identifier for the operation instance. The operation.id is created
+// by either a request or a page view. All other telemetry sets this to the
+// value for the containing request or page view. Operation.id is used for
+// finding all the telemetry items for a specific operation instance.
+func (context *OperationContext) GetId() string {
 	return context.context.getStringTag("ai.operation.id")
 }
 
-func (context *operationContext) SetId(value string) {
+// A unique identifier for the operation instance. The operation.id is created
+// by either a request or a page view. All other telemetry sets this to the
+// value for the containing request or page view. Operation.id is used for
+// finding all the telemetry items for a specific operation instance.
+func (context *OperationContext) SetId(value string) {
 	context.context.setStringTag("ai.operation.id", value)
 }
 
-func (context *operationContext) GetName() string {
+// The name (group) of the operation. The operation.name is created by either
+// a request or a page view. All other telemetry items set this to the value
+// for the containing request or page view. Operation.name is used for finding
+// all the telemetry items for a group of operations (i.e. 'GET Home/Index').
+func (context *OperationContext) GetName() string {
 	return context.context.getStringTag("ai.operation.name")
 }
 
-func (context *operationContext) SetName(value string) {
+// The name (group) of the operation. The operation.name is created by either
+// a request or a page view. All other telemetry items set this to the value
+// for the containing request or page view. Operation.name is used for finding
+// all the telemetry items for a group of operations (i.e. 'GET Home/Index').
+func (context *OperationContext) SetName(value string) {
 	context.context.setStringTag("ai.operation.name", value)
 }
 
-func (context *operationContext) GetParentId() string {
+// The unique identifier of the telemetry item's immediate parent.
+func (context *OperationContext) GetParentId() string {
 	return context.context.getStringTag("ai.operation.parentId")
 }
 
-func (context *operationContext) SetParentId(value string) {
+// The unique identifier of the telemetry item's immediate parent.
+func (context *OperationContext) SetParentId(value string) {
 	context.context.setStringTag("ai.operation.parentId", value)
 }
 
-func (context *operationContext) GetSyntheticSource() string {
+// Name of synthetic source. Some telemetry from the application may represent
+// a synthetic traffic. It may be web crawler indexing the web site, site
+// availability tests or traces from diagnostic libraries like Application
+// Insights SDK itself.
+func (context *OperationContext) GetSyntheticSource() string {
 	return context.context.getStringTag("ai.operation.syntheticSource")
 }
 
-func (context *operationContext) SetSyntheticSource(value string) {
+// Name of synthetic source. Some telemetry from the application may represent
+// a synthetic traffic. It may be web crawler indexing the web site, site
+// availability tests or traces from diagnostic libraries like Application
+// Insights SDK itself.
+func (context *OperationContext) SetSyntheticSource(value string) {
 	context.context.setStringTag("ai.operation.syntheticSource", value)
 }
 
-func (context *operationContext) GetCorrelationVector() string {
+// The correlation vector is a light weight vector clock which can be used to
+// identify and order related events across clients and services.
+func (context *OperationContext) GetCorrelationVector() string {
 	return context.context.getStringTag("ai.operation.correlationVector")
 }
 
-func (context *operationContext) SetCorrelationVector(value string) {
+// The correlation vector is a light weight vector clock which can be used to
+// identify and order related events across clients and services.
+func (context *OperationContext) SetCorrelationVector(value string) {
 	context.context.setStringTag("ai.operation.correlationVector", value)
 }
 
-func (context *sessionContext) GetId() string {
+// Session ID - the instance of the user's interaction with the app.
+// Information in the session context fields is always about the end user.
+// When telemetry is sent from a service, the session context is about the
+// user that initiated the operation in the service.
+func (context *SessionContext) GetId() string {
 	return context.context.getStringTag("ai.session.id")
 }
 
-func (context *sessionContext) SetId(value string) {
+// Session ID - the instance of the user's interaction with the app.
+// Information in the session context fields is always about the end user.
+// When telemetry is sent from a service, the session context is about the
+// user that initiated the operation in the service.
+func (context *SessionContext) SetId(value string) {
 	context.context.setStringTag("ai.session.id", value)
 }
 
-func (context *sessionContext) GetIsFirst() string {
+// Boolean value indicating whether the session identified by ai.session.id is
+// first for the user or not.
+func (context *SessionContext) GetIsFirst() string {
 	return context.context.getStringTag("ai.session.isFirst")
 }
 
-func (context *sessionContext) SetIsFirst(value string) {
+// Boolean value indicating whether the session identified by ai.session.id is
+// first for the user or not.
+func (context *SessionContext) SetIsFirst(value string) {
 	context.context.setStringTag("ai.session.isFirst", value)
 }
 
-func (context *userContext) GetAccountId() string {
+// In multi-tenant applications this is the account ID or name which the user
+// is acting with. Examples may be subscription ID for Azure portal or blog
+// name blogging platform.
+func (context *UserContext) GetAccountId() string {
 	return context.context.getStringTag("ai.user.accountId")
 }
 
-func (context *userContext) SetAccountId(value string) {
+// In multi-tenant applications this is the account ID or name which the user
+// is acting with. Examples may be subscription ID for Azure portal or blog
+// name blogging platform.
+func (context *UserContext) SetAccountId(value string) {
 	context.context.setStringTag("ai.user.accountId", value)
 }
 
-func (context *userContext) GetId() string {
+// Anonymous user id. Represents the end user of the application. When
+// telemetry is sent from a service, the user context is about the user that
+// initiated the operation in the service.
+func (context *UserContext) GetId() string {
 	return context.context.getStringTag("ai.user.id")
 }
 
-func (context *userContext) SetId(value string) {
+// Anonymous user id. Represents the end user of the application. When
+// telemetry is sent from a service, the user context is about the user that
+// initiated the operation in the service.
+func (context *UserContext) SetId(value string) {
 	context.context.setStringTag("ai.user.id", value)
 }
 
-func (context *userContext) GetAuthUserId() string {
+// Authenticated user id. The opposite of ai.user.id, this represents the user
+// with a friendly name. Since it's PII information it is not collected by
+// default by most SDKs.
+func (context *UserContext) GetAuthUserId() string {
 	return context.context.getStringTag("ai.user.authUserId")
 }
 
-func (context *userContext) SetAuthUserId(value string) {
+// Authenticated user id. The opposite of ai.user.id, this represents the user
+// with a friendly name. Since it's PII information it is not collected by
+// default by most SDKs.
+func (context *UserContext) SetAuthUserId(value string) {
 	context.context.setStringTag("ai.user.authUserId", value)
 }
 
-func (context *cloudContext) GetRole() string {
+// Name of the role the application is a part of. Maps directly to the role
+// name in azure.
+func (context *CloudContext) GetRole() string {
 	return context.context.getStringTag("ai.cloud.role")
 }
 
-func (context *cloudContext) SetRole(value string) {
+// Name of the role the application is a part of. Maps directly to the role
+// name in azure.
+func (context *CloudContext) SetRole(value string) {
 	context.context.setStringTag("ai.cloud.role", value)
 }
 
-func (context *cloudContext) GetRoleInstance() string {
+// Name of the instance where the application is running. Computer name for
+// on-premisis, instance name for Azure.
+func (context *CloudContext) GetRoleInstance() string {
 	return context.context.getStringTag("ai.cloud.roleInstance")
 }
 
-func (context *cloudContext) SetRoleInstance(value string) {
+// Name of the instance where the application is running. Computer name for
+// on-premisis, instance name for Azure.
+func (context *CloudContext) SetRoleInstance(value string) {
 	context.context.setStringTag("ai.cloud.roleInstance", value)
 }
 
-func (context *internalContext) GetSdkVersion() string {
+// SDK version. See
+// https://github.com/Microsoft/ApplicationInsights-Home/blob/master/SDK-AUTHORING.md#sdk-version-specification
+// for information.
+func (context *InternalContext) GetSdkVersion() string {
 	return context.context.getStringTag("ai.internal.sdkVersion")
 }
 
-func (context *internalContext) SetSdkVersion(value string) {
+// SDK version. See
+// https://github.com/Microsoft/ApplicationInsights-Home/blob/master/SDK-AUTHORING.md#sdk-version-specification
+// for information.
+func (context *InternalContext) SetSdkVersion(value string) {
 	context.context.setStringTag("ai.internal.sdkVersion", value)
 }
 
-func (context *internalContext) GetAgentVersion() string {
+// Agent version. Used to indicate the version of StatusMonitor installed on
+// the computer if it is used for data collection.
+func (context *InternalContext) GetAgentVersion() string {
 	return context.context.getStringTag("ai.internal.agentVersion")
 }
 
-func (context *internalContext) SetAgentVersion(value string) {
+// Agent version. Used to indicate the version of StatusMonitor installed on
+// the computer if it is used for data collection.
+func (context *InternalContext) SetAgentVersion(value string) {
 	context.context.setStringTag("ai.internal.agentVersion", value)
 }
 
-func (context *internalContext) GetNodeName() string {
+// This is the node name used for billing purposes. Use it to override the
+// standard detection of nodes.
+func (context *InternalContext) GetNodeName() string {
 	return context.context.getStringTag("ai.internal.nodeName")
 }
 
-func (context *internalContext) SetNodeName(value string) {
+// This is the node name used for billing purposes. Use it to override the
+// standard detection of nodes.
+func (context *InternalContext) SetNodeName(value string) {
 	context.context.setStringTag("ai.internal.nodeName", value)
 }

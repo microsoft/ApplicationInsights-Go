@@ -46,11 +46,59 @@ func (data *AvailabilityData) BaseType() string {
 	return "AvailabilityData"
 }
 
+func (data *AvailabilityData) Sanitize() []string {
+	var warnings []string
+
+	if len(data.Id) > 64 {
+		data.Id = data.Id[:64]
+		warnings = append(warnings, "AvailabilityData.Id exceeded maximum length of 64")
+	}
+
+	if len(data.Name) > 1024 {
+		data.Name = data.Name[:1024]
+		warnings = append(warnings, "AvailabilityData.Name exceeded maximum length of 1024")
+	}
+
+	if len(data.RunLocation) > 1024 {
+		data.RunLocation = data.RunLocation[:1024]
+		warnings = append(warnings, "AvailabilityData.RunLocation exceeded maximum length of 1024")
+	}
+
+	if len(data.Message) > 8192 {
+		data.Message = data.Message[:8192]
+		warnings = append(warnings, "AvailabilityData.Message exceeded maximum length of 8192")
+	}
+
+	if data.Properties != nil {
+		for k, v := range data.Properties {
+			if len(v) > 8192 {
+				data.Properties[k] = v[:8192]
+				warnings = append(warnings, "AvailabilityData.Properties has value with length exceeding max of 8192: "+k)
+			}
+			if len(k) > 150 {
+				data.Properties[k[:150]] = data.Properties[k]
+				delete(data.Properties, k)
+				warnings = append(warnings, "AvailabilityData.Properties has key with length exceeding max of 150: "+k)
+			}
+		}
+	}
+
+	if data.Measurements != nil {
+		for k, v := range data.Measurements {
+			if len(k) > 150 {
+				data.Measurements[k[:150]] = v
+				delete(data.Measurements, k)
+				warnings = append(warnings, "AvailabilityData.Measurements has key with length exceeding max of 150: "+k)
+			}
+		}
+	}
+
+	return warnings
+}
+
 // Creates a new AvailabilityData instance with default values set by the schema.
 func NewAvailabilityData() *AvailabilityData {
 	return &AvailabilityData{
-		Ver:          2,
-		Properties:   make(map[string]string),
-		Measurements: make(map[string]float64),
+		Ver: 2,
 	}
 }

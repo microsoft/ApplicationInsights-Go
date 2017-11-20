@@ -44,11 +44,36 @@ type Envelope struct {
 	Data interface{} `json:"data"`
 }
 
+func (data *Envelope) Sanitize() []string {
+	var warnings []string
+
+	if len(data.Name) > 1024 {
+		data.Name = data.Name[:1024]
+		warnings = append(warnings, "Envelope.Name exceeded maximum length of 1024")
+	}
+
+	if len(data.Time) > 64 {
+		data.Time = data.Time[:64]
+		warnings = append(warnings, "Envelope.Time exceeded maximum length of 64")
+	}
+
+	if len(data.Seq) > 64 {
+		data.Seq = data.Seq[:64]
+		warnings = append(warnings, "Envelope.Seq exceeded maximum length of 64")
+	}
+
+	if len(data.IKey) > 40 {
+		data.IKey = data.IKey[:40]
+		warnings = append(warnings, "Envelope.IKey exceeded maximum length of 40")
+	}
+
+	return warnings
+}
+
 // Creates a new Envelope instance with default values set by the schema.
 func NewEnvelope() *Envelope {
 	return &Envelope{
 		Ver:        1,
 		SampleRate: 100.0,
-		Tags:       make(map[string]string),
 	}
 }

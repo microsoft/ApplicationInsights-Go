@@ -29,10 +29,33 @@ func (data *MetricData) BaseType() string {
 	return "MetricData"
 }
 
+func (data *MetricData) Sanitize() []string {
+	var warnings []string
+
+	for _, ptr := range data.Metrics {
+		warnings = append(warnings, ptr.Sanitize()...)
+	}
+
+	if data.Properties != nil {
+		for k, v := range data.Properties {
+			if len(v) > 8192 {
+				data.Properties[k] = v[:8192]
+				warnings = append(warnings, "MetricData.Properties has value with length exceeding max of 8192: "+k)
+			}
+			if len(k) > 150 {
+				data.Properties[k[:150]] = data.Properties[k]
+				delete(data.Properties, k)
+				warnings = append(warnings, "MetricData.Properties has key with length exceeding max of 150: "+k)
+			}
+		}
+	}
+
+	return warnings
+}
+
 // Creates a new MetricData instance with default values set by the schema.
 func NewMetricData() *MetricData {
 	return &MetricData{
-		Ver:        2,
-		Properties: make(map[string]string),
+		Ver: 2,
 	}
 }

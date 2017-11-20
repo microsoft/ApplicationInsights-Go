@@ -10,6 +10,12 @@ type Data struct {
 	BaseData interface{} `json:"baseData"`
 }
 
+func (data *Data) Sanitize() []string {
+	var warnings []string
+
+	return warnings
+}
+
 // Creates a new Data instance with default values set by the schema.
 func NewData() *Data {
 	return &Data{}

@@ -28,13 +28,51 @@ func (data *PageViewData) BaseType() string {
 	return "PageViewData"
 }
 
+func (data *PageViewData) Sanitize() []string {
+	var warnings []string
+
+	if len(data.Url) > 2048 {
+		data.Url = data.Url[:2048]
+		warnings = append(warnings, "PageViewData.Url exceeded maximum length of 2048")
+	}
+
+	if len(data.Name) > 512 {
+		data.Name = data.Name[:512]
+		warnings = append(warnings, "PageViewData.Name exceeded maximum length of 512")
+	}
+
+	if data.Properties != nil {
+		for k, v := range data.Properties {
+			if len(v) > 8192 {
+				data.Properties[k] = v[:8192]
+				warnings = append(warnings, "PageViewData.Properties has value with length exceeding max of 8192: "+k)
+			}
+			if len(k) > 150 {
+				data.Properties[k[:150]] = data.Properties[k]
+				delete(data.Properties, k)
+				warnings = append(warnings, "PageViewData.Properties has key with length exceeding max of 150: "+k)
+			}
+		}
+	}
+
+	if data.Measurements != nil {
+		for k, v := range data.Measurements {
+			if len(k) > 150 {
+				data.Measurements[k[:150]] = v
+				delete(data.Measurements, k)
+				warnings = append(warnings, "PageViewData.Measurements has key with length exceeding max of 150: "+k)
+			}
+		}
+	}
+
+	return warnings
+}
+
 // Creates a new PageViewData instance with default values set by the schema.
 func NewPageViewData() *PageViewData {
 	return &PageViewData{
 		EventData: EventData{
-			Ver:          2,
-			Properties:   make(map[string]string),
-			Measurements: make(map[string]float64),
+			Ver: 2,
 		},
 	}
 }

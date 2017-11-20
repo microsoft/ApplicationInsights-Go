@@ -109,3 +109,41 @@ const (
 	// standard detection of nodes.
 	InternalNodeName string = "ai.internal.nodeName"
 )
+
+var contextMaxLengths = map[string]int{
+	"ai.application.ver":             1024,
+	"ai.device.id":                   1024,
+	"ai.device.locale":               64,
+	"ai.device.model":                256,
+	"ai.device.oemName":              256,
+	"ai.device.osVersion":            256,
+	"ai.device.type":                 64,
+	"ai.location.ip":                 46,
+	"ai.operation.id":                128,
+	"ai.operation.name":              1024,
+	"ai.operation.parentId":          128,
+	"ai.operation.syntheticSource":   1024,
+	"ai.operation.correlationVector": 64,
+	"ai.session.id":                  64,
+	"ai.session.isFirst":             5,
+	"ai.user.accountId":              1024,
+	"ai.user.id":                     128,
+	"ai.user.authUserId":             1024,
+	"ai.cloud.role":                  256,
+	"ai.cloud.roleInstance":          256,
+	"ai.internal.sdkVersion":         64,
+	"ai.internal.agentVersion":       64,
+	"ai.internal.nodeName":           256,
+}
+
+func SanitizeContextKeys(tags map[string]string) []string {
+	var warnings []string
+	for k, v := range tags {
+		if maxlen, ok := contextMaxLengths[k]; ok && len(v) > maxlen {
+			tags[k] = v[:maxlen]
+			warnings = append(warnings, "Value for "+k+" exceeded maximum length of "+string(maxlen))
+		}
+	}
+
+	return warnings
+}

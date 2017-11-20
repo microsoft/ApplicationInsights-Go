@@ -58,12 +58,70 @@ func (data *RemoteDependencyData) BaseType() string {
 	return "RemoteDependencyData"
 }
 
+func (data *RemoteDependencyData) Sanitize() []string {
+	var warnings []string
+
+	if len(data.Name) > 1024 {
+		data.Name = data.Name[:1024]
+		warnings = append(warnings, "RemoteDependencyData.Name exceeded maximum length of 1024")
+	}
+
+	if len(data.Id) > 128 {
+		data.Id = data.Id[:128]
+		warnings = append(warnings, "RemoteDependencyData.Id exceeded maximum length of 128")
+	}
+
+	if len(data.ResultCode) > 1024 {
+		data.ResultCode = data.ResultCode[:1024]
+		warnings = append(warnings, "RemoteDependencyData.ResultCode exceeded maximum length of 1024")
+	}
+
+	if len(data.Data) > 8192 {
+		data.Data = data.Data[:8192]
+		warnings = append(warnings, "RemoteDependencyData.Data exceeded maximum length of 8192")
+	}
+
+	if len(data.Target) > 1024 {
+		data.Target = data.Target[:1024]
+		warnings = append(warnings, "RemoteDependencyData.Target exceeded maximum length of 1024")
+	}
+
+	if len(data.Type) > 1024 {
+		data.Type = data.Type[:1024]
+		warnings = append(warnings, "RemoteDependencyData.Type exceeded maximum length of 1024")
+	}
+
+	if data.Properties != nil {
+		for k, v := range data.Properties {
+			if len(v) > 8192 {
+				data.Properties[k] = v[:8192]
+				warnings = append(warnings, "RemoteDependencyData.Properties has value with length exceeding max of 8192: "+k)
+			}
+			if len(k) > 150 {
+				data.Properties[k[:150]] = data.Properties[k]
+				delete(data.Properties, k)
+				warnings = append(warnings, "RemoteDependencyData.Properties has key with length exceeding max of 150: "+k)
+			}
+		}
+	}
+
+	if data.Measurements != nil {
+		for k, v := range data.Measurements {
+			if len(k) > 150 {
+				data.Measurements[k[:150]] = v
+				delete(data.Measurements, k)
+				warnings = append(warnings, "RemoteDependencyData.Measurements has key with length exceeding max of 150: "+k)
+			}
+		}
+	}
+
+	return warnings
+}
+
 // Creates a new RemoteDependencyData instance with default values set by the schema.
 func NewRemoteDependencyData() *RemoteDependencyData {
 	return &RemoteDependencyData{
-		Ver:          2,
-		Success:      true,
-		Properties:   make(map[string]string),
-		Measurements: make(map[string]float64),
+		Ver:     2,
+		Success: true,
 	}
 }

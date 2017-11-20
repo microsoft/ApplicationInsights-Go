@@ -55,11 +55,64 @@ func (data *RequestData) BaseType() string {
 	return "RequestData"
 }
 
+func (data *RequestData) Sanitize() []string {
+	var warnings []string
+
+	if len(data.Id) > 128 {
+		data.Id = data.Id[:128]
+		warnings = append(warnings, "RequestData.Id exceeded maximum length of 128")
+	}
+
+	if len(data.Source) > 1024 {
+		data.Source = data.Source[:1024]
+		warnings = append(warnings, "RequestData.Source exceeded maximum length of 1024")
+	}
+
+	if len(data.Name) > 1024 {
+		data.Name = data.Name[:1024]
+		warnings = append(warnings, "RequestData.Name exceeded maximum length of 1024")
+	}
+
+	if len(data.ResponseCode) > 1024 {
+		data.ResponseCode = data.ResponseCode[:1024]
+		warnings = append(warnings, "RequestData.ResponseCode exceeded maximum length of 1024")
+	}
+
+	if len(data.Url) > 2048 {
+		data.Url = data.Url[:2048]
+		warnings = append(warnings, "RequestData.Url exceeded maximum length of 2048")
+	}
+
+	if data.Properties != nil {
+		for k, v := range data.Properties {
+			if len(v) > 8192 {
+				data.Properties[k] = v[:8192]
+				warnings = append(warnings, "RequestData.Properties has value with length exceeding max of 8192: "+k)
+			}
+			if len(k) > 150 {
+				data.Properties[k[:150]] = data.Properties[k]
+				delete(data.Properties, k)
+				warnings = append(warnings, "RequestData.Properties has key with length exceeding max of 150: "+k)
+			}
+		}
+	}
+
+	if data.Measurements != nil {
+		for k, v := range data.Measurements {
+			if len(k) > 150 {
+				data.Measurements[k[:150]] = v
+				delete(data.Measurements, k)
+				warnings = append(warnings, "RequestData.Measurements has key with length exceeding max of 150: "+k)
+			}
+		}
+	}
+
+	return warnings
+}
+
 // Creates a new RequestData instance with default values set by the schema.
 func NewRequestData() *RequestData {
 	return &RequestData{
-		Ver:          2,
-		Properties:   make(map[string]string),
-		Measurements: make(map[string]float64),
+		Ver: 2,
 	}
 }

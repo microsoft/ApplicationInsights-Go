@@ -5,11 +5,18 @@ package appinsights
 import "github.com/jjjordanmsft/ApplicationInsights-Go/appinsights/contracts"
 
 const (
+	// DataPointType: Measurement
 	Measurement contracts.DataPointType = contracts.Measurement
+	// DataPointType: Aggregation
 	Aggregation contracts.DataPointType = contracts.Aggregation
-	Verbose     contracts.SeverityLevel = contracts.Verbose
+	// SeverityLevel: Verbose
+	Verbose contracts.SeverityLevel = contracts.Verbose
+	// SeverityLevel: Information
 	Information contracts.SeverityLevel = contracts.Information
-	Warning     contracts.SeverityLevel = contracts.Warning
-	Error       contracts.SeverityLevel = contracts.Error
-	Critical    contracts.SeverityLevel = contracts.Critical
+	// SeverityLevel: Warning
+	Warning contracts.SeverityLevel = contracts.Warning
+	// SeverityLevel: Error
+	Error contracts.SeverityLevel = contracts.Error
+	// SeverityLevel: Critical
+	Critical contracts.SeverityLevel = contracts.Critical
 )
