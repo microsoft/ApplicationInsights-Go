@@ -15,8 +15,12 @@ type TelemetryClient interface {
 	Track(Telemetry)
 	TrackEvent(string)
 	TrackMetric(string, float64)
-	TrackTrace(string)
+	TrackTrace(string, contracts.SeverityLevel)
 	TrackRequest(string, string, time.Duration, string)
+	TrackRemoteDependency(name, dependencyType, target string, success bool)
+	TrackAvailability(name string, duration time.Duration, success bool)
+	TrackPageView(name, url string)
+	TrackException(err interface{})
 }
 
 type telemetryClient struct {
@@ -78,10 +82,26 @@ func (tc *telemetryClient) TrackMetric(name string, value float64) {
 	tc.Track(NewMetricTelemetry(name, value))
 }
 
-func (tc *telemetryClient) TrackTrace(message string) {
-	tc.Track(NewTraceTelemetry(message, contracts.Information))
+func (tc *telemetryClient) TrackTrace(message string, severity contracts.SeverityLevel) {
+	tc.Track(NewTraceTelemetry(message, severity))
 }
 
 func (tc *telemetryClient) TrackRequest(method, url string, duration time.Duration, responseCode string) {
 	tc.Track(NewRequestTelemetry(method, url, duration, responseCode))
+}
+
+func (tc *telemetryClient) TrackRemoteDependency(name, dependencyType, target string, success bool) {
+	tc.Track(NewRemoteDependencyTelemetry(name, dependencyType, target, success))
+}
+
+func (tc *telemetryClient) TrackAvailability(name string, duration time.Duration, success bool) {
+	tc.Track(NewAvailabilityTelemetry(name, duration, success))
+}
+
+func (tc *telemetryClient) TrackPageView(name, url string) {
+	tc.Track(NewPageViewTelemetry(name, url))
+}
+
+func (tc *telemetryClient) TrackException(err interface{}) {
+	tc.Track(NewExceptionTelemetry(err))
 }

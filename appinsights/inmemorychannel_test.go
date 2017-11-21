@@ -126,7 +126,7 @@ func TestSimpleSubmit(t *testing.T) {
 	defer transmitter.Close()
 	defer client.Channel().Stop()
 
-	client.TrackTrace("~msg~")
+	client.TrackTrace("~msg~", Information)
 	tm := currentClock.Now()
 	transmitter.prepResponse(200)
 
@@ -152,7 +152,7 @@ func TestMultipleSubmit(t *testing.T) {
 	start := currentClock.Now()
 
 	for i := 0; i < 16; i++ {
-		client.TrackTrace(fmt.Sprintf("~msg-%x~", i))
+		client.TrackTrace(fmt.Sprintf("~msg-%x~", i), Information)
 		slowTick(1)
 	}
 
@@ -190,7 +190,7 @@ func TestFlush(t *testing.T) {
 	client.Channel().Flush()
 
 	tm := currentClock.Now()
-	client.TrackTrace("~msg~")
+	client.TrackTrace("~msg~", Information)
 	client.Channel().Flush()
 
 	req1 := transmitter.waitForRequest(t)
@@ -200,7 +200,7 @@ func TestFlush(t *testing.T) {
 	}
 
 	// Next one goes back to normal
-	client.TrackTrace("~next~")
+	client.TrackTrace("~next~", Information)
 	slowTick(11)
 
 	req2 := transmitter.waitForRequest(t)
@@ -218,7 +218,7 @@ func TestStop(t *testing.T) {
 
 	transmitter.prepResponse(200)
 
-	client.TrackTrace("Not sent")
+	client.TrackTrace("Not sent", Information)
 	client.Channel().Stop()
 	slowTick(20)
 	transmitter.assertNoRequest(t)
@@ -232,7 +232,7 @@ func TestCloseFlush(t *testing.T) {
 
 	transmitter.prepResponse(200)
 
-	client.TrackTrace("~flushed~")
+	client.TrackTrace("~flushed~", Information)
 	client.Channel().Close()
 
 	req := transmitter.waitForRequest(t)
@@ -249,7 +249,7 @@ func TestCloseFlushRetry(t *testing.T) {
 
 	transmitter.prepResponse(500, 200)
 
-	client.TrackTrace("~flushed~")
+	client.TrackTrace("~flushed~", Information)
 	tm := currentClock.Now()
 	ch := client.Channel().Close(time.Minute)
 
@@ -281,7 +281,7 @@ func TestCloseWithOngoingRetry(t *testing.T) {
 	transmitter.prepResponse(408, 200, 200)
 
 	// This message should get stuck, retried
-	client.TrackTrace("~msg-1~")
+	client.TrackTrace("~msg-1~", Information)
 	slowTick(11)
 
 	// Check first one came through
@@ -291,7 +291,7 @@ func TestCloseWithOngoingRetry(t *testing.T) {
 	}
 
 	// This message will get flushed immediately
-	client.TrackTrace("~msg-2~")
+	client.TrackTrace("~msg-2~", Information)
 	ch := client.Channel().Close(time.Minute)
 
 	// Let 2 go out, but not the retry for 1
@@ -328,7 +328,7 @@ func TestSendOnBufferFull(t *testing.T) {
 	transmitter.prepResponse(200, 200)
 
 	for i := 0; i < 5; i++ {
-		client.TrackTrace(fmt.Sprintf("~msg-%d~", i))
+		client.TrackTrace(fmt.Sprintf("~msg-%d~", i), Information)
 	}
 
 	req1 := transmitter.waitForRequest(t)
@@ -362,8 +362,8 @@ func TestRetryOnFailure(t *testing.T) {
 
 	transmitter.prepResponse(500, 200)
 
-	client.TrackTrace("~msg-1~")
-	client.TrackTrace("~msg-2~")
+	client.TrackTrace("~msg-1~", Information)
+	client.TrackTrace("~msg-2~", Information)
 
 	tm := currentClock.Now()
 	slowTick(10)
@@ -392,11 +392,11 @@ func TestPartialRetry(t *testing.T) {
 	defer client.Channel().Stop()
 	defer transmitter.Close()
 
-	client.TrackTrace("~ok-1~")
-	client.TrackTrace("~retry-1~")
-	client.TrackTrace("~ok-2~")
-	client.TrackTrace("~bad-1~")
-	client.TrackTrace("~retry-2~")
+	client.TrackTrace("~ok-1~", Information)
+	client.TrackTrace("~retry-1~", Information)
+	client.TrackTrace("~ok-2~", Information)
+	client.TrackTrace("~bad-1~", Information)
+	client.TrackTrace("~retry-2~", Information)
 
 	transmitter.responses <- &transmissionResult{
 		statusCode: 206,
@@ -447,11 +447,11 @@ func TestThrottleDropsMessages(t *testing.T) {
 	retryAfter := transmitter.prepThrottle(time.Minute)
 	transmitter.prepResponse(200, 200)
 
-	client.TrackTrace("~throttled~")
+	client.TrackTrace("~throttled~", Information)
 	slowTick(10)
 
 	for i := 0; i < 20; i++ {
-		client.TrackTrace(fmt.Sprintf("~msg-%d~", i))
+		client.TrackTrace(fmt.Sprintf("~msg-%d~", i), Information)
 	}
 
 	slowTick(60)
@@ -493,10 +493,10 @@ func TestThrottleCannotFlush(t *testing.T) {
 
 	transmitter.prepResponse(200, 200)
 
-	client.TrackTrace("~throttled~")
+	client.TrackTrace("~throttled~", Information)
 	slowTick(10)
 
-	client.TrackTrace("~msg~")
+	client.TrackTrace("~msg~", Information)
 	client.Channel().Flush()
 
 	slowTick(60)
@@ -526,10 +526,10 @@ func TestThrottleFlushesOnClose(t *testing.T) {
 
 	transmitter.prepResponse(200, 200)
 
-	client.TrackTrace("~throttled~")
+	client.TrackTrace("~throttled~", Information)
 	slowTick(10)
 
-	client.TrackTrace("~msg~")
+	client.TrackTrace("~msg~", Information)
 	ch := client.Channel().Close(30 * time.Second)
 
 	slowTick(60)
@@ -568,9 +568,9 @@ func TestThrottleAbandonsMessageOnStop(t *testing.T) {
 	transmitter.prepThrottle(time.Minute)
 	transmitter.prepResponse(200, 200, 200, 200)
 
-	client.TrackTrace("~throttled~")
+	client.TrackTrace("~throttled~", Information)
 	slowTick(10)
-	client.TrackTrace("~dropped~")
+	client.TrackTrace("~dropped~", Information)
 	slowTick(10)
 	client.Channel().Stop()
 	slowTick(45)
@@ -600,8 +600,8 @@ func TestThrottleStacking(t *testing.T) {
 	// make further attempts in lock-step from there.
 
 	start := currentClock.Now()
-	client.TrackTrace("~throttle-1~")
-	client.TrackTrace("~throttle-2~")
+	client.TrackTrace("~throttle-1~", Information)
+	client.TrackTrace("~throttle-2~", Information)
 
 	// Per above, give both time to get to transmitRetry, then send out responses
 	// simultaneously.

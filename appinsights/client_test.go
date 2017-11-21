@@ -13,7 +13,7 @@ func BenchmarkClientBurstPerformance(b *testing.B) {
 	client.(*telemetryClient).channel.(*InMemoryChannel).transmitter = &nullTransmitter{}
 
 	for i := 0; i < b.N; i++ {
-		client.TrackTrace("A message")
+		client.TrackTrace("A message", Information)
 	}
 
 	<-client.Channel().Close(time.Minute)
@@ -67,7 +67,7 @@ func TestEndToEnd(t *testing.T) {
 	// Track directly off the client
 	client.TrackEvent("client-event")
 	client.TrackMetric("client-metric", 44.0)
-	client.TrackTrace("client-trace")
+	client.TrackTrace("client-trace", Information)
 	client.TrackRequest("GET", "www.testurl.org", time.Minute, "404")
 
 	// NOTE: A lot of this is covered elsewhere, so we won't duplicate

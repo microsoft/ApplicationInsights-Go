@@ -434,10 +434,11 @@ type RemoteDependencyTelemetry struct {
 	Target string
 }
 
-// Builds a new Remote Dependency telemetry item, with the specified dependency type,
-// target site, and success status.
-func NewRemoteDependencyTelemetry(dependencyType, target string, success bool) *RemoteDependencyTelemetry {
+// Builds a new Remote Dependency telemetry item, with the specified name,
+// dependency type, target site, and success status.
+func NewRemoteDependencyTelemetry(name, dependencyType, target string, success bool) *RemoteDependencyTelemetry {
 	return &RemoteDependencyTelemetry{
+		Name:    name,
 		Type:    dependencyType,
 		Target:  target,
 		Success: success,
@@ -505,7 +506,6 @@ func NewAvailabilityTelemetry(name string, duration time.Duration, success bool)
 		Name:     name,
 		Duration: duration,
 		Success:  success,
-		Id:       RandomId(),
 		BaseTelemetry: BaseTelemetry{
 			Timestamp:    currentClock.Now(),
 			Context:      NewTelemetryContext(),
@@ -530,13 +530,8 @@ func (telem *AvailabilityTelemetry) TelemetryData() TelemetryData {
 	data.RunLocation = telem.RunLocation
 	data.Message = telem.Message
 	data.Properties = telem.Properties
+	data.Id = telem.Id
 	data.Measurements = telem.Measurements
-
-	if telem.Id != "" {
-		data.Id = telem.Id
-	} else {
-		data.Id = RandomId()
-	}
 
 	return data
 }
@@ -556,9 +551,11 @@ type PageViewTelemetry struct {
 	Name string
 }
 
-func NewPageViewTelemetry(url string) *PageViewTelemetry {
+// Creates a new page view telemetry item with the specified name and url.
+func NewPageViewTelemetry(name, url string) *PageViewTelemetry {
 	return &PageViewTelemetry{
-		Url: url,
+		Name: name,
+		Url:  url,
 		BaseTelemetry: BaseTelemetry{
 			Timestamp:    currentClock.Now(),
 			Context:      NewTelemetryContext(),

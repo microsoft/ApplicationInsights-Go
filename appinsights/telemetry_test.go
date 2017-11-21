@@ -237,11 +237,10 @@ func TestRemoteDependencyTelemetry(t *testing.T) {
 	mockClock()
 	defer resetClock()
 
-	telem := NewRemoteDependencyTelemetry("SQL", "myhost.name", true)
+	telem := NewRemoteDependencyTelemetry("SQL-GET", "SQL", "myhost.name", true)
 	telem.Data = "<command>"
 	telem.ResultCode = "OK"
 	telem.Duration = time.Minute
-	telem.Name = "SQL-GET"
 	telem.Properties["prop1"] = "value1"
 	telem.Measurements["measure1"] = 999.0
 	d := telem.TelemetryData().(*contracts.RemoteDependencyData)
@@ -284,7 +283,7 @@ func TestAvailabilityTelemetry(t *testing.T) {
 	telem.Measurements["measure1"] = 999.0
 	d := telem.TelemetryData().(*contracts.AvailabilityData)
 
-	checkNotNullOrEmpty(t, "Id", d.Id)
+	checkDataContract(t, "Id", d.Id, "")
 	checkDataContract(t, "Name", d.Name, "Frontdoor")
 	checkDataContract(t, "Duration", d.Duration, "0.00:01:00.0000000")
 	checkDataContract(t, "RunLocation", d.RunLocation, "The moon")
@@ -313,8 +312,7 @@ func TestPageViewTelemetry(t *testing.T) {
 	mockClock()
 	defer resetClock()
 
-	telem := NewPageViewTelemetry("http://testuri.org/")
-	telem.Name = "Home page"
+	telem := NewPageViewTelemetry("Home page", "http://testuri.org/")
 	telem.Duration = time.Minute
 	telem.Properties["prop1"] = "value1"
 	telem.Measurements["measure1"] = 999.0

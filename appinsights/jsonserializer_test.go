@@ -34,7 +34,7 @@ func TestJsonSerializerEvents(t *testing.T) {
 	agg.AddData([]float64{1, 2, 3})
 	buffer.add(agg)
 
-	remdep := NewRemoteDependencyTelemetry("http", "www.bing.com", false)
+	remdep := NewRemoteDependencyTelemetry("bing-remote-dep", "http", "www.bing.com", false)
 	remdep.Data = "some-data"
 	remdep.ResultCode = "arg"
 	remdep.Duration = 4 * time.Second
@@ -45,11 +45,11 @@ func TestJsonSerializerEvents(t *testing.T) {
 	avail.RunLocation = "jupiter"
 	avail.Message = "ok."
 	avail.Measurements["measure"] = 88.0
+	avail.Id = "avail-id"
 	buffer.add(avail)
 
-	view := NewPageViewTelemetry("http://bing.com")
+	view := NewPageViewTelemetry("name", "http://bing.com")
 	view.Duration = 4 * time.Minute
-	view.Name = "name"
 	buffer.add(view)
 
 	j, err := parsePayload(buffer.serialize())
@@ -107,12 +107,6 @@ func TestJsonSerializerEvents(t *testing.T) {
 	j[3].assertPath(t, "data.baseData.url", "my-url")
 	j[3].assertPath(t, "data.baseData.ver", 2)
 
-	if id, err := j[3].getPath("data.baseData.id"); err != nil {
-		t.Errorf("Id not present")
-	} else if len(id.(string)) == 0 {
-		t.Errorf("Empty request id")
-	}
-
 	// Aggregate metric
 	j[4].assertPath(t, "iKey", test_ikey)
 	j[4].assertPath(t, "name", "Microsoft.ApplicationInsights.Metric")
@@ -135,7 +129,7 @@ func TestJsonSerializerEvents(t *testing.T) {
 	j[5].assertPath(t, "time", "2017-11-18T10:35:21Z")
 	j[5].assertPath(t, "sampleRate", 100.0)
 	j[5].assertPath(t, "data.baseType", "RemoteDependencyData")
-	j[5].assertPath(t, "data.baseData.name", "")
+	j[5].assertPath(t, "data.baseData.name", "bing-remote-dep")
 	j[5].assertPath(t, "data.baseData.id", "")
 	j[5].assertPath(t, "data.baseData.resultCode", "arg")
 	j[5].assertPath(t, "data.baseData.duration", "0.00:00:04.0000000")
@@ -157,14 +151,9 @@ func TestJsonSerializerEvents(t *testing.T) {
 	j[6].assertPath(t, "data.baseData.success", true)
 	j[6].assertPath(t, "data.baseData.runLocation", "jupiter")
 	j[6].assertPath(t, "data.baseData.message", "ok.")
+	j[6].assertPath(t, "data.baseData.id", "avail-id")
 	j[6].assertPath(t, "data.baseData.ver", 2)
 	j[6].assertPath(t, "data.baseData.measurements.measure", 88)
-
-	if id, err := j[6].getPath("data.baseData.id"); err != nil {
-		t.Errorf("Id not present")
-	} else if len(id.(string)) == 0 {
-		t.Errorf("Empty request id")
-	}
 
 	// Page view
 	j[7].assertPath(t, "iKey", test_ikey)
@@ -339,13 +328,8 @@ func TestJsonSerializerNakedEvents(t *testing.T) {
 	j[6].assertPath(t, "data.baseData.success", true)
 	j[6].assertPath(t, "data.baseData.runLocation", "run-loc")
 	j[6].assertPath(t, "data.baseData.message", "avail-msg")
+	j[6].assertPath(t, "data.baseData.id", "")
 	j[6].assertPath(t, "data.baseData.ver", 2)
-
-	if id, err := j[6].getPath("data.baseData.id"); err != nil {
-		t.Errorf("Id not present")
-	} else if len(id.(string)) == 0 {
-		t.Errorf("Empty request id")
-	}
 
 	// Page view
 	j[7].assertPath(t, "iKey", test_ikey)
