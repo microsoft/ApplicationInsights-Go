@@ -1,9 +1,11 @@
 package appinsights
 
 import (
-	"github.com/jjjordanmsft/ApplicationInsights-Go/appinsights/contracts"
 	"strconv"
 	"time"
+
+	"github.com/jjjordanmsft/ApplicationInsights-Go/appinsights/contracts"
+	"github.com/satori/go.uuid"
 )
 
 type TelemetryContext struct {
@@ -43,23 +45,30 @@ func (context *TelemetryContext) envelop(item Telemetry) *contracts.Envelope {
 		envelope.Tags = itemContext.Tags
 
 		// Copy in default tag values.
-		if context != itemContext {
-			for tagkey, tagval := range context.Tags {
-				if _, ok := itemContext.Tags[tagkey]; !ok {
-					envelope.Tags[tagkey] = tagval
-				}
+		for tagkey, tagval := range context.Tags {
+			if _, ok := itemContext.Tags[tagkey]; !ok {
+				envelope.Tags[tagkey] = tagval
 			}
 		}
+	} else {
+		// Create new tags object
+		envelope.Tags = make(map[string]string)
+		for k, v := range context.Tags {
+			envelope.Tags[k] = v
+		}
+	}
+
+	// Create operation ID if it does not exist
+	if _, ok := envelope.Tags[contracts.OperationId]; !ok {
+		envelope.Tags[contracts.OperationId] = uuid.NewV4().String()
 	}
 
 	// Sanitize.
 	for _, warn := range tdata.Sanitize() {
 		diagnosticsWriter.Printf("Telemetry data warning: %s", warn)
 	}
-	if envelope.Tags != nil {
-		for _, warn := range contracts.SanitizeContextKeys(envelope.Tags) {
-			diagnosticsWriter.Printf("Telemetry tag warning: %s", warn)
-		}
+	for _, warn := range contracts.SanitizeContextKeys(envelope.Tags) {
+		diagnosticsWriter.Printf("Telemetry tag warning: %s", warn)
 	}
 
 	return envelope

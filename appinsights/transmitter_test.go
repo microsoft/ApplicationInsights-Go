@@ -10,6 +10,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/jjjordanmsft/ApplicationInsights-Go/appinsights/contracts"
 )
 
 type testServer struct {
@@ -462,15 +464,12 @@ func TestGetRetryItems(t *testing.T) {
 }
 
 func makePayload() ([]byte, TelemetryBufferItems) {
-	buffer := telemetryBuffer(
-		NewTraceTelemetry("msg1", 0),
-		NewTraceTelemetry("msg2", 1),
-		NewTraceTelemetry("msg3", 2),
-		NewTraceTelemetry("msg4", 3),
-		NewTraceTelemetry("msg5", 4),
-		NewTraceTelemetry("msg6", 0),
-		NewTraceTelemetry("msg7", 1),
-	)
+	buffer := telemetryBuffer()
+	for i := 0; i < 7; i++ {
+		tr := NewTraceTelemetry(fmt.Sprintf("msg%d", i+1), contracts.SeverityLevel(i%5))
+		tr.Context.Operation().SetId(fmt.Sprintf("op%d", i))
+		buffer.add(tr)
+	}
 
 	return buffer.serialize(), buffer
 }

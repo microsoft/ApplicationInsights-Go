@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jjjordanmsft/ApplicationInsights-Go/appinsights/contracts"
+	"github.com/satori/go.uuid"
 )
 
 // Interface implemented by telemetry data contracts
@@ -359,7 +360,7 @@ func NewRequestTelemetry(method, url string, duration time.Duration, responseCod
 	return &RequestTelemetry{
 		Name:         fmt.Sprintf("%s %s", method, url),
 		Url:          url,
-		Id:           RandomId(),
+		Id:           uuid.NewV4().String(),
 		Duration:     duration,
 		ResponseCode: responseCode,
 		Success:      success,
@@ -389,7 +390,7 @@ func (request *RequestTelemetry) TelemetryData() TelemetryData {
 	data.Source = request.Source
 
 	if request.Id == "" {
-		data.Id = RandomId()
+		data.Id = uuid.NewV4().String()
 	} else {
 		data.Id = request.Id
 	}
