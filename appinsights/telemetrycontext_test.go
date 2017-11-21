@@ -8,12 +8,43 @@ import (
 )
 
 func TestDefaultTags(t *testing.T) {
-	client := NewTelemetryClient("")
-	client.Context().Tags["test"] = "OK"
+	context := NewTelemetryContext()
+	context.Tags["test"] = "OK"
+	context.Tags["no-write"] = "Fail"
+
 	telem := NewTraceTelemetry("Hello world.", Verbose)
-	envelope := client.Context().envelop(telem)
+	telem.Context.Tags["no-write"] = "OK"
+
+	envelope := context.envelop(telem)
+
 	if envelope.Tags["test"] != "OK" {
 		t.Error("Default client tags did not propagate to telemetry")
+	}
+
+	if envelope.Tags["no-write"] != "OK" {
+		t.Error("Default client tag overwrote telemetry item tag")
+	}
+}
+
+func TestDefaultProperties(t *testing.T) {
+	context := NewTelemetryContext()
+	context.DefaultProperties = map[string]string{
+		"test":     "OK",
+		"no-write": "Fail",
+	}
+
+	telem := NewTraceTelemetry("Hello world.", Verbose)
+	telem.Properties["no-write"] = "OK"
+
+	envelope := context.envelop(telem)
+	data := envelope.Data.(*contracts.Data).BaseData.(*contracts.MessageData)
+
+	if data.Properties["test"] != "OK" {
+		t.Error("Default properties did not propagate to telemetry")
+	}
+
+	if data.Properties["no-write"] != "OK" {
+		t.Error("Default properties overwrote telemetry properties")
 	}
 }
 

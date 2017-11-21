@@ -9,8 +9,9 @@ import (
 )
 
 type TelemetryContext struct {
-	iKey string
-	Tags map[string]string
+	iKey              string
+	Tags              map[string]string
+	DefaultProperties map[string]string
 }
 
 func NewTelemetryContext() *TelemetryContext {
@@ -24,6 +25,15 @@ func (context *TelemetryContext) InstrumentationKey() string {
 }
 
 func (context *TelemetryContext) envelop(item Telemetry) *contracts.Envelope {
+	// Apply default properties
+	if props := item.GetProperties(); props != nil && context.DefaultProperties != nil {
+		for k, v := range context.DefaultProperties {
+			if _, ok := props[k]; !ok {
+				props[k] = v
+			}
+		}
+	}
+
 	tdata := item.TelemetryData()
 	data := contracts.NewData()
 	data.BaseType = tdata.BaseType()

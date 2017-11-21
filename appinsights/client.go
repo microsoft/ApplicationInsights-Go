@@ -24,9 +24,9 @@ type TelemetryClient interface {
 }
 
 type telemetryClient struct {
-	channel                TelemetryChannel
-	context                *TelemetryContext
-	isEnabled              bool
+	channel   TelemetryChannel
+	context   *TelemetryContext
+	isEnabled bool
 }
 
 func NewTelemetryClient(iKey string) TelemetryClient {
@@ -37,12 +37,15 @@ func NewTelemetryClientFromConfig(config *TelemetryConfiguration) TelemetryClien
 	channel := NewInMemoryChannel(config)
 	context := NewTelemetryContext()
 
+	// Not generated for items' TelemetryContexts
+	context.DefaultProperties = make(map[string]string)
+
 	config.setupContext(context)
 
 	return &telemetryClient{
-		channel:                channel,
-		context:                context,
-		isEnabled:              true,
+		channel:   channel,
+		context:   context,
+		isEnabled: true,
 	}
 }
 
