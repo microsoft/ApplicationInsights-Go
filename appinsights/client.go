@@ -24,7 +24,6 @@ type TelemetryClient interface {
 }
 
 type telemetryClient struct {
-	TelemetryConfiguration *TelemetryConfiguration
 	channel                TelemetryChannel
 	context                *TelemetryContext
 	isEnabled              bool
@@ -41,7 +40,6 @@ func NewTelemetryClientFromConfig(config *TelemetryConfiguration) TelemetryClien
 	config.setupContext(context)
 
 	return &telemetryClient{
-		TelemetryConfiguration: config,
 		channel:                channel,
 		context:                context,
 		isEnabled:              true,
@@ -57,7 +55,7 @@ func (tc *telemetryClient) Channel() TelemetryChannel {
 }
 
 func (tc *telemetryClient) InstrumentationKey() string {
-	return tc.TelemetryConfiguration.InstrumentationKey
+	return tc.context.InstrumentationKey()
 }
 
 func (tc *telemetryClient) IsEnabled() bool {
