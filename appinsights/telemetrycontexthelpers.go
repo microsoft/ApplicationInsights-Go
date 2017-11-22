@@ -2,66 +2,90 @@ package appinsights
 
 // NOTE: This file was automatically generated.
 
+// Helper type that provides access to context fields grouped under 'application'.
+// This is returned by TelemetryContext.Application()
 type ApplicationContext struct {
 	context *TelemetryContext
 }
 
+// Helper type that provides access to context fields grouped under 'device'.
+// This is returned by TelemetryContext.Device()
 type DeviceContext struct {
 	context *TelemetryContext
 }
 
+// Helper type that provides access to context fields grouped under 'location'.
+// This is returned by TelemetryContext.Location()
 type LocationContext struct {
 	context *TelemetryContext
 }
 
+// Helper type that provides access to context fields grouped under 'operation'.
+// This is returned by TelemetryContext.Operation()
 type OperationContext struct {
 	context *TelemetryContext
 }
 
+// Helper type that provides access to context fields grouped under 'session'.
+// This is returned by TelemetryContext.Session()
 type SessionContext struct {
 	context *TelemetryContext
 }
 
+// Helper type that provides access to context fields grouped under 'user'.
+// This is returned by TelemetryContext.User()
 type UserContext struct {
 	context *TelemetryContext
 }
 
+// Helper type that provides access to context fields grouped under 'cloud'.
+// This is returned by TelemetryContext.Cloud()
 type CloudContext struct {
 	context *TelemetryContext
 }
 
+// Helper type that provides access to context fields grouped under 'internal'.
+// This is returned by TelemetryContext.Internal()
 type InternalContext struct {
 	context *TelemetryContext
 }
 
+// Returns a helper to access context fields grouped under 'application'.
 func (context *TelemetryContext) Application() *ApplicationContext {
 	return &ApplicationContext{context: context}
 }
 
+// Returns a helper to access context fields grouped under 'device'.
 func (context *TelemetryContext) Device() *DeviceContext {
 	return &DeviceContext{context: context}
 }
 
+// Returns a helper to access context fields grouped under 'location'.
 func (context *TelemetryContext) Location() *LocationContext {
 	return &LocationContext{context: context}
 }
 
+// Returns a helper to access context fields grouped under 'operation'.
 func (context *TelemetryContext) Operation() *OperationContext {
 	return &OperationContext{context: context}
 }
 
+// Returns a helper to access context fields grouped under 'session'.
 func (context *TelemetryContext) Session() *SessionContext {
 	return &SessionContext{context: context}
 }
 
+// Returns a helper to access context fields grouped under 'user'.
 func (context *TelemetryContext) User() *UserContext {
 	return &UserContext{context: context}
 }
 
+// Returns a helper to access context fields grouped under 'cloud'.
 func (context *TelemetryContext) Cloud() *CloudContext {
 	return &CloudContext{context: context}
 }
 
+// Returns a helper to access context fields grouped under 'internal'.
 func (context *TelemetryContext) Internal() *InternalContext {
 	return &InternalContext{context: context}
 }

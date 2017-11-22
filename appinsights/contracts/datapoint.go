@@ -32,6 +32,9 @@ type DataPoint struct {
 	StdDev float64 `json:"stdDev"`
 }
 
+// Truncates string fields that exceed their maximum supported sizes for this
+// object and all objects it references.  Returns a warning for each affected
+// field.
 func (data *DataPoint) Sanitize() []string {
 	var warnings []string
 

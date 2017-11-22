@@ -2,6 +2,8 @@ package contracts
 
 // NOTE: This file was automatically generated.
 
+import "strconv"
+
 const (
 	// Application version. Information in the application context fields is
 	// always about the application that is sending the telemetry.
@@ -110,7 +112,7 @@ const (
 	InternalNodeName string = "ai.internal.nodeName"
 )
 
-var contextMaxLengths = map[string]int{
+var tagMaxLengths = map[string]int{
 	"ai.application.ver":             1024,
 	"ai.device.id":                   1024,
 	"ai.device.locale":               64,
@@ -136,12 +138,14 @@ var contextMaxLengths = map[string]int{
 	"ai.internal.nodeName":           256,
 }
 
-func SanitizeContextKeys(tags map[string]string) []string {
+// Truncates tag values that exceed their maximum supported lengths.  Returns
+// warnings for each affected field.
+func SanitizeTags(tags map[string]string) []string {
 	var warnings []string
 	for k, v := range tags {
-		if maxlen, ok := contextMaxLengths[k]; ok && len(v) > maxlen {
+		if maxlen, ok := tagMaxLengths[k]; ok && len(v) > maxlen {
 			tags[k] = v[:maxlen]
-			warnings = append(warnings, "Value for "+k+" exceeded maximum length of "+string(maxlen))
+			warnings = append(warnings, "Value for "+k+" exceeded maximum length of "+strconv.Itoa(maxlen))
 		}
 	}
 

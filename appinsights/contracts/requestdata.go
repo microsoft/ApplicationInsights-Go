@@ -55,6 +55,9 @@ func (data *RequestData) BaseType() string {
 	return "RequestData"
 }
 
+// Truncates string fields that exceed their maximum supported sizes for this
+// object and all objects it references.  Returns a warning for each affected
+// field.
 func (data *RequestData) Sanitize() []string {
 	var warnings []string
 

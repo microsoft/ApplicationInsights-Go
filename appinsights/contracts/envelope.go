@@ -44,6 +44,9 @@ type Envelope struct {
 	Data interface{} `json:"data"`
 }
 
+// Truncates string fields that exceed their maximum supported sizes for this
+// object and all objects it references.  Returns a warning for each affected
+// field.
 func (data *Envelope) Sanitize() []string {
 	var warnings []string
 

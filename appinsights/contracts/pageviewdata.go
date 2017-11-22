@@ -28,6 +28,9 @@ func (data *PageViewData) BaseType() string {
 	return "PageViewData"
 }
 
+// Truncates string fields that exceed their maximum supported sizes for this
+// object and all objects it references.  Returns a warning for each affected
+// field.
 func (data *PageViewData) Sanitize() []string {
 	var warnings []string
 

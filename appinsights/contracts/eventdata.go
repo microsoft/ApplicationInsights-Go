@@ -32,6 +32,9 @@ func (data *EventData) BaseType() string {
 	return "EventData"
 }
 
+// Truncates string fields that exceed their maximum supported sizes for this
+// object and all objects it references.  Returns a warning for each affected
+// field.
 func (data *EventData) Sanitize() []string {
 	var warnings []string
 

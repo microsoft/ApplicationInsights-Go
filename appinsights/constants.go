@@ -4,19 +4,17 @@ package appinsights
 
 import "github.com/jjjordanmsft/ApplicationInsights-Go/appinsights/contracts"
 
+// Type of the metric data measurement.
 const (
-	// DataPointType: Measurement
 	Measurement contracts.DataPointType = contracts.Measurement
-	// DataPointType: Aggregation
 	Aggregation contracts.DataPointType = contracts.Aggregation
-	// SeverityLevel: Verbose
-	Verbose contracts.SeverityLevel = contracts.Verbose
-	// SeverityLevel: Information
+)
+
+// Defines the level of severity for the event.
+const (
+	Verbose     contracts.SeverityLevel = contracts.Verbose
 	Information contracts.SeverityLevel = contracts.Information
-	// SeverityLevel: Warning
-	Warning contracts.SeverityLevel = contracts.Warning
-	// SeverityLevel: Error
-	Error contracts.SeverityLevel = contracts.Error
-	// SeverityLevel: Critical
-	Critical contracts.SeverityLevel = contracts.Critical
+	Warning     contracts.SeverityLevel = contracts.Warning
+	Error       contracts.SeverityLevel = contracts.Error
+	Critical    contracts.SeverityLevel = contracts.Critical
 )
