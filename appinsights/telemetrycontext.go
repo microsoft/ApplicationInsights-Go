@@ -21,10 +21,10 @@ type TelemetryContext struct {
 	// Collection of tag data to attach to the telemetry item.
 	Tags map[string]string
 
-	// Default properties to add to each telemetry item.  This only has
+	// Common properties to add to each telemetry item.  This only has
 	// an effect from the TelemetryClient's context instance.  This will
 	// be nil on telemetry items.
-	DefaultProperties map[string]string
+	CommonProperties map[string]string
 }
 
 // Creates a new, empty TelemetryContext
@@ -43,9 +43,9 @@ func (context *TelemetryContext) InstrumentationKey() string {
 // Wraps a telemetry item in an envelope with the information found in this
 // context.
 func (context *TelemetryContext) envelop(item Telemetry) *contracts.Envelope {
-	// Apply default properties
-	if props := item.GetProperties(); props != nil && context.DefaultProperties != nil {
-		for k, v := range context.DefaultProperties {
+	// Apply common properties
+	if props := item.GetProperties(); props != nil && context.CommonProperties != nil {
+		for k, v := range context.CommonProperties {
 			if _, ok := props[k]; !ok {
 				props[k] = v
 			}

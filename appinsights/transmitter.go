@@ -55,7 +55,7 @@ func newTransmitter(endpointAddress string) transmitter {
 }
 
 func (transmitter *httpTransmitter) Transmit(payload []byte, items telemetryBufferItems) (*transmissionResult, error) {
-	diagnosticsWriter.Printf("----------- Transmitting %d items ---------", len(items))
+	diagnosticsWriter.Printf("--------- Transmitting %d items ---------", len(items))
 	startTime := time.Now()
 
 	// Compress the payload

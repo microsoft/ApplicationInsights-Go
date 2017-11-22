@@ -77,7 +77,7 @@ func NewTelemetryClientFromConfig(config *TelemetryConfiguration) TelemetryClien
 	context := NewTelemetryContext()
 
 	// Not generated for items' TelemetryContexts
-	context.DefaultProperties = make(map[string]string)
+	context.CommonProperties = make(map[string]string)
 
 	config.setupContext(context)
 
@@ -117,7 +117,7 @@ func (tc *telemetryClient) SetIsEnabled(isEnabled bool) {
 
 // Submits the specified telemetry item.
 func (tc *telemetryClient) Track(item Telemetry) {
-	if tc.isEnabled {
+	if tc.isEnabled && item != nil  {
 		tc.channel.Send(tc.context.envelop(item))
 	}
 }

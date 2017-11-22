@@ -1,6 +1,6 @@
 # Microsoft Application Insights SDK for Go
 
-[![Build Status](https://travis-ci.org/Microsoft/ApplicationInsights-Go.svg?branch=master)](https://travis-ci.org/Microsoft/ApplicationInsights-Go)
+[![Build Status](https://travis-ci.org/Microsoft/ApplicationInsights-Go.svg?branch=master)](https://travis-ci.org/Microsoft/ApplicationInsights-Go) [![Documentation](https://godoc.org/github.com/jjjordanmsft/ApplicationInsights-Go?status.svg)](https://godoc.org/github.com/jjjordanmsft/ApplicationInsights-Go/appinsights) [![Release](https://img.shields.io/github/release/Microsoft/ApplicationInsights-Go/all.svg)](https://github.com/Microsoft/ApplicationInsights-Go/releases)
 
 This project provides a Go SDK for Application Insights.
 [Application Insights](http://azure.microsoft.com/en-us/services/application-insights/)
@@ -8,6 +8,25 @@ is a service that allows developers to keep their applications available,
 performant, and successful.  This go package will allow you to send
 telemetry of various kinds (event, metric, trace) to the Application
 Insights service where they can be visualized in the Azure Portal.
+
+## Status
+This SDK is considered to be pre-production.  It has not reached parity with
+some of the more mature SDK's.  In particular, the gaps are:
+
+* Operation correlation is not supported, but this can be managed by the
+  caller through the interfaces that exist today.
+* Sampling is not supported.  The more mature SDKs support dynamic sampling,
+  but at present this does not even support manual sampling.
+* Automatic collection of events is not supported.  All telemetry must be
+  explicitly collected and sent by the user.
+* Offline storage of telemetry is not supported.  The .Net SDK is capable of
+  spilling events to disk in case of network interruption.  This SDK has no
+  such feature.
+
+Additionally, this is considered a community-supported SDK.  Read more about
+the status of this and other SDK's in the
+[ApplicationInsights-Home](https://github.com/Microsoft/ApplicationInsights-Home)
+repository.
 
 ## Requirements
 **Install**
@@ -201,9 +220,9 @@ client.Track(aggregate)
 
 #### Requests
 [Request telemetry items](https://godoc.org/github.com/jjjordanmsft/ApplicationInsights-Go/appinsights#RequestTelemetry)
-represents completion of an external request to the
-application and contains a summary of that request execution and results. 
-This SDK's request telemetry is focused on HTTP requests.
+represent completion of an external request to the application and contains
+a summary of that request execution and results.  This SDK's request
+telemetry is focused on HTTP requests.
 
 ```go
 request := appinsights.NewRequestTelemetry("GET", "https://microsoft.com/", duration, "<response code>")
@@ -418,9 +437,9 @@ func main() {
 }
 ```
 
-#### Default properties
+### Common properties
 In the same way that context tags can be written to all telemetry items, the
-`TelemetryContext` on the `TelemetryClient` has a `DefaultProperties` map. 
+`TelemetryContext` on the `TelemetryClient` has a `CommonProperties` map. 
 Entries in this map will be added to all telemetry items' custom properties
 (unless a telemetry item already has that property set -- the telemetry item
 always has precedence).  This is useful for contextual data that may not be
@@ -431,12 +450,12 @@ groups.
 func main() {
 	client := appinsights.NewTelemetryClient("<ikey>")
 	
-	client.Context().DefaultProperties["Resource group"] = "My resource group"
+	client.Context().CommonProperties["Resource group"] = "My resource group"
 	// ...
 }
 ```
 
-Do note that while the `DefaultProperties` field exists on telemetry items'
+Do note that while the `CommonProperties` field exists on telemetry items'
 `TelemetryContext` objects, it will be set to nil.
 
 ### Shutdown
@@ -471,7 +490,7 @@ func main() {
 		
 		// If we got here, then all telemetry was submitted
 		// successfully, and we can proceed to exiting.
-	case <-time.NewTimer(30 * time.Second):
+	case <-time.After(30 * time.Second):
 		// Thirty second absolute timeout.  This covers any
 		// previous telemetry submission that may not have
 		// completed before Close was called.

@@ -26,9 +26,9 @@ func TestDefaultTags(t *testing.T) {
 	}
 }
 
-func TestDefaultProperties(t *testing.T) {
+func TestCommonProperties(t *testing.T) {
 	context := NewTelemetryContext()
-	context.DefaultProperties = map[string]string{
+	context.CommonProperties = map[string]string{
 		"test":     "OK",
 		"no-write": "Fail",
 	}
@@ -40,11 +40,11 @@ func TestDefaultProperties(t *testing.T) {
 	data := envelope.Data.(*contracts.Data).BaseData.(*contracts.MessageData)
 
 	if data.Properties["test"] != "OK" {
-		t.Error("Default properties did not propagate to telemetry")
+		t.Error("Common properties did not propagate to telemetry")
 	}
 
 	if data.Properties["no-write"] != "OK" {
-		t.Error("Default properties overwrote telemetry properties")
+		t.Error("Common properties overwrote telemetry properties")
 	}
 }
 
