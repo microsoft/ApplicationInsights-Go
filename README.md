@@ -12,7 +12,7 @@ Insights service where they can be visualized in the Azure Portal.
 ## Requirements
 **Install**
 ```
-	go get github.com/Microsoft/ApplicationInsights-Go/appinsights
+go get github.com/Microsoft/ApplicationInsights-Go/appinsights
 ```
 **Get an instrumentation key**
 >**Note**: an instrumentation key is required before any data can be sent. Please see the "[Getting an Application Insights Instrumentation Key](https://github.com/Microsoft/AppInsights-Home/wiki#getting-an-application-insights-instrumentation-key)" section of the wiki for more information. To try the SDK without an instrumentation key, set the instrumentationKey config value to a non-empty string.
@@ -25,11 +25,11 @@ To start tracking telemetry, you'll want to first initialize a
 [telemetry client](https://godoc.org/github.com/jjjordanmsft/ApplicationInsights-Go/appinsights#TelemetryClient).
 
 ```go
-	import "github.com/Microsoft/ApplicationInsights-Go/appinsights"
+import "github.com/Microsoft/ApplicationInsights-Go/appinsights"
 
-	func main() {
-		client := appinsights.NewTelemetryClient("<instrumentation key>")
-	}
+func main() {
+	client := appinsights.NewTelemetryClient("<instrumentation key>")
+}
 ```
 
 If you want more control over the client's behavior, you should initialize a
@@ -37,20 +37,20 @@ new [TelemetryConfiguration](https://godoc.org/github.com/jjjordanmsft/Applicati
 object and use it to create a client:
 
 ```go
-	import "time"
-	import "github.com/Microsoft/ApplicationInsights-Go/appinsights"
+import "time"
+import "github.com/Microsoft/ApplicationInsights-Go/appinsights"
 
-	func main() {
-		telemetryConfig := appinsights.NewTelemetryConfiguration("<instrumentation key>")
-		
-		// Configure how many items can be sent in one call to the data collector:
-		telemetryConfig.MaxBatchSize = 8192
-		
-		// Configure the maximum delay before sending queued telemetry:
-		telemetryConfig.MaxBatchInterval = 2 * time.Second
-		
-		client := appinsights.NewTelemetryClientFromConfig(telemetryConfig)
-	}
+func main() {
+	telemetryConfig := appinsights.NewTelemetryConfiguration("<instrumentation key>")
+	
+	// Configure how many items can be sent in one call to the data collector:
+	telemetryConfig.MaxBatchSize = 8192
+	
+	// Configure the maximum delay before sending queued telemetry:
+	telemetryConfig.MaxBatchInterval = 2 * time.Second
+	
+	client := appinsights.NewTelemetryClientFromConfig(telemetryConfig)
+}
 ```
 
 This client will be used to submit all of your telemetry to Application
@@ -65,44 +65,44 @@ The [TelemetryClient](https://godoc.org/github.com/jjjordanmsft/ApplicationInsig
 itself has several methods for submitting telemetry:
 
 ```go
-	type TelemetryClient interface {
-		// (much omitted)
+type TelemetryClient interface {
+	// (much omitted)
 
-		// Log a user action with the specified name
-		TrackEvent(name string)
+	// Log a user action with the specified name
+	TrackEvent(name string)
 
-		// Log a numeric value that is not specified with a specific event.
-		// Typically used to send regular reports of performance indicators.
-		TrackMetric(name string, value float64)
+	// Log a numeric value that is not specified with a specific event.
+	// Typically used to send regular reports of performance indicators.
+	TrackMetric(name string, value float64)
 
-		// Log a trace message with the specified severity level.
-		TrackTrace(name string, severity contracts.SeverityLevel)
+	// Log a trace message with the specified severity level.
+	TrackTrace(name string, severity contracts.SeverityLevel)
 
-		// Log an HTTP request with the specified method, URL, duration and
-		// response code.
-		TrackRequest(method, url string, duration time.Duration, responseCode string)
+	// Log an HTTP request with the specified method, URL, duration and
+	// response code.
+	TrackRequest(method, url string, duration time.Duration, responseCode string)
 
-		// Log a dependency with the specified name, type, target, and
-		// success status.
-		TrackRemoteDependency(name, dependencyType, target string, success bool)
+	// Log a dependency with the specified name, type, target, and
+	// success status.
+	TrackRemoteDependency(name, dependencyType, target string, success bool)
 
-		// Log an availability test result with the specified test name,
-		// duration, and success status.
-		TrackAvailability(name string, duration time.Duration, success bool)
+	// Log an availability test result with the specified test name,
+	// duration, and success status.
+	TrackAvailability(name string, duration time.Duration, success bool)
 
-		// Log an exception with the specified error, which may be a string,
-		// error or Stringer. The current callstack is collected
-		// automatically.
-		TrackException(err interface{})
-	}
+	// Log an exception with the specified error, which may be a string,
+	// error or Stringer. The current callstack is collected
+	// automatically.
+	TrackException(err interface{})
+}
 ```
 
 These may be used directly to log basic telemetry a manner you might expect:
 
 ```go
-	client.TrackMetric("Queue Length", len(queue))
+client.TrackMetric("Queue Length", len(queue))
 
-	client.TrackEvent("Client connected")
+client.TrackEvent("Client connected")
 ```
 
 But the inputs to these methods only capture the very basics of what these
@@ -119,39 +119,39 @@ an associated severity level, values for which are found in the package's
 constants:
 
 ```go
-	const (
-		Verbose     contracts.SeverityLevel = contracts.Verbose
-		Information contracts.SeverityLevel = contracts.Information
-		Warning     contracts.SeverityLevel = contracts.Warning
-		Error       contracts.SeverityLevel = contracts.Error
-		Critical    contracts.SeverityLevel = contracts.Critical
-	)
+const (
+	Verbose     contracts.SeverityLevel = contracts.Verbose
+	Information contracts.SeverityLevel = contracts.Information
+	Warning     contracts.SeverityLevel = contracts.Warning
+	Error       contracts.SeverityLevel = contracts.Error
+	Critical    contracts.SeverityLevel = contracts.Critical
+)
 ```
 
 Trace telemetry is fairly simple, but common telemetry properties are also
 available:
 
 ```go
-	trace := appinsights.NewTraceTelemetry("message", appinsights.Warning)
+trace := appinsights.NewTraceTelemetry("message", appinsights.Warning)
 
-	// You can set custom properties on traces
-	trace.Properties["module"] = "server"
+// You can set custom properties on traces
+trace.Properties["module"] = "server"
 
-	// You can also fudge the timestamp:
-	trace.Timestamp = time.Now().Sub(time.Minute)
+// You can also fudge the timestamp:
+trace.Timestamp = time.Now().Sub(time.Minute)
 
-	// Finally, track it
-	client.Track(trace)
+// Finally, track it
+client.Track(trace)
 ```
 
 #### Events
-[Trace telemetry items](https://godoc.org/github.com/jjjordanmsft/ApplicationInsights-Go/appinsights#EventTelemetry)
+[Event telemetry items](https://godoc.org/github.com/jjjordanmsft/ApplicationInsights-Go/appinsights#EventTelemetry)
 represent structured event records.
 
 ```go
-	event := appinsights.NewEventTelemetry("button clicked")
-	event.Properties["property"] = "value"
-	client.Track(event)
+event := appinsights.NewEventTelemetry("button clicked")
+event.Properties["property"] = "value"
+client.Track(event)
 ```
 
 #### Single-value metrics
@@ -159,9 +159,9 @@ represent structured event records.
 each represent a single data point.
 
 ```go
-	metric := appinsights.NewMetricTelemetry("Queue length", len(q.items))
-	metric.Properties["Queue name"] = q.name
-	client.Track(metric)
+metric := appinsights.NewMetricTelemetry("Queue length", len(q.items))
+metric.Properties["Queue name"] = q.name
+client.Track(metric)
 ```
 
 #### Pre-aggregated metrics
@@ -171,32 +171,32 @@ when using a particularly high volume of measurements, metric data can be
 and submitted all at once.
 
 ```go
-	aggregate := appinsights.NewAggregateMetricTelemetry("metric name")
+aggregate := appinsights.NewAggregateMetricTelemetry("metric name")
 
-	var dataPoints []float64
-	// ...collect data points...
+var dataPoints []float64
+// ...collect data points...
 
-	// If the data is sampled, then one should use the AddSampledData method to
-	// feed data to this telemetry type.
-	aggregate.AddSampledData(dataPoints)
+// If the data is sampled, then one should use the AddSampledData method to
+// feed data to this telemetry type.
+aggregate.AddSampledData(dataPoints)
 
-	// If the entire population of data points is known, then one should instead
-	// use the AddData method.  The difference between the two is the manner in
-	// which the standard deviation is calculated.
-	aggregate.AddData(dataPoints)
+// If the entire population of data points is known, then one should instead
+// use the AddData method.  The difference between the two is the manner in
+// which the standard deviation is calculated.
+aggregate.AddData(dataPoints)
 
-	// Alternatively, you can aggregate the data yourself and supply it to this
-	// telemetry item:
-	aggregate.Value = sum(dataPoints)
-	aggregate.Min = min(dataPoints)
-	aggregate.Max = max(dataPoints)
-	aggregate.Count = len(dataPoints)
-	aggregate.StdDev = stdDev(dataPoints)
+// Alternatively, you can aggregate the data yourself and supply it to this
+// telemetry item:
+aggregate.Value = sum(dataPoints)
+aggregate.Min = min(dataPoints)
+aggregate.Max = max(dataPoints)
+aggregate.Count = len(dataPoints)
+aggregate.StdDev = stdDev(dataPoints)
 
-	// Custom properties could be further added here...
+// Custom properties could be further added here...
 
-	// Finally, track it:
-	client.Track(aggregate)
+// Finally, track it:
+client.Track(aggregate)
 ```
 
 #### Requests
@@ -206,32 +206,32 @@ application and contains a summary of that request execution and results.
 This SDK's request telemetry is focused on HTTP requests.
 
 ```go
-	request := appinsights.NewRequestTelemetry("GET", "https://microsoft.com/", duration, "<response code>")
-	
-	// Note that the timestamp will be set to time.Now() minus the
-	// specified duration.  This can be overridden by either manually
-	// setting the Timestamp and Duration fields, or with MarkTime:
-	request.MarkTime(requestStartTime, requestEndTime)
-	
-	// Source of request
-	request.Source = clientAddress
-	
-	// Success is normally inferred from the responseCode, but can be overridden:
-	request.Success = false
-	
-	// Request ID's are randomly generated GUIDs, but this can also be overriden:
-	request.Id = "<id>"
-	
-	// Custom properties and measurements can be set here
-	request.Properties["user-agent"] = request.headers["User-agent"]
-	request.Measurements["POST size"] = float64(len(data))
-	
-	// Context tags become more useful here as well
-	request.Context.Session().SetId("<session id>")
-	request.Context.User().SetAccountId("<user id>")
-	
-	// Finally track it
-	client.Track(request)
+request := appinsights.NewRequestTelemetry("GET", "https://microsoft.com/", duration, "<response code>")
+
+// Note that the timestamp will be set to time.Now() minus the
+// specified duration.  This can be overridden by either manually
+// setting the Timestamp and Duration fields, or with MarkTime:
+request.MarkTime(requestStartTime, requestEndTime)
+
+// Source of request
+request.Source = clientAddress
+
+// Success is normally inferred from the responseCode, but can be overridden:
+request.Success = false
+
+// Request ID's are randomly generated GUIDs, but this can also be overridden:
+request.Id = "<id>"
+
+// Custom properties and measurements can be set here
+request.Properties["user-agent"] = request.headers["User-agent"]
+request.Measurements["POST size"] = float64(len(data))
+
+// Context tags become more useful here as well
+request.Context.Session().SetId("<session id>")
+request.Context.User().SetAccountId("<user id>")
+
+// Finally track it
+client.Track(request)
 ```
 
 #### Dependencies
@@ -240,29 +240,29 @@ represent interactions of the monitored component with a remote
 component/service like SQL or an HTTP endpoint.
 
 ```go
-	dependency := appinsights.NewRemoteDependencyTelemetry("Redis cache", "Redis", "<target>", true /* success */)
-	
-	// The result code is typically an error code or response status code
-	dependency.ResultCode = "OK"
-	
-	// Id's can be used for correlation if the remote end is also logging
-	// telemetry through application insights.
-	dependency.Id = "<request id>"
-	
-	// Data may contain the exact URL hit or SQL statements
-	dependency.Data = "MGET <args>"
-	
-	// The duration can be set directly:
-	dependency.Duration = time.Minute
-	// or via MarkTime:
-	dependency.MarkTime(startTime, endTime)
-	
-	// Properties and measurements may be set.
-	dependency.Properties["shard-instance"] = "<name>"
-	dependency.Measurements["data received"] = float64(len(response.data))
-	
-	// Submit the telemetry
-	client.Track(dependency)
+dependency := appinsights.NewRemoteDependencyTelemetry("Redis cache", "Redis", "<target>", true /* success */)
+
+// The result code is typically an error code or response status code
+dependency.ResultCode = "OK"
+
+// Id's can be used for correlation if the remote end is also logging
+// telemetry through application insights.
+dependency.Id = "<request id>"
+
+// Data may contain the exact URL hit or SQL statements
+dependency.Data = "MGET <args>"
+
+// The duration can be set directly:
+dependency.Duration = time.Minute
+// or via MarkTime:
+dependency.MarkTime(startTime, endTime)
+
+// Properties and measurements may be set.
+dependency.Properties["shard-instance"] = "<name>"
+dependency.Measurements["data received"] = float64(len(response.data))
+
+// Submit the telemetry
+client.Track(dependency)
 ```
 
 #### Exceptions
@@ -274,20 +274,20 @@ unexpected results from important functions:
 To handle a panic:
 
 ```go
-	func method(client appinsights.TelemetryClient) {
-		defer func() {
-			if r := recover(); r != nil {
-				// Track the panic
-				client.TrackException(r)
+func method(client appinsights.TelemetryClient) {
+	defer func() {
+		if r := recover(); r != nil {
+			// Track the panic
+			client.TrackException(r)
 
-				// Optionally, you may want to re-throw the panic:
-				panic(r)
-			}
-		}()
-		
-		// Panics in any code below will be handled by the above.
-		panic("AHHHH!!")
-	}
+			// Optionally, you may want to re-throw the panic:
+			panic(r)
+		}
+	}()
+	
+	// Panics in any code below will be handled by the above.
+	panic("AHHHH!!")
+}
 ```
 
 This will capture and report the call stack of the panic, including the site
@@ -302,25 +302,25 @@ While the above example uses `client.TrackException`, you can also use the
 longer form as in earlier examples -- and not only for panics:
 
 ```go
-	value, err := someMethod(argument)
-	if err != nil {
-		exception := appinsights.NewExceptionTelemetry(err)
-		
-		// Set the severity level -- perhaps this isn't a critical
-		// issue, but we'd *really rather* it didn't fail:
-		exception.SeverityLevel = appinsights.Warning
-		
-		// One could tweak the number of stack frames to skip by
-		// reassigning the callstack -- for instance, if you were to
-		// log this exception in a helper method.
-		exception.Frames = appinsights.GetCallstack(3 /* frames to skip */)
-		
-		// Properties are available as usual
-		exception.Properties["input"] = argument
-		
-		// Track the exception
-		client.Track(exception)
-	}
+value, err := someMethod(argument)
+if err != nil {
+	exception := appinsights.NewExceptionTelemetry(err)
+	
+	// Set the severity level -- perhaps this isn't a critical
+	// issue, but we'd *really rather* it didn't fail:
+	exception.SeverityLevel = appinsights.Warning
+	
+	// One could tweak the number of stack frames to skip by
+	// reassigning the callstack -- for instance, if you were to
+	// log this exception in a helper method.
+	exception.Frames = appinsights.GetCallstack(3 /* frames to skip */)
+	
+	// Properties are available as usual
+	exception.Properties["input"] = argument
+	
+	// Track the exception
+	client.Track(exception)
+}
 ```
 
 #### Availability
@@ -329,23 +329,23 @@ represent the result of executing an availability test.  This is useful if
 you are writing availability monitors in Go.
 
 ```go
-	availability := appinsights.NewAvailabilityTelemetry("test name", callDuration, true /* success */)
-	
-	// The run location indicates where the test was run from
-	availability.RunLocation = "Phoenix"
-	
-	// Diagnostics message
-	availability.Message = diagnostics
-	
-	// Id is used for correlation with the target service
-	availability.Id = requestId
-	
-	// Timestamp and duration can be changed through MarkTime, similar
-	// to other telemetry types with Durations
-	availability.MarkTime(testStartTime, testEndTime)
-	
-	// Submit the telemetry
-	client.Track(availability)
+availability := appinsights.NewAvailabilityTelemetry("test name", callDuration, true /* success */)
+
+// The run location indicates where the test was run from
+availability.RunLocation = "Phoenix"
+
+// Diagnostics message
+availability.Message = diagnostics
+
+// Id is used for correlation with the target service
+availability.Id = requestId
+
+// Timestamp and duration can be changed through MarkTime, similar
+// to other telemetry types with Duration's
+availability.MarkTime(testStartTime, testEndTime)
+
+// Submit the telemetry
+client.Track(availability)
 ```
 
 #### Page Views
@@ -355,15 +355,15 @@ generated by the client side rather than the server side, but is available
 here nonetheless.
 
 ```go
-	pageview := appinsights.NewPageViewTelemetry("Event name", "http://testuri.org/page")
-	
-	// A duration is available here.
-	pageview.Duration = time.Minute
-	
-	// As are the usual Properties and Measurements...
-	
-	// Track
-	client.Track(pageview)
+pageview := appinsights.NewPageViewTelemetry("Event name", "http://testuri.org/page")
+
+// A duration is available here.
+pageview.Duration = time.Minute
+
+// As are the usual Properties and Measurements...
+
+// Track
+client.Track(pageview)
 ```
 
 ### Context tags
@@ -374,7 +374,7 @@ such as user, session, and device information.  `TelemetryContext` instances
 exist in two places: on the `TelemetryClient`, which will augment data for
 every telemetry sent through the client; and on individual telemetry items,
 where information can be stored that is specific to that item.  If a context
-tag is found in both the client and the telemtry item's `TelemetryContext`,
+tag is found in both the client and the telemetry item's `TelemetryContext`,
 the value associated with the telemetry item takes precedence.
 
 There are two ways to access this data.  One is directly through the
@@ -387,35 +387,35 @@ The other is via helper methods found on the `TelemetryContext` type.
 A few examples for illustration:
 
 ```go
-	import (
-		"os"
-		
-		"github.com/jjjordanmsft/ApplicationInsights-Go/appinsights"
-		"github.com/jjjordanmsft/ApplicationInsights-Go/appinsights/contracts"
-	)
+import (
+	"os"
 	
-	func main() {
-		client := appinsights.NewTelemetryClient("<ikey>")
-		
-		// Set role instance name globally -- this is usually the
-		// name of the service submitting the telemetry
-		client.Context().Cloud().SetRole("my_go_server")
-		
-		// Set the role instance to the hostname.  Note that this is
-		// done automatically by the SDK.
-		client.Context().Cloud().SetRoleInstance(os.Hostname())
-		
-		// Make a request to fiddle with the telemtry's context
-		req := appinsights.NewRequestTelemetry("GET", "http://server/path", time.Millisecond, "200")
-		
-		// Set the account ID context tag, for this telemetry item
-		// only.  The following are equivalent:
-		req.Context.User().SetAccountId("<user account retrieved from request>")
-		req.Context.Tags[contracts.UserAccountId] = "<user account retrieved from request>"
-		
-		// This request will have all context tags above.
-		client.Track(req)
-	}
+	"github.com/jjjordanmsft/ApplicationInsights-Go/appinsights"
+	"github.com/jjjordanmsft/ApplicationInsights-Go/appinsights/contracts"
+)
+
+func main() {
+	client := appinsights.NewTelemetryClient("<ikey>")
+	
+	// Set role instance name globally -- this is usually the
+	// name of the service submitting the telemetry
+	client.Context().Cloud().SetRole("my_go_server")
+	
+	// Set the role instance to the host name.  Note that this is
+	// done automatically by the SDK.
+	client.Context().Cloud().SetRoleInstance(os.Hostname())
+	
+	// Make a request to fiddle with the telemetry's context
+	req := appinsights.NewRequestTelemetry("GET", "http://server/path", time.Millisecond, "200")
+	
+	// Set the account ID context tag, for this telemetry item
+	// only.  The following are equivalent:
+	req.Context.User().SetAccountId("<user account retrieved from request>")
+	req.Context.Tags[contracts.UserAccountId] = "<user account retrieved from request>"
+	
+	// This request will have all context tags above.
+	client.Track(req)
+}
 ```
 
 #### Default properties
@@ -428,12 +428,12 @@ captured in the context tags, for instance cluster identifiers or resource
 groups.
 
 ```go
-	func main() {
-		client := appinsights.NewTelemetryClient("<ikey>")
-		
-		client.Context().DefaultProperties["Resource group"] = "My resource group"
-		// ...
-	}
+func main() {
+	client := appinsights.NewTelemetryClient("<ikey>")
+	
+	client.Context().DefaultProperties["Resource group"] = "My resource group"
+	// ...
+}
 ```
 
 Do note that while the `DefaultProperties` field exists on telemetry items'
@@ -458,37 +458,37 @@ down.  The channel has a few methods to deal with this case:
 If at all possible, you should use `Close`:
 
 ```go
-	func main() {
-		client := appinsights.NewTelemetryClient("<ikey>")
+func main() {
+	client := appinsights.NewTelemetryClient("<ikey>")
+	
+	// ... run the service ...
+	
+	// on shutdown:
+	
+	select {
+	case <-client.Channel().Close(10 * time.Second):
+		// Ten second timeout for retries.
 		
-		// ... run the service ...
+		// If we got here, then all telemetry was submitted
+		// successfully, and we can proceed to exiting.
+	case <-time.NewTimer(30 * time.Second):
+		// Thirty second absolute timeout.  This covers any
+		// previous telemetry submission that may not have
+		// completed before Close was called.
 		
-		// on shutdown:
-		
-		select {
-		case <-client.Channel().Close(10 * time.Second):
-			// Ten second timeout for retries.
-			
-			// If we got here, then all telemetry was submitted
-			// successfully, and we can proceed to exiting.
-		case <-time.NewTimer(30 * time.Second):
-			// Thirty second absolute timeout.  This covers any
-			// previous telemetry submission that may not have
-			// completed before Close was called.
-			
-			// There are a number of reasons we could have
-			// reached here.  We gave it a go, but telemetry
-			// submission failed somewhere.  Perhaps old events
-			// were still retrying, or perhaps we're throttled.
-			// Either way, we don't want to wait around for it
-			// to complete, so let's just exit.
-		}
+		// There are a number of reasons we could have
+		// reached here.  We gave it a go, but telemetry
+		// submission failed somewhere.  Perhaps old events
+		// were still retrying, or perhaps we're throttled.
+		// Either way, we don't want to wait around for it
+		// to complete, so let's just exit.
 	}
+}
 ```
 
 We recommend something similar to the above to minimize lost telemetry
 through shutdown.
-[The documentation]()
+[The documentation](https://godoc.org/github.com/jjjordanmsft/ApplicationInsights-Go/appinsights#TelemetryChannel)
 explains in more detail what can lead to the cases above.
 
 ### Diagnostics
@@ -497,12 +497,12 @@ submitted, diagnostics can be turned on to help troubleshoot problems with
 telemetry submission.
 
 ```go
-	listener := appinsights.NewDiagnosticsMessageListener()
-	go listener.ProcessMessages(func(msg string) {
-		fmt.Printf("[%s] %s\n", time.Now().Format(time.UnixDate), msg)
-	})
-	
-	// go about your business...
+listener := appinsights.NewDiagnosticsMessageListener()
+go listener.ProcessMessages(func(msg string) {
+	fmt.Printf("[%s] %s\n", time.Now().Format(time.UnixDate), msg)
+})
+
+// go about your business...
 ```
 
 The SDK will emit messages during every telemetry submission.  Successful
