@@ -17,7 +17,7 @@ func TestJsonSerializerEvents(t *testing.T) {
 	mockClock(time.Unix(1511001321, 0))
 	defer resetClock()
 
-	var buffer TelemetryBufferItems
+	var buffer telemetryBufferItems
 
 	buffer.add(
 		NewTraceTelemetry("testing", Error),
@@ -171,7 +171,7 @@ func TestJsonSerializerNakedEvents(t *testing.T) {
 	mockClock(time.Unix(1511001321, 0))
 	defer resetClock()
 
-	var buffer TelemetryBufferItems
+	var buffer telemetryBufferItems
 
 	buffer.add(
 		&TraceTelemetry{
@@ -345,11 +345,11 @@ func TestJsonSerializerNakedEvents(t *testing.T) {
 
 // Test helpers...
 
-func telemetryBuffer(items ...Telemetry) TelemetryBufferItems {
+func telemetryBuffer(items ...Telemetry) telemetryBufferItems {
 	ctx := NewTelemetryContext()
 	ctx.iKey = test_ikey
 
-	var result TelemetryBufferItems
+	var result telemetryBufferItems
 	for _, item := range items {
 		result = append(result, ctx.envelop(item))
 	}
@@ -357,7 +357,7 @@ func telemetryBuffer(items ...Telemetry) TelemetryBufferItems {
 	return result
 }
 
-func (buffer *TelemetryBufferItems) add(items ...Telemetry) {
+func (buffer *telemetryBufferItems) add(items ...Telemetry) {
 	*buffer = append(*buffer, telemetryBuffer(items...)...)
 }
 

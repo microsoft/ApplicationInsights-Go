@@ -8,22 +8,40 @@ import (
 	"github.com/satori/go.uuid"
 )
 
+// The telemetry context type stores context keys that will be applied to
+// submitted telemetry.  This includes, e.g. information about the system
+// and application sending the telemetry as well as information used for
+// correlation with other events.  Each TelemetryClient contains a
+// TelemetryContext that will set values on every outgoing item if the key
+// is not overridden inside the telemetry item's TelemetryContext.
 type TelemetryContext struct {
-	iKey              string
-	Tags              map[string]string
+	// Instrumentation key
+	iKey string
+
+	// Collection of tag data to attach to the telemetry item.
+	Tags map[string]string
+
+	// Default properties to add to each telemetry item.  This only has
+	// an effect from the TelemetryClient's context instance.  This will
+	// be nil on telemetry items.
 	DefaultProperties map[string]string
 }
 
+// Creates a new, empty TelemetryContext
 func NewTelemetryContext() *TelemetryContext {
 	return &TelemetryContext{
 		Tags: make(map[string]string),
 	}
 }
 
+// Gets the instrumentation key associated with this TelemetryContext.  This
+// will be an empty string on telemetry items' context instances.
 func (context *TelemetryContext) InstrumentationKey() string {
 	return context.iKey
 }
 
+// Wraps a telemetry item in an envelope with the information found in this
+// context.
 func (context *TelemetryContext) envelop(item Telemetry) *contracts.Envelope {
 	// Apply default properties
 	if props := item.GetProperties(); props != nil && context.DefaultProperties != nil {

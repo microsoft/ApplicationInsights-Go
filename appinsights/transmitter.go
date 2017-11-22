@@ -11,7 +11,7 @@ import (
 )
 
 type transmitter interface {
-	Transmit(payload []byte, items TelemetryBufferItems) (*transmissionResult, error)
+	Transmit(payload []byte, items telemetryBufferItems) (*transmissionResult, error)
 }
 
 type httpTransmitter struct {
@@ -54,7 +54,7 @@ func newTransmitter(endpointAddress string) transmitter {
 	return &httpTransmitter{endpointAddress}
 }
 
-func (transmitter *httpTransmitter) Transmit(payload []byte, items TelemetryBufferItems) (*transmissionResult, error) {
+func (transmitter *httpTransmitter) Transmit(payload []byte, items telemetryBufferItems) (*transmissionResult, error) {
 	diagnosticsWriter.Printf("----------- Transmitting %d items ---------", len(items))
 	startTime := time.Now()
 
@@ -177,13 +177,13 @@ func (result *itemTransmissionResult) CanRetry() bool {
 		result.StatusCode == tooManyRequestsOverExtendedTimeResponse
 }
 
-func (result *transmissionResult) GetRetryItems(payload []byte, items TelemetryBufferItems) ([]byte, TelemetryBufferItems) {
+func (result *transmissionResult) GetRetryItems(payload []byte, items telemetryBufferItems) ([]byte, telemetryBufferItems) {
 	if result.statusCode == partialSuccessResponse && result.response != nil {
 		// Make sure errors are ordered by index
 		sort.Sort(result.response.Errors)
 
 		var resultPayload bytes.Buffer
-		resultItems := make(TelemetryBufferItems, 0)
+		resultItems := make(telemetryBufferItems, 0)
 		ptr := 0
 		idx := 0
 

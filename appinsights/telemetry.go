@@ -10,15 +10,15 @@ import (
 	"github.com/satori/go.uuid"
 )
 
-// Interface implemented by telemetry data contracts
+// Common interface implemented by telemetry data contracts
 type TelemetryData interface {
 	EnvelopeName() string
 	BaseType() string
 	Sanitize() []string
 }
 
-// Interface implemented by telemetry items, mostly useful for passing to
-// client.Track.
+// Common interface implemented by telemetry items that can be passed to
+// TelemetryClient.Track
 type Telemetry interface {
 	// Gets the time when this item was measured
 	Time() time.Time

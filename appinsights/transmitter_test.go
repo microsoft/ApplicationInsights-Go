@@ -62,7 +62,7 @@ func (server *testServer) waitForRequest(t *testing.T) *testRequest {
 
 type nullTransmitter struct{}
 
-func (transmitter *nullTransmitter) Transmit(payload []byte, items TelemetryBufferItems) (*transmissionResult, error) {
+func (transmitter *nullTransmitter) Transmit(payload []byte, items telemetryBufferItems) (*transmissionResult, error) {
 	return &transmissionResult{statusCode: successResponse}, nil
 }
 
@@ -85,7 +85,7 @@ func TestBasicTransmit(t *testing.T) {
 
 	server.responseData = []byte(`{"itemsReceived":3, "itemsAccepted":5, "errors":[]}`)
 	server.responseHeaders["Content-type"] = "application/json"
-	result, err := client.Transmit([]byte("foobar"), make(TelemetryBufferItems, 0))
+	result, err := client.Transmit([]byte("foobar"), make(telemetryBufferItems, 0))
 	req := server.waitForRequest(t)
 
 	if err != nil {
@@ -159,7 +159,7 @@ func TestFailedTransmit(t *testing.T) {
 	server.responseCode = errorResponse
 	server.responseData = []byte(`{"itemsReceived":3, "itemsAccepted":0, "errors":[{"index": 2, "statusCode": 500, "message": "Hello"}]}`)
 	server.responseHeaders["Content-type"] = "application/json"
-	result, err := client.Transmit([]byte("foobar"), make(TelemetryBufferItems, 0))
+	result, err := client.Transmit([]byte("foobar"), make(telemetryBufferItems, 0))
 	server.waitForRequest(t)
 
 	if err != nil {
@@ -211,7 +211,7 @@ func TestThrottledTransmit(t *testing.T) {
 	server.responseData = make([]byte, 0)
 	server.responseHeaders["Content-type"] = "application/json"
 	server.responseHeaders["retry-after"] = "Wed, 09 Aug 2017 23:43:57 UTC"
-	result, err := client.Transmit([]byte("foobar"), make(TelemetryBufferItems, 0))
+	result, err := client.Transmit([]byte("foobar"), make(telemetryBufferItems, 0))
 	server.waitForRequest(t)
 
 	if err != nil {
@@ -254,7 +254,7 @@ func TestTransmitDiagnostics(t *testing.T) {
 	server.responseCode = errorResponse
 	server.responseData = []byte(`{"itemsReceived":1, "itemsAccepted":0, "errors":[{"index": 0, "statusCode": 500, "message": "Hello"}]}`)
 	server.responseHeaders["Content-type"] = "application/json"
-	_, err := client.Transmit([]byte("foobar"), make(TelemetryBufferItems, 0))
+	_, err := client.Transmit([]byte("foobar"), make(telemetryBufferItems, 0))
 	server.waitForRequest(t)
 
 	// Wait for diagnostics to catch up.
@@ -457,13 +457,13 @@ func TestGetRetryItems(t *testing.T) {
 	}
 
 	payload3, items3 := res3.GetRetryItems(makePayload())
-	expected3 := TelemetryBufferItems{originalItems[5], originalItems[6]}
+	expected3 := telemetryBufferItems{originalItems[5], originalItems[6]}
 	if string(payload3) != string(expected3.serialize()) || len(items3) != 2 {
 		t.Error("Unexpected result")
 	}
 }
 
-func makePayload() ([]byte, TelemetryBufferItems) {
+func makePayload() ([]byte, telemetryBufferItems) {
 	buffer := telemetryBuffer()
 	for i := 0; i < 7; i++ {
 		tr := NewTraceTelemetry(fmt.Sprintf("msg%d", i+1), contracts.SeverityLevel(i%5))

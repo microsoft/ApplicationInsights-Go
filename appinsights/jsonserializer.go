@@ -7,9 +7,9 @@ import (
 	"github.com/jjjordanmsft/ApplicationInsights-Go/appinsights/contracts"
 )
 
-type TelemetryBufferItems []*contracts.Envelope
+type telemetryBufferItems []*contracts.Envelope
 
-func (items TelemetryBufferItems) serialize() []byte {
+func (items telemetryBufferItems) serialize() []byte {
 	var result bytes.Buffer
 	encoder := json.NewEncoder(&result)
 

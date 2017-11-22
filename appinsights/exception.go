@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// Exception telemetry items represent a handled or unhandled exception that
+// Exception telemetry items represent a handled or unhandled exceptions that
 // occurred during execution of the monitored application.
 type ExceptionTelemetry struct {
 	BaseTelemetry

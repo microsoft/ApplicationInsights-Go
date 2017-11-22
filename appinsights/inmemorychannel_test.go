@@ -14,8 +14,8 @@ type testTransmitter struct {
 	responses chan *transmissionResult
 }
 
-func (transmitter *testTransmitter) Transmit(payload []byte, items TelemetryBufferItems) (*transmissionResult, error) {
-	itemsCopy := make(TelemetryBufferItems, len(items))
+func (transmitter *testTransmitter) Transmit(payload []byte, items telemetryBufferItems) (*transmissionResult, error) {
+	itemsCopy := make(telemetryBufferItems, len(items))
 	copy(itemsCopy, items)
 
 	transmitter.requests <- &testTransmission{
@@ -71,7 +71,7 @@ func (transmitter *testTransmitter) assertNoRequest(t *testing.T) {
 type testTransmission struct {
 	timestamp time.Time
 	payload   string
-	items     TelemetryBufferItems
+	items     telemetryBufferItems
 }
 
 func newTestChannelServer(config ...*TelemetryConfiguration) (TelemetryClient, *testTransmitter) {

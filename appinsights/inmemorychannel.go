@@ -12,6 +12,8 @@ var (
 	submit_retries = []time.Duration{time.Duration(10 * time.Second), time.Duration(30 * time.Second), time.Duration(60 * time.Second)}
 )
 
+// A telemetry channel that stores events exclusively in memory.  Presently
+// the only telemetry channel implementation available.
 type InMemoryChannel struct {
 	endpointAddress string
 	isDeveloperMode bool
@@ -41,6 +43,8 @@ type inMemoryChannelControl struct {
 	callback chan struct{}
 }
 
+// Creates an InMemoryChannel instance and starts a background submission
+// goroutine.
 func NewInMemoryChannel(config *TelemetryConfiguration) *InMemoryChannel {
 	channel := &InMemoryChannel{
 		endpointAddress: config.EndpointUrl,
@@ -57,16 +61,19 @@ func NewInMemoryChannel(config *TelemetryConfiguration) *InMemoryChannel {
 	return channel
 }
 
+// The address of the endpoint to which telemetry is sent
 func (channel *InMemoryChannel) EndpointAddress() string {
 	return channel.endpointAddress
 }
 
+// Queues a single telemetry item
 func (channel *InMemoryChannel) Send(item *contracts.Envelope) {
 	if item != nil && channel.collectChan != nil {
 		channel.collectChan <- item
 	}
 }
 
+// Forces the current queue to be sent
 func (channel *InMemoryChannel) Flush() {
 	if channel.controlChan != nil {
 		channel.controlChan <- &inMemoryChannelControl{
@@ -75,6 +82,9 @@ func (channel *InMemoryChannel) Flush() {
 	}
 }
 
+// Tears down the submission goroutines, closes internal channels.  Any
+// telemetry waiting to be sent is discarded.  Further calls to Send() have
+// undefined behavior.  This is a more abrupt version of Close().
 func (channel *InMemoryChannel) Stop() {
 	if channel.controlChan != nil {
 		channel.controlChan <- &inMemoryChannelControl{
@@ -83,10 +93,28 @@ func (channel *InMemoryChannel) Stop() {
 	}
 }
 
+// Returns true if this channel has been throttled by the data collector.
 func (channel *InMemoryChannel) IsThrottled() bool {
 	return channel.throttle != nil && channel.throttle.IsThrottled()
 }
 
+// Flushes and tears down the submission goroutine and closes internal
+// channels.  Returns a channel that is closed when all pending telemetry
+// items have been submitted and it is safe to shut down without losing
+// telemetry.
+//
+// If retryTimeout is specified and non-zero, then failed submissions will
+// be retried until one succeeds or the timeout expires, whichever occurs
+// first.  A retryTimeout of zero indicates that failed submissions will be
+// retried as usual.  An omitted retryTimeout indicates that submissions
+// should not be retried if they fail.
+//
+// Note that the returned channel may not be closed before retryTimeout even
+// if it is specified.  This is because retryTimeout only applies to the
+// latest telemetry buffer.  This may be typical for applications that
+// submit a large amount of telemetry or are prone to being throttled.  When
+// exiting, you should select on the result channel and your own timer to
+// avoid long delays.
 func (channel *InMemoryChannel) Close(timeout ...time.Duration) <-chan struct{} {
 	if channel.controlChan != nil {
 		callback := make(chan struct{})
@@ -125,7 +153,7 @@ func (channel *InMemoryChannel) acceptLoop() {
 type inMemoryChannelState struct {
 	channel      *InMemoryChannel
 	stopping     bool
-	buffer       TelemetryBufferItems
+	buffer       telemetryBufferItems
 	retry        bool
 	retryTimeout time.Duration
 	callback     chan struct{}
@@ -135,7 +163,7 @@ type inMemoryChannelState struct {
 func newInMemoryChannelState(channel *InMemoryChannel) *inMemoryChannelState {
 	return &inMemoryChannelState{
 		channel:  channel,
-		buffer:   make(TelemetryBufferItems, 0, 16),
+		buffer:   make(telemetryBufferItems, 0, 16),
 		stopping: false,
 		timer:    currentClock.NewTimer(channel.batchInterval),
 	}
@@ -145,10 +173,10 @@ func newInMemoryChannelState(channel *InMemoryChannel) *inMemoryChannelState {
 func (state *inMemoryChannelState) start() bool {
 	if len(state.buffer) > 16 {
 		// Start out with the size of the previous buffer
-		state.buffer = make(TelemetryBufferItems, 0, cap(state.buffer))
+		state.buffer = make(telemetryBufferItems, 0, cap(state.buffer))
 	} else if len(state.buffer) > 0 {
 		// Start out with at least 16 slots
-		state.buffer = make(TelemetryBufferItems, 0, 16)
+		state.buffer = make(telemetryBufferItems, 0, 16)
 	}
 
 	// Wait for an event
@@ -243,7 +271,7 @@ func (state *inMemoryChannelState) send() bool {
 		// incremented.
 		state.channel.signalWhenDone(state.callback)
 
-		go func(buffer TelemetryBufferItems, retry bool, retryTimeout time.Duration) {
+		go func(buffer telemetryBufferItems, retry bool, retryTimeout time.Duration) {
 			defer state.channel.waitgroup.Done()
 			state.channel.transmitRetry(buffer, retry, retryTimeout)
 		}(state.buffer, state.retry, state.retryTimeout)
@@ -321,7 +349,7 @@ func (state *inMemoryChannelState) stop() {
 	state.channel.throttle = nil
 }
 
-func (channel *InMemoryChannel) transmitRetry(items TelemetryBufferItems, retry bool, retryTimeout time.Duration) {
+func (channel *InMemoryChannel) transmitRetry(items telemetryBufferItems, retry bool, retryTimeout time.Duration) {
 	payload := items.serialize()
 	retryTimeRemaining := retryTimeout
 

@@ -6,13 +6,25 @@ import (
 	"time"
 )
 
+// Configuration data used to initialize a new TelemetryClient.
 type TelemetryConfiguration struct {
+	// Instrumentation key for the client.
 	InstrumentationKey string
-	EndpointUrl        string
-	MaxBatchSize       int
-	MaxBatchInterval   time.Duration
+
+	// Endpoint URL where data will be submitted.
+	EndpointUrl string
+
+	// Maximum number of telemetry items that can be submitted in each
+	// request.  If this many items are buffered, the buffer will be
+	// flushed before MaxBatchInterval expires.
+	MaxBatchSize int
+
+	// Maximum time to wait before sending a batch of telemetry.
+	MaxBatchInterval time.Duration
 }
 
+// Creates a new TelemetryConfiguration object with the specified
+// instrumentation key and default values.
 func NewTelemetryConfiguration(instrumentationKey string) *TelemetryConfiguration {
 	return &TelemetryConfiguration{
 		InstrumentationKey: instrumentationKey,
