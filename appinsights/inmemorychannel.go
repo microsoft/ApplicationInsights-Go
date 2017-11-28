@@ -161,7 +161,8 @@ type inMemoryChannelState struct {
 }
 
 func newInMemoryChannelState(channel *InMemoryChannel) *inMemoryChannelState {
-	timer := currentClock.NewTimer(channel.batchInterval)
+	// Initialize timer to stopped -- avoid any chance of a race condition.
+	timer := currentClock.NewTimer(time.Hour)
 	timer.Stop()
 
 	return &inMemoryChannelState{
@@ -218,14 +219,13 @@ func (state *inMemoryChannelState) waitToSend() bool {
 
 	// Delay until timeout passes or buffer fills up
 	state.timer.Reset(state.channel.batchInterval)
-	defer func() {
-		if !state.timer.Stop() {
-			<-state.timer.C()
-		}
-	}()
 
 	for {
 		if len(state.buffer) >= state.channel.batchSize {
+			if !state.timer.Stop() {
+				<-state.timer.C()
+			}
+
 			return state.send()
 		}
 
@@ -250,12 +250,16 @@ func (state *inMemoryChannelState) waitToSend() bool {
 			}
 
 			if ctl.flush {
+				if !state.timer.Stop() {
+					<-state.timer.C()
+				}
+
 				state.retryTimeout = ctl.timeout
 				state.callback = ctl.callback
 				return state.send()
 			}
 
-		case _ = <-state.timer.C():
+		case <-state.timer.C():
 			// Timeout expired
 			return state.send()
 		}
