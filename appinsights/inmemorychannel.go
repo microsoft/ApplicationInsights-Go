@@ -161,11 +161,14 @@ type inMemoryChannelState struct {
 }
 
 func newInMemoryChannelState(channel *InMemoryChannel) *inMemoryChannelState {
+	timer := currentClock.NewTimer(channel.batchInterval)
+	timer.Stop()
+
 	return &inMemoryChannelState{
 		channel:  channel,
 		buffer:   make(telemetryBufferItems, 0, 16),
 		stopping: false,
-		timer:    currentClock.NewTimer(channel.batchInterval),
+		timer:    timer,
 	}
 }
 
@@ -215,6 +218,12 @@ func (state *inMemoryChannelState) waitToSend() bool {
 
 	// Delay until timeout passes or buffer fills up
 	state.timer.Reset(state.channel.batchInterval)
+	defer func() {
+		if !state.timer.Stop() {
+			<-state.timer.C()
+		}
+	}()
+
 	for {
 		if len(state.buffer) >= state.channel.batchSize {
 			return state.send()

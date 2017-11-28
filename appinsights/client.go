@@ -117,7 +117,7 @@ func (tc *telemetryClient) SetIsEnabled(isEnabled bool) {
 
 // Submits the specified telemetry item.
 func (tc *telemetryClient) Track(item Telemetry) {
-	if tc.isEnabled && item != nil  {
+	if tc.isEnabled && item != nil {
 		tc.channel.Send(tc.context.envelop(item))
 	}
 }
