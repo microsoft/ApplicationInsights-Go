@@ -190,7 +190,7 @@ func TestRequestTelemetry(t *testing.T) {
 	mockClock()
 	defer resetClock()
 
-	telem := NewRequestTelemetry("POST", "http://testurl.org/", time.Minute, "200")
+	telem := NewRequestTelemetry("POST", "http://testurl.org/?query=value", time.Minute, "200")
 	telem.Source = "127.0.0.1"
 	telem.Properties["prop1"] = "value1"
 	telem.Measurements["measure1"] = 999.0
@@ -198,7 +198,7 @@ func TestRequestTelemetry(t *testing.T) {
 
 	checkNotNullOrEmpty(t, "Id", d.Id)
 	checkDataContract(t, "Name", d.Name, "POST http://testurl.org/")
-	checkDataContract(t, "Url", d.Url, "http://testurl.org/")
+	checkDataContract(t, "Url", d.Url, "http://testurl.org/?query=value")
 	checkDataContract(t, "Duration", d.Duration, "0.00:01:00.0000000")
 	checkDataContract(t, "Success", d.Success, true)
 	checkDataContract(t, "Source", d.Source, "127.0.0.1")

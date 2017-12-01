@@ -3,6 +3,7 @@ package appinsights
 import (
 	"fmt"
 	"math"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -350,16 +351,34 @@ type RequestTelemetry struct {
 // Creates a new request telemetry item for HTTP requests. The success value will be
 // computed from responseCode, and the timestamp will be set to the current time minus
 // the duration.
-func NewRequestTelemetry(method, url string, duration time.Duration, responseCode string) *RequestTelemetry {
+func NewRequestTelemetry(method, uri string, duration time.Duration, responseCode string) *RequestTelemetry {
 	success := true
 	code, err := strconv.Atoi(responseCode)
 	if err == nil {
 		success = code < 400 || code == 401
 	}
 
+	nameUri := uri
+
+	// Sanitize URL for the request name
+	if parsedUrl, err := url.Parse(uri); err == nil {
+		// Remove the query
+		parsedUrl.RawQuery = ""
+		parsedUrl.ForceQuery = false
+
+		// Remove the fragment
+		parsedUrl.Fragment = ""
+
+		// Remove the user info, if any.
+		parsedUrl.User = nil
+
+		// Write back to name
+		nameUri = parsedUrl.String()
+	}
+
 	return &RequestTelemetry{
-		Name:         fmt.Sprintf("%s %s", method, url),
-		Url:          url,
+		Name:         fmt.Sprintf("%s %s", method, nameUri),
+		Url:          uri,
 		Id:           uuid.NewV4().String(),
 		Duration:     duration,
 		ResponseCode: responseCode,
