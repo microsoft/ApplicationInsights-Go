@@ -59,6 +59,9 @@ func (telem *ExceptionTelemetry) TelemetryData() TelemetryData {
 	} else if stringer, ok := telem.Error.(fmt.Stringer); ok {
 		details.Message = stringer.String()
 		details.TypeName = reflect.TypeOf(telem.Error).String()
+	} else if stringer, ok := telem.Error.(fmt.GoStringer); ok {
+		details.Message = stringer.GoString()
+		details.TypeName = reflect.TypeOf(telem.Error).String()
 	} else {
 		details.Message = "<unknown>"
 		details.TypeName = "<unknown>"

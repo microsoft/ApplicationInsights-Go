@@ -20,6 +20,12 @@ func (s *myError) Error() string {
 	return "My error error"
 }
 
+type myGoStringer struct{}
+
+func (s *myGoStringer) Error() string {
+	return "My go stringer error"
+}
+
 func TestExceptionTelemetry(t *testing.T) {
 	// Test callstack capture -- these should all fit in 64 frames.
 	for i := 9; i < 20; i++ {
@@ -42,6 +48,11 @@ func TestExceptionTelemetry(t *testing.T) {
 	exd2 := e2.TelemetryData().(*contracts.ExceptionData).Exceptions[0]
 	checkDataContract(t, "ExceptionDetails.Message", exd2.Message, "My stringer error")
 	checkDataContract(t, "ExceptionDetails.TypeName", exd2.TypeName, "*appinsights.myStringer")
+
+	e3 := catchPanic(&myGoStringer{})
+	exd3 := e3.TelemetryData().(*contracts.ExceptionData).Exceptions[0]
+	checkDataContract(t, "ExceptionDetails.Message", exd3.Message, "My go stringer error")
+	checkDataContract(t, "ExceptionDetails.TypeName", exd3.TypeName, "*appinsights.myGoStringer")
 }
 
 func TestTrackPanic(t *testing.T) {

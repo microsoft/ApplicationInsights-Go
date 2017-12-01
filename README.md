@@ -328,7 +328,8 @@ callstack while processing panics, so the trace will include any functions
 that may be called by `method` in the example above leading up to the panic.
 
 This SDK will handle panic messages that are any of the types: `string`,
-`error`, or anything that implements [fmt.Stringer](https://golang.org/pkg/fmt/#Stringer).
+`error`, or anything that implements [fmt.Stringer](https://golang.org/pkg/fmt/#Stringer)
+or [fmt.GoStringer](https://golang.org/pkg/fmt/#GoStringer).
 
 While the above example uses `client.TrackException`, you can also use the
 longer form as in earlier examples -- and not only for panics:
