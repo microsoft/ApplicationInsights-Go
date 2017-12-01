@@ -36,9 +36,9 @@ go get github.com/Microsoft/ApplicationInsights-Go/appinsights
 **Get an instrumentation key**
 >**Note**: an instrumentation key is required before any data can be sent. Please see the "[Getting an Application Insights Instrumentation Key](https://github.com/Microsoft/AppInsights-Home/wiki#getting-an-application-insights-instrumentation-key)" section of the wiki for more information. To try the SDK without an instrumentation key, set the instrumentationKey config value to a non-empty string.
 
-## Usage
+# Usage
 
-### Setup
+## Setup
 
 To start tracking telemetry, you'll want to first initialize a
 [telemetry client](https://godoc.org/github.com/jjjordanmsft/ApplicationInsights-Go/appinsights#TelemetryClient).
@@ -78,7 +78,7 @@ so you will use this client extensively to report application health and
 status.  You may want to store it in a global variable or otherwise include
 it in your data model.
 
-### Telemetry submission
+## Telemetry submission
 
 The [TelemetryClient](https://godoc.org/github.com/jjjordanmsft/ApplicationInsights-Go/appinsights#TelemetryClient)
 itself has several methods for submitting telemetry:
@@ -131,7 +131,7 @@ versions are available through use of *telemetry item* classes, which can
 then be submitted through the `TelemetryClient.Track` method, as illustrated
 in the below sections:
 
-#### Trace
+### Trace
 [Trace telemetry items](https://godoc.org/github.com/jjjordanmsft/ApplicationInsights-Go/appinsights#TraceTelemetry)
 represent printf-like trace statements that can be text searched.  They have
 an associated severity level, values for which are found in the package's
@@ -163,7 +163,7 @@ trace.Timestamp = time.Now().Sub(time.Minute)
 client.Track(trace)
 ```
 
-#### Events
+### Events
 [Event telemetry items](https://godoc.org/github.com/jjjordanmsft/ApplicationInsights-Go/appinsights#EventTelemetry)
 represent structured event records.
 
@@ -173,7 +173,7 @@ event.Properties["property"] = "value"
 client.Track(event)
 ```
 
-#### Single-value metrics
+### Single-value metrics
 [Metric telemetry items](https://godoc.org/github.com/jjjordanmsft/ApplicationInsights-Go/appinsights#MetricTelemetry)
 each represent a single data point.
 
@@ -183,7 +183,7 @@ metric.Properties["Queue name"] = q.name
 client.Track(metric)
 ```
 
-#### Pre-aggregated metrics
+### Pre-aggregated metrics
 To reduce the number of metric values that may be sent through telemetry,
 when using a particularly high volume of measurements, metric data can be
 [pre-aggregated by the client](https://godoc.org/github.com/jjjordanmsft/ApplicationInsights-Go/appinsights#AggregateMetricTelemetry)
@@ -218,7 +218,7 @@ aggregate.StdDev = stdDev(dataPoints)
 client.Track(aggregate)
 ```
 
-#### Requests
+### Requests
 [Request telemetry items](https://godoc.org/github.com/jjjordanmsft/ApplicationInsights-Go/appinsights#RequestTelemetry)
 represent completion of an external request to the application and contains
 a summary of that request execution and results.  This SDK's request
@@ -253,7 +253,7 @@ request.Context.User().SetAccountId("<user id>")
 client.Track(request)
 ```
 
-#### Dependencies
+### Dependencies
 [Remote dependency telemetry items](https://godoc.org/github.com/jjjordanmsft/ApplicationInsights-Go/appinsights#RemoteDependencyTelemetry)
 represent interactions of the monitored component with a remote
 component/service like SQL or an HTTP endpoint.
@@ -284,7 +284,7 @@ dependency.Measurements["data received"] = float64(len(response.data))
 client.Track(dependency)
 ```
 
-#### Exceptions
+### Exceptions
 [Exception telemetry items](https://godoc.org/github.com/jjjordanmsft/ApplicationInsights-Go/appinsights#ExceptionTelemetry)
 represent handled or unhandled exceptions that occurred during the execution
 of the monitored application.  This SDK is geared towards handling panics or
@@ -303,6 +303,19 @@ func method(client appinsights.TelemetryClient) {
 			panic(r)
 		}
 	}()
+	
+	// Panics in any code below will be handled by the above.
+	panic("AHHHH!!")
+}
+```
+
+This can be condensed with a helper function:
+
+```go
+func method(client appinsights.TelemetryClient) {
+	// false indicates that we should have this handle the panic, and
+	// not re-throw it.
+	defer appinsights.TrackPanic(client, false)
 	
 	// Panics in any code below will be handled by the above.
 	panic("AHHHH!!")
@@ -342,7 +355,7 @@ if err != nil {
 }
 ```
 
-#### Availability
+### Availability
 [Availability telemetry items](https://godoc.org/github.com/jjjordanmsft/ApplicationInsights-Go/appinsights/#AvailabilityTelemetry)
 represent the result of executing an availability test.  This is useful if
 you are writing availability monitors in Go.
@@ -367,7 +380,7 @@ availability.MarkTime(testStartTime, testEndTime)
 client.Track(availability)
 ```
 
-#### Page Views
+### Page Views
 [Page view telemetry items](https://godoc.org/github.com/jjjordanmsft/ApplicationInsights-Go/appinsights/#PageViewTelemetry)
 represent generic actions on a page like a button click.  These are typically
 generated by the client side rather than the server side, but is available
@@ -516,9 +529,9 @@ submitted, diagnostics can be turned on to help troubleshoot problems with
 telemetry submission.
 
 ```go
-listener := appinsights.NewDiagnosticsMessageListener()
-go listener.ProcessMessages(func(msg string) {
+appinsights.NewDiagnosticsMessageListener(func(msg string) error {
 	fmt.Printf("[%s] %s\n", time.Now().Format(time.UnixDate), msg)
+	return nil
 })
 
 // go about your business...
@@ -528,7 +541,7 @@ The SDK will emit messages during every telemetry submission.  Successful
 submissions will look something like this:
 
 ```
-[Tue Nov 21 18:59:41 PST 2017] ----------- Transmitting 16 items ---------
+[Tue Nov 21 18:59:41 PST 2017] --------- Transmitting 16 items ---------
 [Tue Nov 21 18:59:41 PST 2017] Telemetry transmitted in 708.382896ms
 [Tue Nov 21 18:59:41 PST 2017] Response: 200
 ```
@@ -537,7 +550,7 @@ If telemetry is rejected, the errors from the data collector endpoint will
 be displayed:
 
 ```
-[Tue Nov 21 18:58:39 PST 2017] ----------- Transmitting 16 items ---------
+[Tue Nov 21 18:58:39 PST 2017] --------- Transmitting 16 items ---------
 [Tue Nov 21 18:58:40 PST 2017] Telemetry transmitted in 1.034608896s
 [Tue Nov 21 18:58:40 PST 2017] Response: 206
 [Tue Nov 21 18:58:40 PST 2017] Items accepted/received: 15/16
