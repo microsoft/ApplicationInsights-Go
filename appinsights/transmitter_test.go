@@ -239,16 +239,19 @@ func TestTransmitDiagnostics(t *testing.T) {
 	client, server := newTestClientServer()
 	defer server.Close()
 
-	listener := NewDiagnosticsMessageListener()
 	var msgs []string
-	notify := make(chan bool)
-	go listener.ProcessMessages(func(message string) {
+	notify := make(chan bool, 1)
+
+	NewDiagnosticsMessageListener(func(message string) error {
 		if message == "PING" {
 			notify <- true
 		} else {
 			msgs = append(msgs, message)
 		}
+
+		return nil
 	})
+
 	defer resetDiagnosticsListeners()
 
 	server.responseCode = errorResponse

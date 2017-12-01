@@ -112,30 +112,21 @@ func TestSanitize(t *testing.T) {
 	}
 
 	// Set up listener for the warnings.
-	pong := make(chan bool)
-	listener := NewDiagnosticsMessageListener()
-	defer resetDiagnosticsListeners()
-	go listener.ProcessMessages(func(msg string) {
-		if msg == "PING" {
-			pong <- true
-			return
-		}
-
+	NewDiagnosticsMessageListener(func(msg string) error {
 		for k, _ := range found {
 			if strings.Contains(msg, k) {
 				found[k] = found[k] + 1
 				break
 			}
 		}
+
+		return nil
 	})
+
+	defer resetDiagnosticsListeners()
 
 	// This may break due to hardcoded limits... Check contracts.
 	envelope := ctx.envelop(ev)
-
-	// Flush diagnostics writer.
-	diagnosticsWriter.Write("PING")
-	<-pong
-	close(pong)
 
 	// Make sure all the warnings were found in the output
 	for k, v := range found {

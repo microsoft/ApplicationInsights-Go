@@ -1,47 +1,78 @@
 package appinsights
 
-import "fmt"
-
-type DiagnosticsMessageWriter interface {
-	Write(string)
-	appendListener(*diagnosticsMessageListener)
-}
+import (
+	"fmt"
+	"sync"
+)
 
 type diagnosticsMessageWriter struct {
-	listeners []chan string
+	listeners []*diagnosticsMessageListener
+	lock      sync.Mutex
 }
 
-type DiagnosticsMessageProcessor func(string)
+// Handler function for receiving diagnostics messages.  If this returns an
+// error, then the listener will be removed.
+type DiagnosticsMessageHandler func(string) error
 
+// Listener type returned by NewDiagnosticsMessageListener.
 type DiagnosticsMessageListener interface {
-	ProcessMessages(DiagnosticsMessageProcessor)
+	// Stop receiving diagnostics messages from this listener.
+	Remove()
 }
 
 type diagnosticsMessageListener struct {
-	channel chan string
+	handler DiagnosticsMessageHandler
+	writer  *diagnosticsMessageWriter
 }
 
-var diagnosticsWriter *diagnosticsMessageWriter = &diagnosticsMessageWriter{
-	listeners: make([]chan string, 0),
+func (listener *diagnosticsMessageListener) Remove() {
+	listener.writer.removeListener(listener)
 }
 
-func NewDiagnosticsMessageListener() DiagnosticsMessageListener {
+// The one and only diagnostics writer.
+var diagnosticsWriter = &diagnosticsMessageWriter{}
+
+// Subscribes the specified handler to diagnostics messages from the SDK.  The
+// returned interface can be used to unsubscribe.
+func NewDiagnosticsMessageListener(handler DiagnosticsMessageHandler) DiagnosticsMessageListener {
 	listener := &diagnosticsMessageListener{
-		channel: make(chan string),
+		handler: handler,
+		writer:  diagnosticsWriter,
 	}
 
 	diagnosticsWriter.appendListener(listener)
-
 	return listener
 }
 
 func (writer *diagnosticsMessageWriter) appendListener(listener *diagnosticsMessageListener) {
-	writer.listeners = append(writer.listeners, listener.channel)
+	writer.lock.Lock()
+	defer writer.lock.Unlock()
+	writer.listeners = append(writer.listeners, listener)
+}
+
+func (writer *diagnosticsMessageWriter) removeListener(listener *diagnosticsMessageListener) {
+	writer.lock.Lock()
+	defer writer.lock.Unlock()
+
+	for i := 0; i < len(writer.listeners); i++ {
+		if writer.listeners[i] == listener {
+			writer.listeners[i] = writer.listeners[len(writer.listeners)-1]
+			writer.listeners = writer.listeners[:len(writer.listeners)-1]
+			return
+		}
+	}
 }
 
 func (writer *diagnosticsMessageWriter) Write(message string) {
-	for _, c := range writer.listeners {
-		c <- message
+	var toRemove []*diagnosticsMessageListener
+	for _, listener := range writer.listeners {
+		if err := listener.handler(message); err != nil {
+			toRemove = append(toRemove, listener)
+		}
+	}
+
+	for _, listener := range toRemove {
+		listener.Remove()
 	}
 }
 
@@ -54,11 +85,4 @@ func (writer *diagnosticsMessageWriter) Printf(message string, args ...interface
 
 func (writer *diagnosticsMessageWriter) hasListeners() bool {
 	return len(writer.listeners) > 0
-}
-
-func (listener *diagnosticsMessageListener) ProcessMessages(process DiagnosticsMessageProcessor) {
-	for {
-		message := <-listener.channel
-		process(message)
-	}
 }
