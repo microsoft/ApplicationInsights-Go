@@ -44,6 +44,21 @@ func TestExceptionTelemetry(t *testing.T) {
 	checkDataContract(t, "ExceptionDetails.TypeName", exd2.TypeName, "*appinsights.myStringer")
 }
 
+func TestTrackPanic(t *testing.T) {
+	mockClock()
+	defer resetClock()
+	client, transmitter := newTestChannelServer()
+	defer transmitter.Close()
+
+	catchTrackPanic(client, "~exception~")
+	client.Channel().Close()
+
+	req := transmitter.waitForRequest(t)
+	if !strings.Contains(req.payload, "~exception~") {
+		t.Error("Unexpected payload")
+	}
+}
+
 func testExceptionCallstack(t *testing.T, n int) *contracts.ExceptionDetails {
 	d := buildStack(n).TelemetryData().(*contracts.ExceptionData)
 	checkDataContract(t, "len(Exceptions)", len(d.Exceptions), 1)
@@ -159,4 +174,9 @@ func panicTestCollatzEven(n int) int {
 
 func panicTestCollatzOdd(n int) int {
 	return panicTestCollatz((3 * n) + 1)
+}
+
+func catchTrackPanic(client TelemetryClient, err interface{}) {
+	defer TrackPanic(client, false)
+	panic(err)
 }

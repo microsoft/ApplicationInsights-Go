@@ -28,9 +28,13 @@ type ExceptionTelemetry struct {
 // handles a recover(), or to report an unexpected error return value from
 // a function.
 func NewExceptionTelemetry(err interface{}) *ExceptionTelemetry {
+	return newExceptionTelemetry(err, 1)
+}
+
+func newExceptionTelemetry(err interface{}, skip int) *ExceptionTelemetry {
 	return &ExceptionTelemetry{
 		Error:         err,
-		Frames:        GetCallstack(2),
+		Frames:        GetCallstack(2 + skip),
 		SeverityLevel: Error,
 		BaseTelemetry: BaseTelemetry{
 			Timestamp:    currentClock.Now(),
@@ -124,4 +128,16 @@ func GetCallstack(skip int) []*contracts.StackFrame {
 	}
 
 	return stackFrames
+}
+
+// Recovers from any active panics and tracks them to the specified
+// TelemetryClient.  If rethrow is set to true, then this will panic.
+// Should be invoked via defer in functions to monitor.
+func TrackPanic(client TelemetryClient, rethrow bool) {
+	if r := recover(); r != nil {
+		client.Track(newExceptionTelemetry(r, 1))
+		if rethrow {
+			panic(r)
+		}
+	}
 }

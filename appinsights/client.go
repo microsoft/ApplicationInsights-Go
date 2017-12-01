@@ -159,5 +159,5 @@ func (tc *telemetryClient) TrackAvailability(name string, duration time.Duration
 // Log an exception with the specified error, which may be a string, error
 // or Stringer.  The current callstack is collected automatically.
 func (tc *telemetryClient) TrackException(err interface{}) {
-	tc.Track(NewExceptionTelemetry(err))
+	tc.Track(newExceptionTelemetry(err, 1))
 }
