@@ -1,132 +1,160 @@
 package appinsights
 
-import "time"
+import (
+	"time"
 
+	"github.com/Microsoft/ApplicationInsights-Go/appinsights/contracts"
+)
+
+// Application Insights telemetry client provides interface to track telemetry
+// items.
 type TelemetryClient interface {
-	Context() TelemetryContext
+	// Gets the telemetry context for this client. Values found on this
+	// context will get written out to every telemetry item tracked by
+	// this client.
+	Context() *TelemetryContext
+
+	// Gets the instrumentation key assigned to this telemetry client.
 	InstrumentationKey() string
+
+	// Gets the telemetry channel used to submit data to the backend.
 	Channel() TelemetryChannel
+
+	// Gets whether this client is enabled and will accept telemetry.
 	IsEnabled() bool
-	SetIsEnabled(bool)
-	Track(Telemetry)
-	TrackEvent(string)
-	TrackEventTelemetry(*EventTelemetry)
-	TrackMetric(string, float32)
-	TrackMetricTelemetry(*MetricTelemetry)
-	TrackTrace(string)
-	TrackTraceTelemetry(*TraceTelemetry)
-	TrackRequest(string, string, string, time.Time, time.Duration, string, bool)
-	TrackRequestTelemetry(*RequestTelemetry)
+
+	// Enables or disables the telemetry client. When disabled, telemetry
+	// is silently swallowed by the client. Defaults to enabled.
+	SetIsEnabled(enabled bool)
+
+	// Submits the specified telemetry item.
+	Track(telemetry Telemetry)
+
+	// Log a user action with the specified name
+	TrackEvent(name string)
+
+	// Log a numeric value that is not specified with a specific event.
+	// Typically used to send regular reports of performance indicators.
+	TrackMetric(name string, value float64)
+
+	// Log a trace message with the specified severity level.
+	TrackTrace(name string, severity contracts.SeverityLevel)
+
+	// Log an HTTP request with the specified method, URL, duration and
+	// response code.
+	TrackRequest(method, url string, duration time.Duration, responseCode string)
+
+	// Log a dependency with the specified name, type, target, and
+	// success status.
+	TrackRemoteDependency(name, dependencyType, target string, success bool)
+
+	// Log an availability test result with the specified test name,
+	// duration, and success status.
+	TrackAvailability(name string, duration time.Duration, success bool)
+
+	// Log an exception with the specified error, which may be a string,
+	// error or Stringer. The current callstack is collected
+	// automatically.
+	TrackException(err interface{})
 }
 
 type telemetryClient struct {
-	TelemetryConfiguration *TelemetryConfiguration
-	channel                TelemetryChannel
-	context                TelemetryContext
-	isEnabled              bool
+	channel   TelemetryChannel
+	context   *TelemetryContext
+	isEnabled bool
 }
 
+// Creates a new telemetry client instance that submits telemetry with the
+// specified instrumentation key.
 func NewTelemetryClient(iKey string) TelemetryClient {
 	return NewTelemetryClientFromConfig(NewTelemetryConfiguration(iKey))
 }
 
+// Creates a new telemetry client instance configured by the specified
+// TelemetryConfiguration object.
 func NewTelemetryClientFromConfig(config *TelemetryConfiguration) TelemetryClient {
 	channel := NewInMemoryChannel(config)
-	context := NewClientTelemetryContext()
+	context := NewTelemetryContext()
+
+	config.setupContext(context)
+
 	return &telemetryClient{
-		TelemetryConfiguration: config,
-		channel:                channel,
-		context:                context,
-		isEnabled:              true,
+		channel:   channel,
+		context:   context,
+		isEnabled: true,
 	}
 }
 
-func (tc *telemetryClient) Context() TelemetryContext {
+// Gets the telemetry context for this client.  Values found on this context
+// will get written out to every telemetry item tracked by this client.
+func (tc *telemetryClient) Context() *TelemetryContext {
 	return tc.context
 }
 
+// Gets the telemetry channel used to submit data to the backend.
 func (tc *telemetryClient) Channel() TelemetryChannel {
 	return tc.channel
 }
 
+// Gets the instrumentation key assigned to this telemetry client.
 func (tc *telemetryClient) InstrumentationKey() string {
-	return tc.TelemetryConfiguration.InstrumentationKey
+	return tc.context.InstrumentationKey()
 }
 
+// Gets whether this client is enabled and will accept telemetry.
 func (tc *telemetryClient) IsEnabled() bool {
 	return tc.isEnabled
 }
 
+// Enables or disables the telemetry client.  When disabled, telemetry is
+// silently swallowed by the client.  Defaults to enabled.
 func (tc *telemetryClient) SetIsEnabled(isEnabled bool) {
 	tc.isEnabled = isEnabled
 }
 
+// Submits the specified telemetry item.
 func (tc *telemetryClient) Track(item Telemetry) {
-	if tc.isEnabled {
-		iKey := tc.context.InstrumentationKey()
-		if len(iKey) == 0 {
-			iKey = tc.TelemetryConfiguration.InstrumentationKey
-		}
-
-		itemContext := item.Context().(*telemetryContext)
-		itemContext.iKey = iKey
-
-		clientContext := tc.context.(*telemetryContext)
-
-		for tagkey, tagval := range clientContext.tags {
-			if itemContext.tags[tagkey] == "" {
-				itemContext.tags[tagkey] = tagval
-			}
-		}
-
-		tc.channel.Send(item)
+	if tc.isEnabled && item != nil {
+		tc.channel.Send(tc.context.envelop(item))
 	}
 }
 
+// Log a user action with the specified name
 func (tc *telemetryClient) TrackEvent(name string) {
-	item := NewEventTelemetry(name)
-	tc.TrackEventTelemetry(item)
+	tc.Track(NewEventTelemetry(name))
 }
 
-func (tc *telemetryClient) TrackEventTelemetry(event *EventTelemetry) {
-	var item Telemetry
-	item = event
-
-	tc.Track(item)
+// Log a numeric value that is not specified with a specific event.
+// Typically used to send regular reports of performance indicators.
+func (tc *telemetryClient) TrackMetric(name string, value float64) {
+	tc.Track(NewMetricTelemetry(name, value))
 }
 
-func (tc *telemetryClient) TrackMetric(name string, value float32) {
-	item := NewMetricTelemetry(name, value)
-	tc.TrackMetricTelemetry(item)
+// Log a trace message with the specified severity level.
+func (tc *telemetryClient) TrackTrace(message string, severity contracts.SeverityLevel) {
+	tc.Track(NewTraceTelemetry(message, severity))
 }
 
-func (tc *telemetryClient) TrackMetricTelemetry(metric *MetricTelemetry) {
-	var item Telemetry
-	item = metric
-
-	tc.Track(item)
+// Log an HTTP request with the specified method, URL, duration and response
+// code.
+func (tc *telemetryClient) TrackRequest(method, url string, duration time.Duration, responseCode string) {
+	tc.Track(NewRequestTelemetry(method, url, duration, responseCode))
 }
 
-func (tc *telemetryClient) TrackTrace(message string) {
-	item := NewTraceTelemetry(message, Information)
-	tc.TrackTraceTelemetry(item)
+// Log a dependency with the specified name, type, target, and success
+// status.
+func (tc *telemetryClient) TrackRemoteDependency(name, dependencyType, target string, success bool) {
+	tc.Track(NewRemoteDependencyTelemetry(name, dependencyType, target, success))
 }
 
-func (tc *telemetryClient) TrackTraceTelemetry(trace *TraceTelemetry) {
-	var item Telemetry
-	item = trace
-
-	tc.Track(item)
+// Log an availability test result with the specified test name, duration,
+// and success status.
+func (tc *telemetryClient) TrackAvailability(name string, duration time.Duration, success bool) {
+	tc.Track(NewAvailabilityTelemetry(name, duration, success))
 }
 
-func (tc *telemetryClient) TrackRequest(name, method, url string, timestamp time.Time, duration time.Duration, responseCode string, success bool) {
-	item := NewRequestTelemetry(name, method, url, timestamp, duration, responseCode, success)
-	tc.TrackRequestTelemetry(item)
-}
-
-func (tc *telemetryClient) TrackRequestTelemetry(request *RequestTelemetry) {
-	var item Telemetry
-	item = request
-
-	tc.Track(item)
+// Log an exception with the specified error, which may be a string, error
+// or Stringer.  The current callstack is collected automatically.
+func (tc *telemetryClient) TrackException(err interface{}) {
+	tc.Track(newExceptionTelemetry(err, 1))
 }

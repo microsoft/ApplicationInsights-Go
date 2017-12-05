@@ -7,8 +7,11 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/Microsoft/ApplicationInsights-Go/appinsights/contracts"
 )
 
 type testServer struct {
@@ -59,7 +62,7 @@ func (server *testServer) waitForRequest(t *testing.T) *testRequest {
 
 type nullTransmitter struct{}
 
-func (transmitter *nullTransmitter) Transmit(payload []byte, items TelemetryBufferItems) (*transmissionResult, error) {
+func (transmitter *nullTransmitter) Transmit(payload []byte, items telemetryBufferItems) (*transmissionResult, error) {
 	return &transmissionResult{statusCode: successResponse}, nil
 }
 
@@ -82,7 +85,7 @@ func TestBasicTransmit(t *testing.T) {
 
 	server.responseData = []byte(`{"itemsReceived":3, "itemsAccepted":5, "errors":[]}`)
 	server.responseHeaders["Content-type"] = "application/json"
-	result, err := client.Transmit([]byte("foobar"), make(TelemetryBufferItems, 0))
+	result, err := client.Transmit([]byte("foobar"), make(telemetryBufferItems, 0))
 	req := server.waitForRequest(t)
 
 	if err != nil {
@@ -100,7 +103,7 @@ func TestBasicTransmit(t *testing.T) {
 
 	// Check for gzip magic number
 	if len(req.body) < 2 || req.body[0] != 0x1f || req.body[1] != 0x8b {
-		t.Fatalf("Missing gzip magic number")
+		t.Fatal("Missing gzip magic number")
 	}
 
 	// Decompress payload
@@ -156,7 +159,7 @@ func TestFailedTransmit(t *testing.T) {
 	server.responseCode = errorResponse
 	server.responseData = []byte(`{"itemsReceived":3, "itemsAccepted":0, "errors":[{"index": 2, "statusCode": 500, "message": "Hello"}]}`)
 	server.responseHeaders["Content-type"] = "application/json"
-	result, err := client.Transmit([]byte("foobar"), make(TelemetryBufferItems, 0))
+	result, err := client.Transmit([]byte("foobar"), make(telemetryBufferItems, 0))
 	server.waitForRequest(t)
 
 	if err != nil {
@@ -208,7 +211,7 @@ func TestThrottledTransmit(t *testing.T) {
 	server.responseData = make([]byte, 0)
 	server.responseHeaders["Content-type"] = "application/json"
 	server.responseHeaders["retry-after"] = "Wed, 09 Aug 2017 23:43:57 UTC"
-	result, err := client.Transmit([]byte("foobar"), make(TelemetryBufferItems, 0))
+	result, err := client.Transmit([]byte("foobar"), make(telemetryBufferItems, 0))
 	server.waitForRequest(t)
 
 	if err != nil {
@@ -230,6 +233,70 @@ func TestThrottledTransmit(t *testing.T) {
 	if (*result.retryAfter).Unix() != 1502322237 {
 		t.Error("retryAfter.Unix")
 	}
+}
+
+func TestTransmitDiagnostics(t *testing.T) {
+	client, server := newTestClientServer()
+	defer server.Close()
+
+	var msgs []string
+	notify := make(chan bool, 1)
+
+	NewDiagnosticsMessageListener(func(message string) error {
+		if message == "PING" {
+			notify <- true
+		} else {
+			msgs = append(msgs, message)
+		}
+
+		return nil
+	})
+
+	defer resetDiagnosticsListeners()
+
+	server.responseCode = errorResponse
+	server.responseData = []byte(`{"itemsReceived":1, "itemsAccepted":0, "errors":[{"index": 0, "statusCode": 500, "message": "Hello"}]}`)
+	server.responseHeaders["Content-type"] = "application/json"
+	_, err := client.Transmit([]byte("foobar"), make(telemetryBufferItems, 0))
+	server.waitForRequest(t)
+
+	// Wait for diagnostics to catch up.
+	diagnosticsWriter.Write("PING")
+	<-notify
+
+	if err != nil {
+		t.Errorf("err: %s", err.Error())
+	}
+
+	// The last line should say "Errors:" and not include the error because the telemetry item wasn't submitted.
+	if !strings.Contains(msgs[len(msgs)-1], "Errors:") {
+		t.Errorf("Last line should say 'Errors:', with no errors listed.  Instead: %s", msgs[len(msgs)-1])
+	}
+
+	// Go again but include telemetry items this time.
+	server.responseCode = errorResponse
+	server.responseData = []byte(`{"itemsReceived":1, "itemsAccepted":0, "errors":[{"index": 0, "statusCode": 500, "message": "Hello"}]}`)
+	server.responseHeaders["Content-type"] = "application/json"
+	_, err = client.Transmit([]byte("foobar"), telemetryBuffer(NewTraceTelemetry("World", Warning)))
+	server.waitForRequest(t)
+
+	// Wait for diagnostics to catch up.
+	diagnosticsWriter.Write("PING")
+	<-notify
+
+	if err != nil {
+		t.Errorf("err: %s", err.Error())
+	}
+
+	if !strings.Contains(msgs[len(msgs)-2], "500 Hello") {
+		t.Error("Telemetry error should be prefaced with result code and message")
+	}
+
+	if !strings.Contains(msgs[len(msgs)-1], "World") {
+		t.Error("Raw telemetry item should be found on last line")
+	}
+
+	close(notify)
 }
 
 type resultProperties struct {
@@ -393,21 +460,18 @@ func TestGetRetryItems(t *testing.T) {
 	}
 
 	payload3, items3 := res3.GetRetryItems(makePayload())
-	expected3 := TelemetryBufferItems{originalItems[5], originalItems[6]}
+	expected3 := telemetryBufferItems{originalItems[5], originalItems[6]}
 	if string(payload3) != string(expected3.serialize()) || len(items3) != 2 {
 		t.Error("Unexpected result")
 	}
 }
 
-func makePayload() ([]byte, TelemetryBufferItems) {
-	buffer := TelemetryBufferItems{
-		NewTraceTelemetry("msg1", 0),
-		NewTraceTelemetry("msg2", 1),
-		NewTraceTelemetry("msg3", 2),
-		NewTraceTelemetry("msg4", 3),
-		NewTraceTelemetry("msg5", 4),
-		NewTraceTelemetry("msg6", 0),
-		NewTraceTelemetry("msg7", 1),
+func makePayload() ([]byte, telemetryBufferItems) {
+	buffer := telemetryBuffer()
+	for i := 0; i < 7; i++ {
+		tr := NewTraceTelemetry(fmt.Sprintf("msg%d", i+1), contracts.SeverityLevel(i%5))
+		tr.Tags.Operation().SetId(fmt.Sprintf("op%d", i))
+		buffer.add(tr)
 	}
 
 	return buffer.serialize(), buffer

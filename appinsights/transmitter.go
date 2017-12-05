@@ -11,7 +11,7 @@ import (
 )
 
 type transmitter interface {
-	Transmit(payload []byte, items TelemetryBufferItems) (*transmissionResult, error)
+	Transmit(payload []byte, items telemetryBufferItems) (*transmissionResult, error)
 }
 
 type httpTransmitter struct {
@@ -54,8 +54,8 @@ func newTransmitter(endpointAddress string) transmitter {
 	return &httpTransmitter{endpointAddress}
 }
 
-func (transmitter *httpTransmitter) Transmit(payload []byte, items TelemetryBufferItems) (*transmissionResult, error) {
-	diagnosticsWriter.Printf("----------- Transmitting %d items ---------", len(items))
+func (transmitter *httpTransmitter) Transmit(payload []byte, items telemetryBufferItems) (*transmissionResult, error) {
+	diagnosticsWriter.Printf("--------- Transmitting %d items ---------", len(items))
 	startTime := time.Now()
 
 	// Compress the payload
@@ -121,7 +121,7 @@ func (transmitter *httpTransmitter) Transmit(payload []byte, items TelemetryBuff
 				for _, err := range result.response.Errors {
 					if err.Index < len(items) {
 						diagnosticsWriter.Printf("#%d - %d %s", err.Index, err.StatusCode, err.Message)
-						diagnosticsWriter.Printf("Telemetry item:\n%d\t%s", err.Index, string(items[err.Index:err.Index+1].serialize()))
+						diagnosticsWriter.Printf("Telemetry item:\n\t%s", string(items[err.Index:err.Index+1].serialize()))
 					}
 				}
 			}
@@ -177,13 +177,13 @@ func (result *itemTransmissionResult) CanRetry() bool {
 		result.StatusCode == tooManyRequestsOverExtendedTimeResponse
 }
 
-func (result *transmissionResult) GetRetryItems(payload []byte, items TelemetryBufferItems) ([]byte, TelemetryBufferItems) {
+func (result *transmissionResult) GetRetryItems(payload []byte, items telemetryBufferItems) ([]byte, telemetryBufferItems) {
 	if result.statusCode == partialSuccessResponse && result.response != nil {
 		// Make sure errors are ordered by index
 		sort.Sort(result.response.Errors)
 
 		var resultPayload bytes.Buffer
-		resultItems := make(TelemetryBufferItems, 0)
+		resultItems := make(telemetryBufferItems, 0)
 		ptr := 0
 		idx := 0
 

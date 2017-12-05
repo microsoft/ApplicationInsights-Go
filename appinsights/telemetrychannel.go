@@ -1,6 +1,9 @@
 package appinsights
 
-import "time"
+import (
+	"github.com/Microsoft/ApplicationInsights-Go/appinsights/contracts"
+	"time"
+)
 
 // Implementations of TelemetryChannel are responsible for queueing and
 // periodically submitting telemetry items.
@@ -9,7 +12,7 @@ type TelemetryChannel interface {
 	EndpointAddress() string
 
 	// Queues a single telemetry item
-	Send(Telemetry)
+	Send(*contracts.Envelope)
 
 	// Forces the current queue to be sent
 	Flush()
