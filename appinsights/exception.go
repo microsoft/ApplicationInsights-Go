@@ -2,7 +2,7 @@ package appinsights
 
 import (
 	"fmt"
-	"github.com/jjjordanmsft/ApplicationInsights-Go/appinsights/contracts"
+	"github.com/Microsoft/ApplicationInsights-Go/appinsights/contracts"
 	"reflect"
 	"runtime"
 	"strings"

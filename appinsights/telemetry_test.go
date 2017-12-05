@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jjjordanmsft/ApplicationInsights-Go/appinsights/contracts"
+	"github.com/Microsoft/ApplicationInsights-Go/appinsights/contracts"
 )
 
 const float_precision = 1e-4

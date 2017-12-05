@@ -2,7 +2,7 @@ package appinsights
 
 // NOTE: This file was automatically generated.
 
-import "github.com/jjjordanmsft/ApplicationInsights-Go/appinsights/contracts"
+import "github.com/Microsoft/ApplicationInsights-Go/appinsights/contracts"
 
 // Type of the metric data measurement.
 const (

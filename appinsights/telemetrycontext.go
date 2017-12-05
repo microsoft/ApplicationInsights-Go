@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jjjordanmsft/ApplicationInsights-Go/appinsights/contracts"
+	"github.com/Microsoft/ApplicationInsights-Go/appinsights/contracts"
 	"github.com/satori/go.uuid"
 )
 
