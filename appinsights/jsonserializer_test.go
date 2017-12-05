@@ -402,7 +402,7 @@ func (msg jsonMessage) assertPath(t *testing.T, path string, value interface{}) 
 				t.Errorf("Data was unexpected at %s. Got %d want %d", path, vnum, num)
 			}
 		} else {
-			t.Errorf("Expected value at %s to be a number, but was %t", path, v)
+			t.Errorf("Expected value at %s to be a number, but was %T", path, v)
 		}
 	} else if num, ok := value.(float64); ok {
 		if vnum, ok := v.(float64); ok {
@@ -414,7 +414,7 @@ func (msg jsonMessage) assertPath(t *testing.T, path string, value interface{}) 
 				t.Errorf("Data was unexpected at %s. Got %d want %g", path, vnum, num)
 			}
 		} else {
-			t.Errorf("Expected value at %s to be a number, but was %t", path, v)
+			t.Errorf("Expected value at %s to be a number, but was %T", path, v)
 		}
 	} else if str, ok := value.(string); ok {
 		if vstr, ok := v.(string); ok {
@@ -422,18 +422,18 @@ func (msg jsonMessage) assertPath(t *testing.T, path string, value interface{}) 
 				t.Errorf("Data was unexpected at %s. Got '%s' want '%s'", path, vstr, str)
 			}
 		} else {
-			t.Errorf("Expected value at %s to be a string, but was %t", path, v)
+			t.Errorf("Expected value at %s to be a string, but was %T", path, v)
 		}
 	} else if bl, ok := value.(bool); ok {
 		if vbool, ok := v.(bool); ok {
 			if bl != vbool {
-				t.Errorf("Data was unexpected at %s. Got %q want %q", path, vbool, bl)
+				t.Errorf("Data was unexpected at %s. Got %t want %t", path, vbool, bl)
 			}
 		} else {
-			t.Errorf("Expected value at %t to be a bool, but was %t", path, v)
+			t.Errorf("Expected value at %s to be a bool, but was %T", path, v)
 		}
 	} else {
-		t.Errorf("Unsupported type: %v", value)
+		t.Errorf("Unsupported type: %#v", value)
 	}
 }
 
