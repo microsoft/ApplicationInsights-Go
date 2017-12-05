@@ -1,7 +1,6 @@
 package appinsights
 
 import (
-	"strconv"
 	"time"
 
 	"github.com/jjjordanmsft/ApplicationInsights-Go/appinsights/contracts"
@@ -19,7 +18,7 @@ type TelemetryContext struct {
 	iKey string
 
 	// Collection of tag data to attach to the telemetry item.
-	Tags map[string]string
+	Tags contracts.ContextTags
 
 	// Common properties to add to each telemetry item.  This only has
 	// an effect from the TelemetryClient's context instance.  This will
@@ -30,7 +29,7 @@ type TelemetryContext struct {
 // Creates a new, empty TelemetryContext
 func NewTelemetryContext() *TelemetryContext {
 	return &TelemetryContext{
-		Tags: make(map[string]string),
+		Tags: make(contracts.ContextTags),
 	}
 }
 
@@ -100,38 +99,4 @@ func (context *TelemetryContext) envelop(item Telemetry) *contracts.Envelope {
 	}
 
 	return envelope
-}
-
-func (context *TelemetryContext) getStringTag(key string) string {
-	if result, ok := context.Tags[key]; ok {
-		return result
-	}
-
-	return ""
-}
-
-func (context *TelemetryContext) setStringTag(key, value string) {
-	if value != "" {
-		context.Tags[key] = value
-	} else {
-		delete(context.Tags, key)
-	}
-}
-
-func (context *TelemetryContext) getBoolTag(key string) bool {
-	if result, ok := context.Tags[key]; ok {
-		if value, err := strconv.ParseBool(result); err == nil {
-			return value
-		}
-	}
-
-	return false
-}
-
-func (context *TelemetryContext) setBoolTag(key string, value bool) {
-	if value {
-		context.Tags[key] = "true"
-	} else {
-		delete(context.Tags, key)
-	}
 }
