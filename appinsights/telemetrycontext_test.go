@@ -13,7 +13,7 @@ func TestDefaultTags(t *testing.T) {
 	context.Tags["no-write"] = "Fail"
 
 	telem := NewTraceTelemetry("Hello world.", Verbose)
-	telem.Context.Tags["no-write"] = "OK"
+	telem.Tags["no-write"] = "OK"
 
 	envelope := context.envelop(telem)
 
@@ -50,22 +50,22 @@ func TestCommonProperties(t *testing.T) {
 
 func TestContextTags(t *testing.T) {
 	// Just a quick test to make sure it works.
-	context := NewTelemetryContext()
-	if v := context.Tags.Session().GetId(); v != "" {
+	tags := make(contracts.ContextTags)
+	if v := tags.Session().GetId(); v != "" {
 		t.Error("Failed to get empty session ID")
 	}
 
-	context.Tags.Session().SetIsFirst("true")
-	if v := context.Tags.Session().GetIsFirst(); v != "true" {
+	tags.Session().SetIsFirst("true")
+	if v := tags.Session().GetIsFirst(); v != "true" {
 		t.Error("Failed to get value")
 	}
 
-	if v, ok := context.Tags["ai.session.isFirst"]; !ok || v != "true" {
+	if v, ok := tags["ai.session.isFirst"]; !ok || v != "true" {
 		t.Error("Failed to get isFirst through raw map")
 	}
 
-	context.Tags.Session().SetIsFirst("")
-	if v, ok := context.Tags["ai.session.isFirst"]; ok || v != "" {
+	tags.Session().SetIsFirst("")
+	if v, ok := tags["ai.session.isFirst"]; ok || v != "" {
 		t.Error("SetIsFirst with empty string failed to remove it from the map")
 	}
 }

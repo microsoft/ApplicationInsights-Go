@@ -26,7 +26,7 @@ type Telemetry interface {
 
 	// Gets context data containing extra, optional tags.  Overrides
 	// values found on client TelemetryContext.
-	TelemetryContext() *TelemetryContext
+	ContextTags() map[string]string
 
 	// Gets the data contract as it will be submitted to the data
 	// collector.
@@ -51,7 +51,7 @@ type BaseTelemetry struct {
 	Measurements map[string]float64
 
 	// Telemetry Context containing extra, optional tags.
-	Context *TelemetryContext
+	Tags contracts.ContextTags
 }
 
 // Gets the time when this item was measured
@@ -61,8 +61,8 @@ func (item *BaseTelemetry) Time() time.Time {
 
 // Gets context data containing extra, optional tags.  Overrides values
 // found on client TelemetryContext.
-func (item *BaseTelemetry) TelemetryContext() *TelemetryContext {
-	return item.Context
+func (item *BaseTelemetry) ContextTags() map[string]string {
+	return item.Tags
 }
 
 // Gets custom properties to submit with the telemetry item.
@@ -95,7 +95,7 @@ func NewTraceTelemetry(message string, severityLevel contracts.SeverityLevel) *T
 		SeverityLevel: severityLevel,
 		BaseTelemetry: BaseTelemetry{
 			Timestamp:  currentClock.Now(),
-			Context:    NewTelemetryContext(),
+			Tags:       make(contracts.ContextTags),
 			Properties: make(map[string]string),
 		},
 	}
@@ -124,7 +124,7 @@ func NewEventTelemetry(name string) *EventTelemetry {
 		Name: name,
 		BaseTelemetry: BaseTelemetry{
 			Timestamp:    currentClock.Now(),
-			Context:      NewTelemetryContext(),
+			Tags:         make(contracts.ContextTags),
 			Properties:   make(map[string]string),
 			Measurements: make(map[string]float64),
 		},
@@ -158,7 +158,7 @@ func NewMetricTelemetry(name string, value float64) *MetricTelemetry {
 		Value: value,
 		BaseTelemetry: BaseTelemetry{
 			Timestamp:  currentClock.Now(),
-			Context:    NewTelemetryContext(),
+			Tags:       make(contracts.ContextTags),
 			Properties: make(map[string]string),
 		},
 	}
@@ -216,7 +216,7 @@ func NewAggregateMetricTelemetry(name string) *AggregateMetricTelemetry {
 		Count: 0,
 		BaseTelemetry: BaseTelemetry{
 			Timestamp:  currentClock.Now(),
-			Context:    NewTelemetryContext(),
+			Tags:       make(contracts.ContextTags),
 			Properties: make(map[string]string),
 		},
 	}
@@ -385,7 +385,7 @@ func NewRequestTelemetry(method, uri string, duration time.Duration, responseCod
 		Success:      success,
 		BaseTelemetry: BaseTelemetry{
 			Timestamp:    currentClock.Now().Add(-duration),
-			Context:      NewTelemetryContext(),
+			Tags:         make(contracts.ContextTags),
 			Properties:   make(map[string]string),
 			Measurements: make(map[string]float64),
 		},
@@ -464,7 +464,7 @@ func NewRemoteDependencyTelemetry(name, dependencyType, target string, success b
 		Success: success,
 		BaseTelemetry: BaseTelemetry{
 			Timestamp:    currentClock.Now(),
-			Context:      NewTelemetryContext(),
+			Tags:         make(contracts.ContextTags),
 			Properties:   make(map[string]string),
 			Measurements: make(map[string]float64),
 		},
@@ -528,7 +528,7 @@ func NewAvailabilityTelemetry(name string, duration time.Duration, success bool)
 		Success:  success,
 		BaseTelemetry: BaseTelemetry{
 			Timestamp:    currentClock.Now(),
-			Context:      NewTelemetryContext(),
+			Tags:         make(contracts.ContextTags),
 			Properties:   make(map[string]string),
 			Measurements: make(map[string]float64),
 		},
@@ -578,7 +578,7 @@ func NewPageViewTelemetry(name, url string) *PageViewTelemetry {
 		Url:  url,
 		BaseTelemetry: BaseTelemetry{
 			Timestamp:    currentClock.Now(),
-			Context:      NewTelemetryContext(),
+			Tags:         make(contracts.ContextTags),
 			Properties:   make(map[string]string),
 			Measurements: make(map[string]float64),
 		},

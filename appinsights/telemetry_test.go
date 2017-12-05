@@ -49,7 +49,7 @@ func TestTraceTelemetry(t *testing.T) {
 	checkDataContract(t, "Properties[prop1]", d.Properties["prop1"], "value1")
 	checkDataContract(t, "Properties[prop2]", d.Properties["prop2"], "value2")
 	checkDataContract(t, "Timestamp", telem.Time(), currentClock.Now())
-	checkNotNullOrEmpty(t, "TelemetryContext", telem.TelemetryContext())
+	checkNotNullOrEmpty(t, "ContextTags", telem.ContextTags())
 
 	telem2 := &TraceTelemetry{
 		Message:       "~my-2nd-message~",
@@ -78,7 +78,7 @@ func TestEventTelemetry(t *testing.T) {
 	checkDataContract(t, "Measurements[measure1]", d.Measurements["measure1"], 1234.0)
 	checkDataContract(t, "Measurements[measure2]", d.Measurements["measure2"], 5678.0)
 	checkDataContract(t, "Timestamp", telem.Time(), currentClock.Now())
-	checkNotNullOrEmpty(t, "TelemetryContext", telem.TelemetryContext())
+	checkNotNullOrEmpty(t, "ContextTags", telem.ContextTags())
 
 	telem2 := &EventTelemetry{
 		Name: "~my-event~",
@@ -104,7 +104,7 @@ func TestMetricTelemetry(t *testing.T) {
 	checkDataContract(t, "DataPoint.Count", dp.Count, 1)
 	checkDataContract(t, "Properties[prop1]", d.Properties["prop1"], "value!")
 	checkDataContract(t, "Timestamp", telem.Time(), currentClock.Now())
-	checkNotNullOrEmpty(t, "TelemetryContext", telem.TelemetryContext())
+	checkNotNullOrEmpty(t, "ContextTags", telem.ContextTags())
 
 	telem2 := &MetricTelemetry{
 		Name:  "~my metric~",
@@ -205,7 +205,7 @@ func TestRequestTelemetry(t *testing.T) {
 	checkDataContract(t, "Properties[prop1]", d.Properties["prop1"], "value1")
 	checkDataContract(t, "Measurements[measure1]", d.Measurements["measure1"], 999.0)
 	checkDataContract(t, "Timestamp", telem.Time(), currentClock.Now().Add(-time.Minute))
-	checkNotNullOrEmpty(t, "TelemetryContext", telem.TelemetryContext())
+	checkNotNullOrEmpty(t, "ContextTags", telem.ContextTags())
 
 	startTime := currentClock.Now().Add(-time.Hour)
 	endTime := startTime.Add(5 * time.Minute)
@@ -256,7 +256,7 @@ func TestRemoteDependencyTelemetry(t *testing.T) {
 	checkDataContract(t, "Properties[prop1]", d.Properties["prop1"], "value1")
 	checkDataContract(t, "Measurements[measure1]", d.Measurements["measure1"], 999.0)
 	checkDataContract(t, "Timestamp", telem.Time(), currentClock.Now())
-	checkNotNullOrEmpty(t, "TelemetryContext", telem.TelemetryContext())
+	checkNotNullOrEmpty(t, "ContextTags", telem.ContextTags())
 
 	telem.Id = "<id>"
 	telem.Success = false
@@ -292,7 +292,7 @@ func TestAvailabilityTelemetry(t *testing.T) {
 	checkDataContract(t, "Properties[prop1]", d.Properties["prop1"], "value1")
 	checkDataContract(t, "Measurements[measure1]", d.Measurements["measure1"], 999.0)
 	checkDataContract(t, "Timestamp", telem.Time(), currentClock.Now())
-	checkNotNullOrEmpty(t, "TelemetryContext", telem.TelemetryContext())
+	checkNotNullOrEmpty(t, "ContextTags", telem.ContextTags())
 
 	telem.Id = "<id>"
 	telem.Success = false
@@ -324,7 +324,7 @@ func TestPageViewTelemetry(t *testing.T) {
 	checkDataContract(t, "Properties[prop1]", d.Properties["prop1"], "value1")
 	checkDataContract(t, "Measurements[measure1]", d.Measurements["measure1"], 999.0)
 	checkDataContract(t, "Timestamp", telem.Time(), currentClock.Now())
-	checkNotNullOrEmpty(t, "TelemetryContext", telem.TelemetryContext())
+	checkNotNullOrEmpty(t, "ContextTags", telem.ContextTags())
 
 	startTime := currentClock.Now().Add(-time.Hour)
 	endTime := startTime.Add(5 * time.Minute)

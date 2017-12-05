@@ -246,8 +246,8 @@ request.Properties["user-agent"] = request.headers["User-agent"]
 request.Measurements["POST size"] = float64(len(data))
 
 // Context tags become more useful here as well
-request.Context.Session().SetId("<session id>")
-request.Context.User().SetAccountId("<user id>")
+request.Tags.Session().SetId("<session id>")
+request.Tags.User().SetAccountId("<user id>")
 
 // Finally track it
 client.Track(request)
@@ -400,22 +400,18 @@ client.Track(pageview)
 ```
 
 ### Context tags
-[TelemetryContext](https://godoc.org/github.com/jjjordanmsft/ApplicationInsights-Go/appinsights/#TelemetryContext)
-instances encapsulate context data that augments the telemetry sent through
-the client.  It is used to send information *about* the submitted telemetry,
-such as user, session, and device information.  `TelemetryContext` instances
-exist in two places: on the `TelemetryClient`, which will augment data for
-every telemetry sent through the client; and on individual telemetry items,
-where information can be stored that is specific to that item.  If a context
-tag is found in both the client and the telemetry item's `TelemetryContext`,
-the value associated with the telemetry item takes precedence.
 
-There are two ways to access this data.  One is directly through the
-`TelemetryContext.Tags` map, using any of the
-[context tag keys](https://godoc.org/github.com/jjjordanmsft/ApplicationInsights-Go/appinsights/contracts/#pkg-constants)
-found in the
-[contracts package](https://godoc.org/github.com/jjjordanmsft/ApplicationInsights-Go/appinsights/contracts/).
-The other is via helper methods found on the `TelemetryContext` type.
+Telemetry items all have a `Tags` property that contains information *about*
+the submitted telemetry, such as user, session, and device information.  The
+`Tags` property is an instance of the
+[contracts.ContextTags](https://godoc.org/github.com/jjjordanmsft/ApplicationInsights-Go/appinsights/contracts/#ContextTags)
+type, which is a `map[string]string` under the hood, but has helper methods
+to access the most commonly used data.  An instance of
+[TelemetryContext](https://godoc.org/github.com/jjjordanmsft/ApplicationInsights-Go/appinsights/#TelemetryContext)
+exists on the `TelemetryClient`, and also contains a `Tags` property.  These
+tags are applied to all telemetry sent through the client.  If a context tag
+is found on both the client's `TelemetryContext` and in the telemetry item's
+`Tags`, the value associated with the telemtry takes precedence.
 
 A few examples for illustration:
 
@@ -432,19 +428,19 @@ func main() {
 	
 	// Set role instance name globally -- this is usually the
 	// name of the service submitting the telemetry
-	client.Context().Cloud().SetRole("my_go_server")
+	client.Context().Tags.Cloud().SetRole("my_go_server")
 	
 	// Set the role instance to the host name.  Note that this is
 	// done automatically by the SDK.
-	client.Context().Cloud().SetRoleInstance(os.Hostname())
+	client.Context().Tags.Cloud().SetRoleInstance(os.Hostname())
 	
 	// Make a request to fiddle with the telemetry's context
 	req := appinsights.NewRequestTelemetry("GET", "http://server/path", time.Millisecond, "200")
 	
 	// Set the account ID context tag, for this telemetry item
 	// only.  The following are equivalent:
-	req.Context.User().SetAccountId("<user account retrieved from request>")
-	req.Context.Tags[contracts.UserAccountId] = "<user account retrieved from request>"
+	req.Tags.User().SetAccountId("<user account retrieved from request>")
+	req.Tags[contracts.UserAccountId] = "<user account retrieved from request>"
 	
 	// This request will have all context tags above.
 	client.Track(req)
@@ -452,13 +448,13 @@ func main() {
 ```
 
 ### Common properties
+
 In the same way that context tags can be written to all telemetry items, the
-`TelemetryContext` on the `TelemetryClient` has a `CommonProperties` map. 
-Entries in this map will be added to all telemetry items' custom properties
-(unless a telemetry item already has that property set -- the telemetry item
-always has precedence).  This is useful for contextual data that may not be
-captured in the context tags, for instance cluster identifiers or resource
-groups.
+`TelemetryContext` has a `CommonProperties` map.  Entries in this map will
+be added to all telemetry items' custom properties (unless a telemetry item
+already has that property set -- the telemetry item always has precedence). 
+This is useful for contextual data that may not be captured in the context
+tags, for instance cluster identifiers or resource groups.
 
 ```go
 func main() {
@@ -468,9 +464,6 @@ func main() {
 	// ...
 }
 ```
-
-Do note that while the `CommonProperties` field exists on telemetry items'
-`TelemetryContext` objects, it will be set to nil.
 
 ### Shutdown
 The Go SDK submits data asynchronously.  The [InMemoryChannel](https://godoc.org/github.com/jjjordanmsft/ApplicationInsights-Go/appinsights/#InMemoryChannel)

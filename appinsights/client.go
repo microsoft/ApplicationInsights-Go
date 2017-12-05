@@ -76,9 +76,6 @@ func NewTelemetryClientFromConfig(config *TelemetryConfiguration) TelemetryClien
 	channel := NewInMemoryChannel(config)
 	context := NewTelemetryContext()
 
-	// Not generated for items' TelemetryContexts
-	context.CommonProperties = make(map[string]string)
-
 	config.setupContext(context)
 
 	return &telemetryClient{
