@@ -2,10 +2,11 @@ package appinsights
 
 import (
 	"fmt"
-	"github.com/Microsoft/ApplicationInsights-Go/appinsights/contracts"
 	"reflect"
 	"runtime"
 	"strings"
+
+	"github.com/Microsoft/ApplicationInsights-Go/appinsights/contracts"
 )
 
 // Exception telemetry items represent a handled or unhandled exceptions that
@@ -38,7 +39,7 @@ func newExceptionTelemetry(err interface{}, skip int) *ExceptionTelemetry {
 		SeverityLevel: Error,
 		BaseTelemetry: BaseTelemetry{
 			Timestamp:    currentClock.Now(),
-			Context:      NewTelemetryContext(),
+			Tags:         make(contracts.ContextTags),
 			Properties:   make(map[string]string),
 			Measurements: make(map[string]float64),
 		},

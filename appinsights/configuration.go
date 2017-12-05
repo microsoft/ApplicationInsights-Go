@@ -36,11 +36,11 @@ func NewTelemetryConfiguration(instrumentationKey string) *TelemetryConfiguratio
 
 func (config *TelemetryConfiguration) setupContext(context *TelemetryContext) {
 	context.iKey = config.InstrumentationKey
-	context.Internal().SetSdkVersion(sdkName + ":" + Version)
-	context.Device().SetOsVersion(runtime.GOOS)
+	context.Tags.Internal().SetSdkVersion(sdkName + ":" + Version)
+	context.Tags.Device().SetOsVersion(runtime.GOOS)
 
 	if hostname, err := os.Hostname(); err == nil {
-		context.Device().SetId(hostname)
-		context.Cloud().SetRoleInstance(hostname)
+		context.Tags.Device().SetId(hostname)
+		context.Tags.Cloud().SetRoleInstance(hostname)
 	}
 }

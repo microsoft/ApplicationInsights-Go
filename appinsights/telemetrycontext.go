@@ -1,25 +1,21 @@
 package appinsights
 
 import (
-	"strconv"
 	"time"
 
 	"github.com/Microsoft/ApplicationInsights-Go/appinsights/contracts"
 	"github.com/satori/go.uuid"
 )
 
-// The telemetry context type stores context keys that will be applied to
-// submitted telemetry.  This includes, e.g. information about the system
-// and application sending the telemetry as well as information used for
-// correlation with other events.  Each TelemetryClient contains a
-// TelemetryContext that will set values on every outgoing item if the key
-// is not overridden inside the telemetry item's TelemetryContext.
+// Encapsulates contextual data common to all telemetry submitted through a
+// TelemetryClient instance such as including instrumentation key, tags, and
+// common properties.
 type TelemetryContext struct {
 	// Instrumentation key
 	iKey string
 
 	// Collection of tag data to attach to the telemetry item.
-	Tags map[string]string
+	Tags contracts.ContextTags
 
 	// Common properties to add to each telemetry item.  This only has
 	// an effect from the TelemetryClient's context instance.  This will
@@ -30,7 +26,8 @@ type TelemetryContext struct {
 // Creates a new, empty TelemetryContext
 func NewTelemetryContext() *TelemetryContext {
 	return &TelemetryContext{
-		Tags: make(map[string]string),
+		Tags:             make(contracts.ContextTags),
+		CommonProperties: make(map[string]string),
 	}
 }
 
@@ -69,13 +66,13 @@ func (context *TelemetryContext) envelop(item Telemetry) *contracts.Envelope {
 
 	envelope.Time = timestamp.UTC().Format(time.RFC3339)
 
-	if itemContext := item.TelemetryContext(); itemContext != nil && itemContext != context {
-		envelope.Tags = itemContext.Tags
+	if contextTags := item.ContextTags(); contextTags != nil {
+		envelope.Tags = contextTags
 
 		// Copy in default tag values.
 		for tagkey, tagval := range context.Tags {
-			if _, ok := itemContext.Tags[tagkey]; !ok {
-				envelope.Tags[tagkey] = tagval
+			if _, ok := contextTags[tagkey]; !ok {
+				contextTags[tagkey] = tagval
 			}
 		}
 	} else {
@@ -100,38 +97,4 @@ func (context *TelemetryContext) envelop(item Telemetry) *contracts.Envelope {
 	}
 
 	return envelope
-}
-
-func (context *TelemetryContext) getStringTag(key string) string {
-	if result, ok := context.Tags[key]; ok {
-		return result
-	}
-
-	return ""
-}
-
-func (context *TelemetryContext) setStringTag(key, value string) {
-	if value != "" {
-		context.Tags[key] = value
-	} else {
-		delete(context.Tags, key)
-	}
-}
-
-func (context *TelemetryContext) getBoolTag(key string) bool {
-	if result, ok := context.Tags[key]; ok {
-		if value, err := strconv.ParseBool(result); err == nil {
-			return value
-		}
-	}
-
-	return false
-}
-
-func (context *TelemetryContext) setBoolTag(key string, value bool) {
-	if value {
-		context.Tags[key] = "true"
-	} else {
-		delete(context.Tags, key)
-	}
 }

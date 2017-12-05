@@ -470,7 +470,7 @@ func makePayload() ([]byte, telemetryBufferItems) {
 	buffer := telemetryBuffer()
 	for i := 0; i < 7; i++ {
 		tr := NewTraceTelemetry(fmt.Sprintf("msg%d", i+1), contracts.SeverityLevel(i%5))
-		tr.Context.Operation().SetId(fmt.Sprintf("op%d", i))
+		tr.Tags.Operation().SetId(fmt.Sprintf("op%d", i))
 		buffer.add(tr)
 	}
 

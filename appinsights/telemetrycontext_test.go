@@ -13,7 +13,7 @@ func TestDefaultTags(t *testing.T) {
 	context.Tags["no-write"] = "Fail"
 
 	telem := NewTraceTelemetry("Hello world.", Verbose)
-	telem.Context.Tags["no-write"] = "OK"
+	telem.Tags["no-write"] = "OK"
 
 	envelope := context.envelop(telem)
 
@@ -48,46 +48,25 @@ func TestCommonProperties(t *testing.T) {
 	}
 }
 
-func TestTagHelpers(t *testing.T) {
-	context := NewTelemetryContext()
-	if context.getStringTag("Nonexistent") != "" {
-		t.Error("Successfully fetched nonexistent tag")
+func TestContextTags(t *testing.T) {
+	// Just a quick test to make sure it works.
+	tags := make(contracts.ContextTags)
+	if v := tags.Session().GetId(); v != "" {
+		t.Error("Failed to get empty session ID")
 	}
 
-	context.setStringTag("my_tag", "foo")
-	if v, ok := context.Tags["my_tag"]; !ok || v != "foo" {
-		t.Error("setStringTag had no effect")
+	tags.Session().SetIsFirst("true")
+	if v := tags.Session().GetIsFirst(); v != "true" {
+		t.Error("Failed to get value")
 	}
 
-	if context.getStringTag("my_tag") != "foo" {
-		t.Error("setStringTag/getStringTag had unexpected result")
+	if v, ok := tags["ai.session.isFirst"]; !ok || v != "true" {
+		t.Error("Failed to get isFirst through raw map")
 	}
 
-	context.setStringTag("my_tag", "")
-	if _, ok := context.Tags["my_tag"]; ok {
-		t.Error("setStringTag did not delete tag")
-	}
-
-	if context.getBoolTag("Nonexistent") != false {
-		t.Error("Getting a nonexistent bool tag did not default to false")
-	}
-
-	context.setBoolTag("my_bool", true)
-	if v, ok := context.Tags["my_bool"]; !ok || v != "true" {
-		t.Error("Setting a bool tag should set it to 'true'")
-	}
-
-	if context.getBoolTag("my_bool") != true {
-		t.Error("Getting a bool should return the correct value")
-	}
-
-	context.setBoolTag("my_bool", false)
-	if _, ok := context.Tags["my_bool"]; ok {
-		t.Error("Setting a tag to false should remove it from the dict")
-	}
-
-	if context.getBoolTag("my_bool") != false {
-		t.Error("Getting a bool should return the correct value")
+	tags.Session().SetIsFirst("")
+	if v, ok := tags["ai.session.isFirst"]; ok || v != "" {
+		t.Error("SetIsFirst with empty string failed to remove it from the map")
 	}
 }
 
@@ -100,7 +79,7 @@ func TestSanitize(t *testing.T) {
 	ev.Measurements[name] = 55.0
 
 	ctx := NewTelemetryContext()
-	ctx.Session().SetId(name)
+	ctx.Tags.Session().SetId(name)
 
 	// We'll be looking for messages with these values:
 	found := map[string]int{
