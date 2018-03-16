@@ -51,11 +51,13 @@ type baseTelemetry struct {
 	Tags contracts.ContextTags
 }
 
+// Mixin type for telemetry that includes Measurements.
 type baseTelemetryMeasurements struct {
 	// Custom measurements
 	Measurements map[string]float64
 }
 
+// Mixin type for telemetry that omits Measurements.
 type baseTelemetryNoMeasurements struct {
 }
 

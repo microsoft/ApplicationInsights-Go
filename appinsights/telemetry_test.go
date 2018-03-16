@@ -59,6 +59,11 @@ func TestTraceTelemetry(t *testing.T) {
 
 	checkDataContract(t, "Message", d2.Message, "~my-2nd-message~")
 	checkDataContract(t, "SeverityLevel", d2.SeverityLevel, Critical)
+
+	var telemInterface Telemetry
+	if telemInterface = telem; telemInterface.GetMeasurements() != nil {
+		t.Errorf("Trace.(Telemetry).GetMeasurements should return nil")
+	}
 }
 
 func TestEventTelemetry(t *testing.T) {
@@ -118,6 +123,11 @@ func TestMetricTelemetry(t *testing.T) {
 	checkDataContract(t, "DataPoint.Value", dp2.Value, 5678.0)
 	checkDataContract(t, "DataPoint.Kind", dp2.Kind, Measurement)
 	checkDataContract(t, "DataPoint.Count", dp2.Count, 1)
+
+	var telemInterface Telemetry
+	if telemInterface = telem; telemInterface.GetMeasurements() != nil {
+		t.Errorf("Metric.(Telemetry).GetMeasurements should return nil")
+	}
 }
 
 type statsTest struct {
