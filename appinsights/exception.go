@@ -12,8 +12,8 @@ import (
 // Exception telemetry items represent a handled or unhandled exceptions that
 // occurred during execution of the monitored application.
 type ExceptionTelemetry struct {
-	baseTelemetry
-	baseTelemetryMeasurements
+	BaseTelemetry
+	BaseTelemetryMeasurements
 
 	// Panic message: string, error, or Stringer
 	Error interface{}
@@ -38,12 +38,12 @@ func newExceptionTelemetry(err interface{}, skip int) *ExceptionTelemetry {
 		Error:         err,
 		Frames:        GetCallstack(2 + skip),
 		SeverityLevel: Error,
-		baseTelemetry: baseTelemetry{
+		BaseTelemetry: BaseTelemetry{
 			Timestamp:  currentClock.Now(),
 			Tags:       make(contracts.ContextTags),
 			Properties: make(map[string]string),
 		},
-		baseTelemetryMeasurements: baseTelemetryMeasurements{
+		BaseTelemetryMeasurements: BaseTelemetryMeasurements{
 			Measurements: make(map[string]float64),
 		},
 	}
