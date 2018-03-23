@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 
-	"github.com/jjjordanmsft/ApplicationInsights-Go/appinsights/contracts"
+	"github.com/Microsoft/ApplicationInsights-Go/appinsights/contracts"
 )
 
 type telemetryBufferItems []*contracts.Envelope
