@@ -24,6 +24,9 @@ type Telemetry interface {
 	// Gets the time when this item was measured
 	Time() time.Time
 
+	// Sets the timestamp to the specified time.
+	SetTime(time.Time)
+
 	// Gets context data containing extra, optional tags.  Overrides
 	// values found on client TelemetryContext.
 	ContextTags() map[string]string
@@ -66,6 +69,11 @@ type BaseTelemetryNoMeasurements struct {
 // Time returns the timestamp when this was measured.
 func (item *BaseTelemetry) Time() time.Time {
 	return item.Timestamp
+}
+
+// SetTime sets the timestamp to the specified time.
+func (item *BaseTelemetry) SetTime(t time.Time) {
+	item.Timestamp = t
 }
 
 // Gets context data containing extra, optional tags.  Overrides values
