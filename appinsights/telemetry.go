@@ -24,6 +24,9 @@ type Telemetry interface {
 	// Gets the time when this item was measured
 	Time() time.Time
 
+	// Sets the timestamp to the specified time.
+	SetTime(time.Time)
+
 	// Gets context data containing extra, optional tags.  Overrides
 	// values found on client TelemetryContext.
 	ContextTags() map[string]string
@@ -39,7 +42,7 @@ type Telemetry interface {
 	GetMeasurements() map[string]float64
 }
 
-// Common base struct for telemetry items.
+// BaseTelemetry is the common base struct for telemetry items.
 type BaseTelemetry struct {
 	// The time this when this item was measured
 	Timestamp time.Time
@@ -47,16 +50,30 @@ type BaseTelemetry struct {
 	// Custom properties
 	Properties map[string]string
 
-	// Custom measurements
-	Measurements map[string]float64
-
 	// Telemetry Context containing extra, optional tags.
 	Tags contracts.ContextTags
 }
 
-// Gets the time when this item was measured
+// BaseTelemetryMeasurements provides the Measurements field for telemetry
+// items that support it.
+type BaseTelemetryMeasurements struct {
+	// Custom measurements
+	Measurements map[string]float64
+}
+
+// BaseTelemetryNoMeasurements provides no Measurements field for telemetry
+// items that omit it.
+type BaseTelemetryNoMeasurements struct {
+}
+
+// Time returns the timestamp when this was measured.
 func (item *BaseTelemetry) Time() time.Time {
 	return item.Timestamp
+}
+
+// SetTime sets the timestamp to the specified time.
+func (item *BaseTelemetry) SetTime(t time.Time) {
+	item.Timestamp = t
 }
 
 // Gets context data containing extra, optional tags.  Overrides values
@@ -71,14 +88,20 @@ func (item *BaseTelemetry) GetProperties() map[string]string {
 }
 
 // Gets custom measurements to submit with the telemetry item.
-func (item *BaseTelemetry) GetMeasurements() map[string]float64 {
+func (item *BaseTelemetryMeasurements) GetMeasurements() map[string]float64 {
 	return item.Measurements
+}
+
+// GetMeasurements returns nil for telemetry items that do not support measurements.
+func (item *BaseTelemetryNoMeasurements) GetMeasurements() map[string]float64 {
+	return nil
 }
 
 // Trace telemetry items represent printf-like trace statements that can be
 // text searched.
 type TraceTelemetry struct {
 	BaseTelemetry
+	BaseTelemetryNoMeasurements
 
 	// Trace message
 	Message string
@@ -113,6 +136,7 @@ func (trace *TraceTelemetry) TelemetryData() TelemetryData {
 // Event telemetry items represent structured event records.
 type EventTelemetry struct {
 	BaseTelemetry
+	BaseTelemetryMeasurements
 
 	// Event name
 	Name string
@@ -123,9 +147,11 @@ func NewEventTelemetry(name string) *EventTelemetry {
 	return &EventTelemetry{
 		Name: name,
 		BaseTelemetry: BaseTelemetry{
-			Timestamp:    currentClock.Now(),
-			Tags:         make(contracts.ContextTags),
-			Properties:   make(map[string]string),
+			Timestamp:  currentClock.Now(),
+			Tags:       make(contracts.ContextTags),
+			Properties: make(map[string]string),
+		},
+		BaseTelemetryMeasurements: BaseTelemetryMeasurements{
 			Measurements: make(map[string]float64),
 		},
 	}
@@ -143,6 +169,7 @@ func (event *EventTelemetry) TelemetryData() TelemetryData {
 // Metric telemetry items each represent a single data point.
 type MetricTelemetry struct {
 	BaseTelemetry
+	BaseTelemetryNoMeasurements
 
 	// Metric name
 	Name string
@@ -183,6 +210,7 @@ func (metric *MetricTelemetry) TelemetryData() TelemetryData {
 // function.
 type AggregateMetricTelemetry struct {
 	BaseTelemetry
+	BaseTelemetryNoMeasurements
 
 	// Metric name
 	Name string
@@ -323,6 +351,7 @@ func (agg *AggregateMetricTelemetry) TelemetryData() TelemetryData {
 // application and contains a summary of that request execution and results.
 type RequestTelemetry struct {
 	BaseTelemetry
+	BaseTelemetryMeasurements
 
 	// Identifier of a request call instance. Used for correlation between request
 	// and other telemetry items.
@@ -384,9 +413,11 @@ func NewRequestTelemetry(method, uri string, duration time.Duration, responseCod
 		ResponseCode: responseCode,
 		Success:      success,
 		BaseTelemetry: BaseTelemetry{
-			Timestamp:    currentClock.Now().Add(-duration),
-			Tags:         make(contracts.ContextTags),
-			Properties:   make(map[string]string),
+			Timestamp:  currentClock.Now().Add(-duration),
+			Tags:       make(contracts.ContextTags),
+			Properties: make(map[string]string),
+		},
+		BaseTelemetryMeasurements: BaseTelemetryMeasurements{
 			Measurements: make(map[string]float64),
 		},
 	}
@@ -423,6 +454,7 @@ func (request *RequestTelemetry) TelemetryData() TelemetryData {
 // component with a remote component/service like SQL or an HTTP endpoint.
 type RemoteDependencyTelemetry struct {
 	BaseTelemetry
+	BaseTelemetryMeasurements
 
 	// Name of the command that initiated this dependency call. Low cardinality
 	// value. Examples are stored procedure name and URL path template.
@@ -463,9 +495,11 @@ func NewRemoteDependencyTelemetry(name, dependencyType, target string, success b
 		Target:  target,
 		Success: success,
 		BaseTelemetry: BaseTelemetry{
-			Timestamp:    currentClock.Now(),
-			Tags:         make(contracts.ContextTags),
-			Properties:   make(map[string]string),
+			Timestamp:  currentClock.Now(),
+			Tags:       make(contracts.ContextTags),
+			Properties: make(map[string]string),
+		},
+		BaseTelemetryMeasurements: BaseTelemetryMeasurements{
 			Measurements: make(map[string]float64),
 		},
 	}
@@ -498,6 +532,7 @@ func (telem *RemoteDependencyTelemetry) TelemetryData() TelemetryData {
 // test.
 type AvailabilityTelemetry struct {
 	BaseTelemetry
+	BaseTelemetryMeasurements
 
 	// Identifier of a test run. Used to correlate steps of test run and
 	// telemetry generated by the service.
@@ -527,9 +562,11 @@ func NewAvailabilityTelemetry(name string, duration time.Duration, success bool)
 		Duration: duration,
 		Success:  success,
 		BaseTelemetry: BaseTelemetry{
-			Timestamp:    currentClock.Now(),
-			Tags:         make(contracts.ContextTags),
-			Properties:   make(map[string]string),
+			Timestamp:  currentClock.Now(),
+			Tags:       make(contracts.ContextTags),
+			Properties: make(map[string]string),
+		},
+		BaseTelemetryMeasurements: BaseTelemetryMeasurements{
 			Measurements: make(map[string]float64),
 		},
 	}
@@ -560,6 +597,7 @@ func (telem *AvailabilityTelemetry) TelemetryData() TelemetryData {
 // click.
 type PageViewTelemetry struct {
 	BaseTelemetry
+	BaseTelemetryMeasurements
 
 	// Request URL with all query string parameters
 	Url string
@@ -577,9 +615,11 @@ func NewPageViewTelemetry(name, url string) *PageViewTelemetry {
 		Name: name,
 		Url:  url,
 		BaseTelemetry: BaseTelemetry{
-			Timestamp:    currentClock.Now(),
-			Tags:         make(contracts.ContextTags),
-			Properties:   make(map[string]string),
+			Timestamp:  currentClock.Now(),
+			Tags:       make(contracts.ContextTags),
+			Properties: make(map[string]string),
+		},
+		BaseTelemetryMeasurements: BaseTelemetryMeasurements{
 			Measurements: make(map[string]float64),
 		},
 	}

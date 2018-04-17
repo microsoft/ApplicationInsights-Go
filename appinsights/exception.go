@@ -13,6 +13,7 @@ import (
 // occurred during execution of the monitored application.
 type ExceptionTelemetry struct {
 	BaseTelemetry
+	BaseTelemetryMeasurements
 
 	// Panic message: string, error, or Stringer
 	Error interface{}
@@ -38,9 +39,11 @@ func newExceptionTelemetry(err interface{}, skip int) *ExceptionTelemetry {
 		Frames:        GetCallstack(2 + skip),
 		SeverityLevel: Error,
 		BaseTelemetry: BaseTelemetry{
-			Timestamp:    currentClock.Now(),
-			Tags:         make(contracts.ContextTags),
-			Properties:   make(map[string]string),
+			Timestamp:  currentClock.Now(),
+			Tags:       make(contracts.ContextTags),
+			Properties: make(map[string]string),
+		},
+		BaseTelemetryMeasurements: BaseTelemetryMeasurements{
 			Measurements: make(map[string]float64),
 		},
 	}

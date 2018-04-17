@@ -425,6 +425,9 @@ func TestTransmitResults(t *testing.T) {
 }
 
 func TestGetRetryItems(t *testing.T) {
+	mockClock()
+	defer resetClock()
+
 	// Keep a pristine copy.
 	originalPayload, originalItems := makePayload()
 

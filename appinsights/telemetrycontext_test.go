@@ -3,6 +3,7 @@ package appinsights
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Microsoft/ApplicationInsights-Go/appinsights/contracts"
 )
@@ -130,5 +131,15 @@ func TestSanitize(t *testing.T) {
 
 	if v, ok := evdata.Measurements[name[:150]]; !ok || v != 55.0 {
 		t.Error("Event measurement name was not truncated")
+	}
+}
+
+func TestTimestamp(t *testing.T) {
+	ev := NewEventTelemetry("event")
+	ev.Timestamp = time.Unix(1523667421, 500000000)
+
+	envelope := NewTelemetryContext().envelop(ev)
+	if envelope.Time != "2018-04-14T00:57:01.5Z" {
+		t.Errorf("Unexpected timestamp: %s", envelope.Time)
 	}
 }

@@ -64,7 +64,7 @@ func (context *TelemetryContext) envelop(item Telemetry) *contracts.Envelope {
 		timestamp = currentClock.Now()
 	}
 
-	envelope.Time = timestamp.UTC().Format(time.RFC3339)
+	envelope.Time = timestamp.UTC().Format(time.RFC3339Nano)
 
 	if contextTags := item.ContextTags(); contextTags != nil {
 		envelope.Tags = contextTags
