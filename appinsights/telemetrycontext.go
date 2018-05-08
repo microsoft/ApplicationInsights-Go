@@ -85,7 +85,9 @@ func (context *TelemetryContext) envelop(item Telemetry) *contracts.Envelope {
 
 	// Create operation ID if it does not exist
 	if _, ok := envelope.Tags[contracts.OperationId]; !ok {
-		envelope.Tags[contracts.OperationId] = uuid.NewV4().String()
+		if oid, err := uuid.NewV4(); err == nil {
+			envelope.Tags[contracts.OperationId] = oid.String()
+		}
 	}
 
 	// Sanitize.
