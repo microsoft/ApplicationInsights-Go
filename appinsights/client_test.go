@@ -110,18 +110,18 @@ func TestEndToEnd(t *testing.T) {
 	}
 
 	j[0].assertPath(t, "iKey", test_ikey)
-	j[0].assertPath(t, "name", "Microsoft.ApplicationInsights.Event")
+	j[0].assertPath(t, "name", "Microsoft.ApplicationInsights.01234567000089abcdef000000000000.Event")
 	j[0].assertPath(t, "time", "2017-11-18T10:35:21Z")
 
 	j[1].assertPath(t, "iKey", test_ikey)
-	j[1].assertPath(t, "name", "Microsoft.ApplicationInsights.Metric")
+	j[1].assertPath(t, "name", "Microsoft.ApplicationInsights.01234567000089abcdef000000000000.Metric")
 	j[1].assertPath(t, "time", "2017-11-18T10:35:21Z")
 
 	j[2].assertPath(t, "iKey", test_ikey)
-	j[2].assertPath(t, "name", "Microsoft.ApplicationInsights.Message")
+	j[2].assertPath(t, "name", "Microsoft.ApplicationInsights.01234567000089abcdef000000000000.Message")
 	j[2].assertPath(t, "time", "2017-11-18T10:35:21Z")
 
 	j[3].assertPath(t, "iKey", test_ikey)
-	j[3].assertPath(t, "name", "Microsoft.ApplicationInsights.Request")
+	j[3].assertPath(t, "name", "Microsoft.ApplicationInsights.01234567000089abcdef000000000000.Request")
 	j[3].assertPath(t, "time", "2017-11-18T10:34:21Z")
 }

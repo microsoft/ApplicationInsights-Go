@@ -13,7 +13,7 @@ import (
 
 // Common interface implemented by telemetry data contracts
 type TelemetryData interface {
-	EnvelopeName() string
+	EnvelopeName(string) string
 	BaseType() string
 	Sanitize() []string
 }

@@ -30,8 +30,12 @@ type ExceptionData struct {
 }
 
 // Returns the name used when this is embedded within an Envelope container.
-func (data *ExceptionData) EnvelopeName() string {
-	return "Microsoft.ApplicationInsights.Exception"
+func (data *ExceptionData) EnvelopeName(key string) string {
+	if key != "" {
+		return "Microsoft.ApplicationInsights." + key + ".Exception"
+	} else {
+		return "Microsoft.ApplicationInsights.Exception"
+	}
 }
 
 // Returns the base type when placed within a Data object container.

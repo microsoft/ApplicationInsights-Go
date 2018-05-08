@@ -20,8 +20,12 @@ type MetricData struct {
 }
 
 // Returns the name used when this is embedded within an Envelope container.
-func (data *MetricData) EnvelopeName() string {
-	return "Microsoft.ApplicationInsights.Metric"
+func (data *MetricData) EnvelopeName(key string) string {
+	if key != "" {
+		return "Microsoft.ApplicationInsights." + key + ".Metric"
+	} else {
+		return "Microsoft.ApplicationInsights.Metric"
+	}
 }
 
 // Returns the base type when placed within a Data object container.

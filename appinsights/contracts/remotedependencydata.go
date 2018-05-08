@@ -49,8 +49,12 @@ type RemoteDependencyData struct {
 }
 
 // Returns the name used when this is embedded within an Envelope container.
-func (data *RemoteDependencyData) EnvelopeName() string {
-	return "Microsoft.ApplicationInsights.RemoteDependency"
+func (data *RemoteDependencyData) EnvelopeName(key string) string {
+	if key != "" {
+		return "Microsoft.ApplicationInsights." + key + ".RemoteDependency"
+	} else {
+		return "Microsoft.ApplicationInsights.RemoteDependency"
+	}
 }
 
 // Returns the base type when placed within a Data object container.
