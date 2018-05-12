@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/Microsoft/ApplicationInsights-Go/appinsights/contracts"
-	"github.com/satori/go.uuid"
 )
 
 // Common interface implemented by telemetry data contracts
@@ -405,19 +404,10 @@ func NewRequestTelemetry(method, uri string, duration time.Duration, responseCod
 		nameUri = parsedUrl.String()
 	}
 
-	// We probably shouldn't crash if we can't get a UUID.  Just emit a warning, and set it to blank.
-	// The telemetry will be rejected, but there will be plenty of logging about that.
-	var id string
-	if requestId, err := uuid.NewV4(); err != nil {
-		diagnosticsWriter.Printf("Failed to generate request ID: %s", err.Error())
-	} else {
-		id = requestId.String()
-	}
-
 	return &RequestTelemetry{
 		Name:         fmt.Sprintf("%s %s", method, nameUri),
 		Url:          uri,
-		Id:           id,
+		Id:           newUUID().String(),
 		Duration:     duration,
 		ResponseCode: responseCode,
 		Success:      success,
@@ -449,11 +439,7 @@ func (request *RequestTelemetry) TelemetryData() TelemetryData {
 	data.Source = request.Source
 
 	if request.Id == "" {
-		if id, err := uuid.NewV4(); err != nil {
-			diagnosticsWriter.Printf("Failed to generate request ID: %s", err.Error())
-		} else {
-			data.Id = id.String()
-		}
+		data.Id = newUUID().String()
 	} else {
 		data.Id = request.Id
 	}
