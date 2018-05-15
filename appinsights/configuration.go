@@ -34,8 +34,8 @@ func NewTelemetryConfiguration(instrumentationKey string) *TelemetryConfiguratio
 	}
 }
 
-func (config *TelemetryConfiguration) setupContext(context *TelemetryContext) {
-	context.iKey = config.InstrumentationKey
+func (config *TelemetryConfiguration) setupContext() *TelemetryContext {
+	context := NewTelemetryContext(config.InstrumentationKey)
 	context.Tags.Internal().SetSdkVersion(sdkName + ":" + Version)
 	context.Tags.Device().SetOsVersion(runtime.GOOS)
 
@@ -43,4 +43,6 @@ func (config *TelemetryConfiguration) setupContext(context *TelemetryContext) {
 		context.Tags.Device().SetId(hostname)
 		context.Tags.Cloud().SetRoleInstance(hostname)
 	}
+
+	return context
 }

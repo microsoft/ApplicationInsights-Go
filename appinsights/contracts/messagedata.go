@@ -23,8 +23,12 @@ type MessageData struct {
 }
 
 // Returns the name used when this is embedded within an Envelope container.
-func (data *MessageData) EnvelopeName() string {
-	return "Microsoft.ApplicationInsights.Message"
+func (data *MessageData) EnvelopeName(key string) string {
+	if key != "" {
+		return "Microsoft.ApplicationInsights." + key + ".Message"
+	} else {
+		return "Microsoft.ApplicationInsights.Message"
+	}
 }
 
 // Returns the base type when placed within a Data object container.

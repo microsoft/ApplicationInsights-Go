@@ -9,7 +9,7 @@ import (
 )
 
 func TestDefaultTags(t *testing.T) {
-	context := NewTelemetryContext()
+	context := NewTelemetryContext(test_ikey)
 	context.Tags["test"] = "OK"
 	context.Tags["no-write"] = "Fail"
 
@@ -28,7 +28,7 @@ func TestDefaultTags(t *testing.T) {
 }
 
 func TestCommonProperties(t *testing.T) {
-	context := NewTelemetryContext()
+	context := NewTelemetryContext(test_ikey)
 	context.CommonProperties = map[string]string{
 		"test":     "OK",
 		"no-write": "Fail",
@@ -79,7 +79,7 @@ func TestSanitize(t *testing.T) {
 	ev.Properties[name] = val
 	ev.Measurements[name] = 55.0
 
-	ctx := NewTelemetryContext()
+	ctx := NewTelemetryContext(test_ikey)
 	ctx.Tags.Session().SetId(name)
 
 	// We'll be looking for messages with these values:
@@ -138,7 +138,7 @@ func TestTimestamp(t *testing.T) {
 	ev := NewEventTelemetry("event")
 	ev.Timestamp = time.Unix(1523667421, 500000000)
 
-	envelope := NewTelemetryContext().envelop(ev)
+	envelope := NewTelemetryContext(test_ikey).envelop(ev)
 	if envelope.Time != "2018-04-14T00:57:01.5Z" {
 		t.Errorf("Unexpected timestamp: %s", envelope.Time)
 	}

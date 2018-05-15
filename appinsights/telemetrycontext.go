@@ -1,10 +1,10 @@
 package appinsights
 
 import (
+	"strings"
 	"time"
 
 	"github.com/Microsoft/ApplicationInsights-Go/appinsights/contracts"
-	"github.com/satori/go.uuid"
 )
 
 // Encapsulates contextual data common to all telemetry submitted through a
@@ -13,6 +13,9 @@ import (
 type TelemetryContext struct {
 	// Instrumentation key
 	iKey string
+
+	// Stripped-down instrumentation key used in envelope name
+	nameIKey string
 
 	// Collection of tag data to attach to the telemetry item.
 	Tags contracts.ContextTags
@@ -24,8 +27,10 @@ type TelemetryContext struct {
 }
 
 // Creates a new, empty TelemetryContext
-func NewTelemetryContext() *TelemetryContext {
+func NewTelemetryContext(ikey string) *TelemetryContext {
 	return &TelemetryContext{
+		iKey:             ikey,
+		nameIKey:         strings.Replace(ikey, "-", "", -1),
 		Tags:             make(contracts.ContextTags),
 		CommonProperties: make(map[string]string),
 	}
@@ -55,7 +60,7 @@ func (context *TelemetryContext) envelop(item Telemetry) *contracts.Envelope {
 	data.BaseData = tdata
 
 	envelope := contracts.NewEnvelope()
-	envelope.Name = tdata.EnvelopeName()
+	envelope.Name = tdata.EnvelopeName(context.nameIKey)
 	envelope.Data = data
 	envelope.IKey = context.iKey
 
@@ -85,7 +90,7 @@ func (context *TelemetryContext) envelop(item Telemetry) *contracts.Envelope {
 
 	// Create operation ID if it does not exist
 	if _, ok := envelope.Tags[contracts.OperationId]; !ok {
-		envelope.Tags[contracts.OperationId] = uuid.NewV4().String()
+		envelope.Tags[contracts.OperationId] = newUUID().String()
 	}
 
 	// Sanitize.

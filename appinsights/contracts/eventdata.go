@@ -23,8 +23,12 @@ type EventData struct {
 }
 
 // Returns the name used when this is embedded within an Envelope container.
-func (data *EventData) EnvelopeName() string {
-	return "Microsoft.ApplicationInsights.Event"
+func (data *EventData) EnvelopeName(key string) string {
+	if key != "" {
+		return "Microsoft.ApplicationInsights." + key + ".Event"
+	} else {
+		return "Microsoft.ApplicationInsights.Event"
+	}
 }
 
 // Returns the base type when placed within a Data object container.

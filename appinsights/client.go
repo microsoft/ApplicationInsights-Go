@@ -73,14 +73,9 @@ func NewTelemetryClient(iKey string) TelemetryClient {
 // Creates a new telemetry client instance configured by the specified
 // TelemetryConfiguration object.
 func NewTelemetryClientFromConfig(config *TelemetryConfiguration) TelemetryClient {
-	channel := NewInMemoryChannel(config)
-	context := NewTelemetryContext()
-
-	config.setupContext(context)
-
 	return &telemetryClient{
-		channel:   channel,
-		context:   context,
+		channel:   NewInMemoryChannel(config),
+		context:   config.setupContext(),
 		isEnabled: true,
 	}
 }

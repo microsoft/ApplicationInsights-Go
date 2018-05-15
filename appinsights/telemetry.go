@@ -8,12 +8,11 @@ import (
 	"time"
 
 	"github.com/Microsoft/ApplicationInsights-Go/appinsights/contracts"
-	"github.com/satori/go.uuid"
 )
 
 // Common interface implemented by telemetry data contracts
 type TelemetryData interface {
-	EnvelopeName() string
+	EnvelopeName(string) string
 	BaseType() string
 	Sanitize() []string
 }
@@ -408,7 +407,7 @@ func NewRequestTelemetry(method, uri string, duration time.Duration, responseCod
 	return &RequestTelemetry{
 		Name:         fmt.Sprintf("%s %s", method, nameUri),
 		Url:          uri,
-		Id:           uuid.NewV4().String(),
+		Id:           newUUID().String(),
 		Duration:     duration,
 		ResponseCode: responseCode,
 		Success:      success,
@@ -440,7 +439,7 @@ func (request *RequestTelemetry) TelemetryData() TelemetryData {
 	data.Source = request.Source
 
 	if request.Id == "" {
-		data.Id = uuid.NewV4().String()
+		data.Id = newUUID().String()
 	} else {
 		data.Id = request.Id
 	}

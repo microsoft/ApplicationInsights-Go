@@ -63,7 +63,7 @@ func TestJsonSerializerEvents(t *testing.T) {
 
 	// Trace
 	j[0].assertPath(t, "iKey", test_ikey)
-	j[0].assertPath(t, "name", "Microsoft.ApplicationInsights.Message")
+	j[0].assertPath(t, "name", "Microsoft.ApplicationInsights.01234567000089abcdef000000000000.Message")
 	j[0].assertPath(t, "time", "2017-11-18T10:35:21Z")
 	j[0].assertPath(t, "sampleRate", 100.0)
 	j[0].assertPath(t, "data.baseType", "MessageData")
@@ -73,7 +73,7 @@ func TestJsonSerializerEvents(t *testing.T) {
 
 	// Event
 	j[1].assertPath(t, "iKey", test_ikey)
-	j[1].assertPath(t, "name", "Microsoft.ApplicationInsights.Event")
+	j[1].assertPath(t, "name", "Microsoft.ApplicationInsights.01234567000089abcdef000000000000.Event")
 	j[1].assertPath(t, "time", "2017-11-18T10:35:21Z")
 	j[1].assertPath(t, "sampleRate", 100.0)
 	j[1].assertPath(t, "data.baseType", "EventData")
@@ -82,7 +82,7 @@ func TestJsonSerializerEvents(t *testing.T) {
 
 	// Metric
 	j[2].assertPath(t, "iKey", test_ikey)
-	j[2].assertPath(t, "name", "Microsoft.ApplicationInsights.Metric")
+	j[2].assertPath(t, "name", "Microsoft.ApplicationInsights.01234567000089abcdef000000000000.Metric")
 	j[2].assertPath(t, "time", "2017-11-18T10:35:21Z")
 	j[2].assertPath(t, "sampleRate", 100.0)
 	j[2].assertPath(t, "data.baseType", "MetricData")
@@ -95,7 +95,7 @@ func TestJsonSerializerEvents(t *testing.T) {
 
 	// Request
 	j[3].assertPath(t, "iKey", test_ikey)
-	j[3].assertPath(t, "name", "Microsoft.ApplicationInsights.Request")
+	j[3].assertPath(t, "name", "Microsoft.ApplicationInsights.01234567000089abcdef000000000000.Request")
 	j[3].assertPath(t, "time", "2017-11-18T10:34:21Z") // Constructor subtracts duration
 	j[3].assertPath(t, "sampleRate", 100.0)
 	j[3].assertPath(t, "data.baseType", "RequestData")
@@ -109,7 +109,7 @@ func TestJsonSerializerEvents(t *testing.T) {
 
 	// Aggregate metric
 	j[4].assertPath(t, "iKey", test_ikey)
-	j[4].assertPath(t, "name", "Microsoft.ApplicationInsights.Metric")
+	j[4].assertPath(t, "name", "Microsoft.ApplicationInsights.01234567000089abcdef000000000000.Metric")
 	j[4].assertPath(t, "time", "2017-11-18T10:35:21Z")
 	j[4].assertPath(t, "sampleRate", 100.0)
 	j[4].assertPath(t, "data.baseType", "MetricData")
@@ -125,7 +125,7 @@ func TestJsonSerializerEvents(t *testing.T) {
 
 	// Remote dependency
 	j[5].assertPath(t, "iKey", test_ikey)
-	j[5].assertPath(t, "name", "Microsoft.ApplicationInsights.RemoteDependency")
+	j[5].assertPath(t, "name", "Microsoft.ApplicationInsights.01234567000089abcdef000000000000.RemoteDependency")
 	j[5].assertPath(t, "time", "2017-11-18T10:35:21Z")
 	j[5].assertPath(t, "sampleRate", 100.0)
 	j[5].assertPath(t, "data.baseType", "RemoteDependencyData")
@@ -142,7 +142,7 @@ func TestJsonSerializerEvents(t *testing.T) {
 
 	// Availability
 	j[6].assertPath(t, "iKey", test_ikey)
-	j[6].assertPath(t, "name", "Microsoft.ApplicationInsights.Availability")
+	j[6].assertPath(t, "name", "Microsoft.ApplicationInsights.01234567000089abcdef000000000000.Availability")
 	j[6].assertPath(t, "time", "2017-11-18T10:35:21Z")
 	j[6].assertPath(t, "sampleRate", 100.0)
 	j[6].assertPath(t, "data.baseType", "AvailabilityData")
@@ -157,7 +157,7 @@ func TestJsonSerializerEvents(t *testing.T) {
 
 	// Page view
 	j[7].assertPath(t, "iKey", test_ikey)
-	j[7].assertPath(t, "name", "Microsoft.ApplicationInsights.PageView")
+	j[7].assertPath(t, "name", "Microsoft.ApplicationInsights.01234567000089abcdef000000000000.PageView")
 	j[7].assertPath(t, "time", "2017-11-18T10:35:21Z")
 	j[7].assertPath(t, "sampleRate", 100.0)
 	j[7].assertPath(t, "data.baseType", "PageViewData")
@@ -235,7 +235,7 @@ func TestJsonSerializerNakedEvents(t *testing.T) {
 
 	// Trace
 	j[0].assertPath(t, "iKey", test_ikey)
-	j[0].assertPath(t, "name", "Microsoft.ApplicationInsights.Message")
+	j[0].assertPath(t, "name", "Microsoft.ApplicationInsights.01234567000089abcdef000000000000.Message")
 	j[0].assertPath(t, "time", "2017-11-18T10:35:21Z")
 	j[0].assertPath(t, "sampleRate", 100)
 	j[0].assertPath(t, "data.baseType", "MessageData")
@@ -245,7 +245,7 @@ func TestJsonSerializerNakedEvents(t *testing.T) {
 
 	// Event
 	j[1].assertPath(t, "iKey", test_ikey)
-	j[1].assertPath(t, "name", "Microsoft.ApplicationInsights.Event")
+	j[1].assertPath(t, "name", "Microsoft.ApplicationInsights.01234567000089abcdef000000000000.Event")
 	j[1].assertPath(t, "time", "2017-11-18T10:35:21Z")
 	j[1].assertPath(t, "sampleRate", 100)
 	j[1].assertPath(t, "data.baseType", "EventData")
@@ -254,7 +254,7 @@ func TestJsonSerializerNakedEvents(t *testing.T) {
 
 	// Metric
 	j[2].assertPath(t, "iKey", test_ikey)
-	j[2].assertPath(t, "name", "Microsoft.ApplicationInsights.Metric")
+	j[2].assertPath(t, "name", "Microsoft.ApplicationInsights.01234567000089abcdef000000000000.Metric")
 	j[2].assertPath(t, "time", "2017-11-18T10:35:21Z")
 	j[2].assertPath(t, "sampleRate", 100)
 	j[2].assertPath(t, "data.baseType", "MetricData")
@@ -267,7 +267,7 @@ func TestJsonSerializerNakedEvents(t *testing.T) {
 
 	// Aggregate metric
 	j[3].assertPath(t, "iKey", test_ikey)
-	j[3].assertPath(t, "name", "Microsoft.ApplicationInsights.Metric")
+	j[3].assertPath(t, "name", "Microsoft.ApplicationInsights.01234567000089abcdef000000000000.Metric")
 	j[3].assertPath(t, "time", "2017-11-18T10:35:21Z")
 	j[3].assertPath(t, "sampleRate", 100.0)
 	j[3].assertPath(t, "data.baseType", "MetricData")
@@ -283,7 +283,7 @@ func TestJsonSerializerNakedEvents(t *testing.T) {
 
 	// Request
 	j[4].assertPath(t, "iKey", test_ikey)
-	j[4].assertPath(t, "name", "Microsoft.ApplicationInsights.Request")
+	j[4].assertPath(t, "name", "Microsoft.ApplicationInsights.01234567000089abcdef000000000000.Request")
 	j[4].assertPath(t, "time", "2017-11-18T10:35:21Z") // Context takes current time since it's not supplied
 	j[4].assertPath(t, "sampleRate", 100.0)
 	j[4].assertPath(t, "data.baseType", "RequestData")
@@ -303,7 +303,7 @@ func TestJsonSerializerNakedEvents(t *testing.T) {
 
 	// Remote dependency
 	j[5].assertPath(t, "iKey", test_ikey)
-	j[5].assertPath(t, "name", "Microsoft.ApplicationInsights.RemoteDependency")
+	j[5].assertPath(t, "name", "Microsoft.ApplicationInsights.01234567000089abcdef000000000000.RemoteDependency")
 	j[5].assertPath(t, "time", "2017-11-18T10:35:21Z")
 	j[5].assertPath(t, "sampleRate", 100.0)
 	j[5].assertPath(t, "data.baseType", "RemoteDependencyData")
@@ -319,7 +319,7 @@ func TestJsonSerializerNakedEvents(t *testing.T) {
 
 	// Availability
 	j[6].assertPath(t, "iKey", test_ikey)
-	j[6].assertPath(t, "name", "Microsoft.ApplicationInsights.Availability")
+	j[6].assertPath(t, "name", "Microsoft.ApplicationInsights.01234567000089abcdef000000000000.Availability")
 	j[6].assertPath(t, "time", "2017-11-18T10:35:21Z")
 	j[6].assertPath(t, "sampleRate", 100.0)
 	j[6].assertPath(t, "data.baseType", "AvailabilityData")
@@ -333,7 +333,7 @@ func TestJsonSerializerNakedEvents(t *testing.T) {
 
 	// Page view
 	j[7].assertPath(t, "iKey", test_ikey)
-	j[7].assertPath(t, "name", "Microsoft.ApplicationInsights.PageView")
+	j[7].assertPath(t, "name", "Microsoft.ApplicationInsights.01234567000089abcdef000000000000.PageView")
 	j[7].assertPath(t, "time", "2017-11-18T10:35:21Z")
 	j[7].assertPath(t, "sampleRate", 100.0)
 	j[7].assertPath(t, "data.baseType", "PageViewData")
@@ -346,7 +346,7 @@ func TestJsonSerializerNakedEvents(t *testing.T) {
 // Test helpers...
 
 func telemetryBuffer(items ...Telemetry) telemetryBufferItems {
-	ctx := NewTelemetryContext()
+	ctx := NewTelemetryContext(test_ikey)
 	ctx.iKey = test_ikey
 
 	var result telemetryBufferItems
