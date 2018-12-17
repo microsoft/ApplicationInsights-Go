@@ -2,7 +2,6 @@ package appinsights
 
 import (
 	"strings"
-	"time"
 
 	"github.com/Microsoft/ApplicationInsights-Go/appinsights/contracts"
 )
@@ -69,7 +68,7 @@ func (context *TelemetryContext) envelop(item Telemetry) *contracts.Envelope {
 		timestamp = currentClock.Now()
 	}
 
-	envelope.Time = timestamp.UTC().Format(time.RFC3339Nano)
+	envelope.Time = timestamp.UTC().Format("2006-01-02T15:04:05.999999Z")
 
 	if contextTags := item.ContextTags(); contextTags != nil {
 		envelope.Tags = contextTags
