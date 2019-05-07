@@ -19,7 +19,7 @@ The full path to BondSchemaGenerator.exe
 
 The path to the directory that contains all of the input .bond files.
 
-.LINK https://github.com/Microsoft/ApplicationInsights-Home
+.LINK https://github.com/microsoft/ApplicationInsights-Home
 
 #>
 
@@ -75,7 +75,7 @@ try {
         # Check locally.
         if (-not (Test-Path .\ApplicationInsights-Home -PathType Container)) {
             # Clone into it!
-            git clone https://github.com/Microsoft/ApplicationInsights-Home.git
+            git clone https://github.com/microsoft/ApplicationInsights-Home.git
         }
     }
 

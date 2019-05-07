@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/clock"
-	"github.com/Microsoft/ApplicationInsights-Go/appinsights/contracts"
+	"github.com/microsoft/ApplicationInsights-Go/appinsights/contracts"
 )
 
 var (
