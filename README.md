@@ -10,7 +10,7 @@ telemetry of various kinds (event, metric, trace) to the Application
 Insights service where they can be visualized in the Azure Portal.
 
 ## Status
-This SDK is considered to be pre-production.  It has not reached parity with
+This SDKs is not recommended for production applications.  It has not reached parity with
 some of the more mature SDK's.  In particular, the gaps are:
 
 * Operation correlation is not supported, but this can be managed by the
