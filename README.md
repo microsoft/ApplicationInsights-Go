@@ -6,7 +6,7 @@ This project provides a Go SDK for Application Insights.
 [Application Insights](http://azure.microsoft.com/en-us/services/application-insights/)
 is a service that allows developers to keep their applications available,
 performant, and successful.  This go package will allow you to send
-telemetry of var]ious kinds (event, metric, trace) to the Application
+telemetry of various kinds (event, metric, trace) to the Application
 Insights service where they can be visualized in the Azure Portal.
 
 ## Status
