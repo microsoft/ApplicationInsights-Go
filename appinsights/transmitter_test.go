@@ -315,7 +315,7 @@ func checkTransmitResult(t *testing.T, result *transmissionResult, expected *res
 	}
 	response := "<nil>"
 	if result.response != nil {
-		response = fmt.Sprintf("%q", *result.response)
+		response = fmt.Sprintf("%v", *result.response)
 	}
 	id := fmt.Sprintf("%d, retryAfter:%s, response:%s", result.statusCode, retryAfter, response)
 
