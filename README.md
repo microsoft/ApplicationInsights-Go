@@ -1,6 +1,6 @@
 # Microsoft Application Insights SDK for Go
 
-[![Build Status](https://travis-ci.org/Microsoft/ApplicationInsights-Go.svg?branch=master)](https://travis-ci.org/Microsoft/ApplicationInsights-Go) [![Documentation](https://godoc.org/github.com/Microsoft/ApplicationInsights-Go?status.svg)](https://godoc.org/github.com/Microsoft/ApplicationInsights-Go/appinsights) [![Release](https://img.shields.io/github/release/Microsoft/ApplicationInsights-Go/all.svg)](https://github.com/Microsoft/ApplicationInsights-Go/releases)
+[![Build Status](https://travis-ci.org/Microsoft/ApplicationInsights-Go.svg?branch=master)](https://travis-ci.org/Microsoft/ApplicationInsights-Go) [![Documentation](https://godoc.org/github.com/microsoft/ApplicationInsights-Go?status.svg)](https://godoc.org/github.com/microsoft/ApplicationInsights-Go/appinsights) [![Release](https://img.shields.io/github/release/Microsoft/ApplicationInsights-Go/all.svg)](https://github.com/microsoft/ApplicationInsights-Go/releases)
 
 This project provides a Go SDK for Application Insights.
 [Application Insights](http://azure.microsoft.com/en-us/services/application-insights/)
@@ -10,8 +10,7 @@ telemetry of various kinds (event, metric, trace) to the Application
 Insights service where they can be visualized in the Azure Portal.
 
 ## Status
-This SDK is considered to be pre-production.  It has not reached parity with
-some of the more mature SDK's.  In particular, the gaps are:
+This SDK is NOT maintained or supported by Microsoft even though we've contributed to it in the past. Note that Azure Monitor only provides support when using our [supported SDKs](https://docs.microsoft.com/en-us/azure/azure-monitor/app/platforms#unsupported-community-sdks), and this SDK does not yet meet that standard.  Known gaps include:
 
 * Operation correlation is not supported, but this can be managed by the
   caller through the interfaces that exist today.
@@ -23,28 +22,25 @@ some of the more mature SDK's.  In particular, the gaps are:
   spilling events to disk in case of network interruption.  This SDK has no
   such feature.
 
-Additionally, this is considered a community-supported SDK.  Read more about
-the status of this and other SDK's in the
-[ApplicationInsights-Home](https://github.com/Microsoft/ApplicationInsights-Home)
-repository.
+We’re constantly assessing opportunities to expand our support for other languages, so follow our [GitHub Announcements](https://github.com/microsoft/ApplicationInsights-Announcements/issues) page to receive the latest SDK news.
 
 ## Requirements
 **Install**
 ```
-go get github.com/Microsoft/ApplicationInsights-Go/appinsights
+go get github.com/microsoft/ApplicationInsights-Go/appinsights
 ```
 **Get an instrumentation key**
->**Note**: an instrumentation key is required before any data can be sent. Please see the "[Getting an Application Insights Instrumentation Key](https://github.com/Microsoft/AppInsights-Home/wiki#getting-an-application-insights-instrumentation-key)" section of the wiki for more information. To try the SDK without an instrumentation key, set the instrumentationKey config value to a non-empty string.
+>**Note**: an instrumentation key is required before any data can be sent. Please see the "[Getting an Application Insights Instrumentation Key](https://github.com/microsoft/AppInsights-Home/wiki#getting-an-application-insights-instrumentation-key)" section of the wiki for more information. To try the SDK without an instrumentation key, set the instrumentationKey config value to a non-empty string.
 
 # Usage
 
 ## Setup
 
 To start tracking telemetry, you'll want to first initialize a
-[telemetry client](https://godoc.org/github.com/Microsoft/ApplicationInsights-Go/appinsights#TelemetryClient).
+[telemetry client](https://godoc.org/github.com/microsoft/ApplicationInsights-Go/appinsights#TelemetryClient).
 
 ```go
-import "github.com/Microsoft/ApplicationInsights-Go/appinsights"
+import "github.com/microsoft/ApplicationInsights-Go/appinsights"
 
 func main() {
 	client := appinsights.NewTelemetryClient("<instrumentation key>")
@@ -52,12 +48,12 @@ func main() {
 ```
 
 If you want more control over the client's behavior, you should initialize a
-new [TelemetryConfiguration](https://godoc.org/github.com/Microsoft/ApplicationInsights-Go/appinsights#TelemetryConfiguration)
+new [TelemetryConfiguration](https://godoc.org/github.com/microsoft/ApplicationInsights-Go/appinsights#TelemetryConfiguration)
 object and use it to create a client:
 
 ```go
 import "time"
-import "github.com/Microsoft/ApplicationInsights-Go/appinsights"
+import "github.com/microsoft/ApplicationInsights-Go/appinsights"
 
 func main() {
 	telemetryConfig := appinsights.NewTelemetryConfiguration("<instrumentation key>")
@@ -80,7 +76,7 @@ it in your data model.
 
 ## Telemetry submission
 
-The [TelemetryClient](https://godoc.org/github.com/Microsoft/ApplicationInsights-Go/appinsights#TelemetryClient)
+The [TelemetryClient](https://godoc.org/github.com/microsoft/ApplicationInsights-Go/appinsights#TelemetryClient)
 itself has several methods for submitting telemetry:
 
 ```go
@@ -132,7 +128,7 @@ then be submitted through the `TelemetryClient.Track` method, as illustrated
 in the below sections:
 
 ### Trace
-[Trace telemetry items](https://godoc.org/github.com/Microsoft/ApplicationInsights-Go/appinsights#TraceTelemetry)
+[Trace telemetry items](https://godoc.org/github.com/microsoft/ApplicationInsights-Go/appinsights#TraceTelemetry)
 represent printf-like trace statements that can be text searched.  They have
 an associated severity level, values for which are found in the package's
 constants:
@@ -164,7 +160,7 @@ client.Track(trace)
 ```
 
 ### Events
-[Event telemetry items](https://godoc.org/github.com/Microsoft/ApplicationInsights-Go/appinsights#EventTelemetry)
+[Event telemetry items](https://godoc.org/github.com/microsoft/ApplicationInsights-Go/appinsights#EventTelemetry)
 represent structured event records.
 
 ```go
@@ -174,7 +170,7 @@ client.Track(event)
 ```
 
 ### Single-value metrics
-[Metric telemetry items](https://godoc.org/github.com/Microsoft/ApplicationInsights-Go/appinsights#MetricTelemetry)
+[Metric telemetry items](https://godoc.org/github.com/microsoft/ApplicationInsights-Go/appinsights#MetricTelemetry)
 each represent a single data point.
 
 ```go
@@ -186,7 +182,7 @@ client.Track(metric)
 ### Pre-aggregated metrics
 To reduce the number of metric values that may be sent through telemetry,
 when using a particularly high volume of measurements, metric data can be
-[pre-aggregated by the client](https://godoc.org/github.com/Microsoft/ApplicationInsights-Go/appinsights#AggregateMetricTelemetry)
+[pre-aggregated by the client](https://godoc.org/github.com/microsoft/ApplicationInsights-Go/appinsights#AggregateMetricTelemetry)
 and submitted all at once.
 
 ```go
@@ -219,7 +215,7 @@ client.Track(aggregate)
 ```
 
 ### Requests
-[Request telemetry items](https://godoc.org/github.com/Microsoft/ApplicationInsights-Go/appinsights#RequestTelemetry)
+[Request telemetry items](https://godoc.org/github.com/microsoft/ApplicationInsights-Go/appinsights#RequestTelemetry)
 represent completion of an external request to the application and contains
 a summary of that request execution and results.  This SDK's request
 telemetry is focused on HTTP requests.
@@ -254,7 +250,7 @@ client.Track(request)
 ```
 
 ### Dependencies
-[Remote dependency telemetry items](https://godoc.org/github.com/Microsoft/ApplicationInsights-Go/appinsights#RemoteDependencyTelemetry)
+[Remote dependency telemetry items](https://godoc.org/github.com/microsoft/ApplicationInsights-Go/appinsights#RemoteDependencyTelemetry)
 represent interactions of the monitored component with a remote
 component/service like SQL or an HTTP endpoint.
 
@@ -285,7 +281,7 @@ client.Track(dependency)
 ```
 
 ### Exceptions
-[Exception telemetry items](https://godoc.org/github.com/Microsoft/ApplicationInsights-Go/appinsights#ExceptionTelemetry)
+[Exception telemetry items](https://godoc.org/github.com/microsoft/ApplicationInsights-Go/appinsights#ExceptionTelemetry)
 represent handled or unhandled exceptions that occurred during the execution
 of the monitored application.  This SDK is geared towards handling panics or
 unexpected results from important functions:
@@ -357,7 +353,7 @@ if err != nil {
 ```
 
 ### Availability
-[Availability telemetry items](https://godoc.org/github.com/Microsoft/ApplicationInsights-Go/appinsights/#AvailabilityTelemetry)
+[Availability telemetry items](https://godoc.org/github.com/microsoft/ApplicationInsights-Go/appinsights/#AvailabilityTelemetry)
 represent the result of executing an availability test.  This is useful if
 you are writing availability monitors in Go.
 
@@ -382,7 +378,7 @@ client.Track(availability)
 ```
 
 ### Page Views
-[Page view telemetry items](https://godoc.org/github.com/Microsoft/ApplicationInsights-Go/appinsights/#PageViewTelemetry)
+[Page view telemetry items](https://godoc.org/github.com/microsoft/ApplicationInsights-Go/appinsights/#PageViewTelemetry)
 represent generic actions on a page like a button click.  These are typically
 generated by the client side rather than the server side, but is available
 here nonetheless.
@@ -403,10 +399,10 @@ client.Track(pageview)
 Telemetry items all have a `Tags` property that contains information *about*
 the submitted telemetry, such as user, session, and device information.  The
 `Tags` property is an instance of the
-[contracts.ContextTags](https://godoc.org/github.com/Microsoft/ApplicationInsights-Go/appinsights/contracts/#ContextTags)
+[contracts.ContextTags](https://godoc.org/github.com/microsoft/ApplicationInsights-Go/appinsights/contracts/#ContextTags)
 type, which is a `map[string]string` under the hood, but has helper methods
 to access the most commonly used data.  An instance of
-[TelemetryContext](https://godoc.org/github.com/Microsoft/ApplicationInsights-Go/appinsights/#TelemetryContext)
+[TelemetryContext](https://godoc.org/github.com/microsoft/ApplicationInsights-Go/appinsights/#TelemetryContext)
 exists on the `TelemetryClient`, and also contains a `Tags` property.  These
 tags are applied to all telemetry sent through the client.  If a context tag
 is found on both the client's `TelemetryContext` and in the telemetry item's
@@ -418,8 +414,8 @@ A few examples for illustration:
 import (
 	"os"
 	
-	"github.com/Microsoft/ApplicationInsights-Go/appinsights"
-	"github.com/Microsoft/ApplicationInsights-Go/appinsights/contracts"
+	"github.com/microsoft/ApplicationInsights-Go/appinsights"
+	"github.com/microsoft/ApplicationInsights-Go/appinsights/contracts"
 )
 
 func main() {
@@ -465,7 +461,7 @@ func main() {
 ```
 
 ### Shutdown
-The Go SDK submits data asynchronously.  The [InMemoryChannel](https://godoc.org/github.com/Microsoft/ApplicationInsights-Go/appinsights/#InMemoryChannel)
+The Go SDK submits data asynchronously.  The [InMemoryChannel](https://godoc.org/github.com/microsoft/ApplicationInsights-Go/appinsights/#InMemoryChannel)
 launches its own goroutine used to accept and send telemetry.  If you're not
 careful, this may result in lost telemetry when the service needs to shut
 down.  The channel has a few methods to deal with this case:
@@ -513,7 +509,7 @@ func main() {
 
 We recommend something similar to the above to minimize lost telemetry
 through shutdown.
-[The documentation](https://godoc.org/github.com/Microsoft/ApplicationInsights-Go/appinsights#TelemetryChannel)
+[The documentation](https://godoc.org/github.com/microsoft/ApplicationInsights-Go/appinsights#TelemetryChannel)
 explains in more detail what can lead to the cases above.
 
 ### Diagnostics

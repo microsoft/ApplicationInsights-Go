@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Microsoft/ApplicationInsights-Go/appinsights/contracts"
+	"github.com/microsoft/ApplicationInsights-Go/appinsights/contracts"
 )
 
 // Common interface implemented by telemetry data contracts
