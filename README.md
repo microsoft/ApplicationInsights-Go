@@ -1,4 +1,4 @@
-# [UNSUPPORTED] Microsoft Application Insights SDK for Go
+# Microsoft Application Insights SDK for Go
 
 [![Build Status](https://travis-ci.org/Microsoft/ApplicationInsights-Go.svg?branch=master)](https://travis-ci.org/Microsoft/ApplicationInsights-Go) [![Documentation](https://godoc.org/github.com/microsoft/ApplicationInsights-Go?status.svg)](https://godoc.org/github.com/microsoft/ApplicationInsights-Go/appinsights) [![Release](https://img.shields.io/github/release/Microsoft/ApplicationInsights-Go/all.svg)](https://github.com/microsoft/ApplicationInsights-Go/releases)
 
