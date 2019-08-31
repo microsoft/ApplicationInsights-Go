@@ -79,13 +79,45 @@ func newTestClientServer() (transmitter, *testServer) {
 	return client, server
 }
 
+func newTestTlsClientServer() (transmitter, *testServer) {
+	server := &testServer{}
+	server.server = httptest.NewTLSServer(server)
+	server.notify = make(chan *testRequest, 1)
+	server.responseCode = 200
+	server.responseData = make([]byte, 0)
+	server.responseHeaders = make(map[string]string)
+
+	NewDiagnosticsMessageListener(func(message string) error {
+		fmt.Println(message)
+		return nil
+	})
+
+	client := newTransmitter(fmt.Sprintf("http://%s/v2/track", server.server.Listener.Addr().String()), server.server.Client())
+
+	return client, server
+}
+
+func TestBasicTransitTls(t *testing.T) {
+	client, server := newTestTlsClientServer()
+
+	doBasicTransmit(client, server, t)
+}
+
 func TestBasicTransmit(t *testing.T) {
 	client, server := newTestClientServer()
+
+	doBasicTransmit(client, server, t)
+}
+
+func doBasicTransmit(client transmitter, server *testServer, t *testing.T) {
 	defer server.Close()
 
 	server.responseData = []byte(`{"itemsReceived":3, "itemsAccepted":5, "errors":[]}`)
 	server.responseHeaders["Content-type"] = "application/json"
 	result, err := client.Transmit([]byte("foobar"), make(telemetryBufferItems, 0))
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 	req := server.waitForRequest(t)
 
 	if err != nil {
