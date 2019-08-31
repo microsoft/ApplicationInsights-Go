@@ -79,7 +79,7 @@ func newTestClientServer() (transmitter, *testServer) {
 	return client, server
 }
 
-func newTestTlsClientServer() (transmitter, *testServer) {
+func newTestTlsClientServer(t *testing.T) (transmitter, *testServer) {
 	server := &testServer{}
 	server.server = httptest.NewTLSServer(server)
 	server.notify = make(chan *testRequest, 1)
@@ -87,18 +87,13 @@ func newTestTlsClientServer() (transmitter, *testServer) {
 	server.responseData = make([]byte, 0)
 	server.responseHeaders = make(map[string]string)
 
-	NewDiagnosticsMessageListener(func(message string) error {
-		fmt.Println(message)
-		return nil
-	})
-
-	client := newTransmitter(fmt.Sprintf("http://%s/v2/track", server.server.Listener.Addr().String()), server.server.Client())
+	client := newTransmitter(fmt.Sprintf("https://%s/v2/track", server.server.Listener.Addr().String()), server.server.Client())
 
 	return client, server
 }
 
 func TestBasicTransitTls(t *testing.T) {
-	client, server := newTestTlsClientServer()
+	client, server := newTestTlsClientServer(t)
 
 	doBasicTransmit(client, server, t)
 }
