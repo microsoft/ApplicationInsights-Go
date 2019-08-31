@@ -74,7 +74,7 @@ func newTestClientServer() (transmitter, *testServer) {
 	server.responseData = make([]byte, 0)
 	server.responseHeaders = make(map[string]string)
 
-	client := newTransmitter(fmt.Sprintf("http://%s/v2/track", server.server.Listener.Addr().String()))
+	client := newTransmitter(fmt.Sprintf("http://%s/v2/track", server.server.Listener.Addr().String()), nil)
 
 	return client, server
 }

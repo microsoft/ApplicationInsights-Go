@@ -16,6 +16,7 @@ type transmitter interface {
 
 type httpTransmitter struct {
 	endpoint string
+	client   *http.Client
 }
 
 type transmissionResult struct {
@@ -50,8 +51,11 @@ const (
 	serviceUnavailableResponse              = 503
 )
 
-func newTransmitter(endpointAddress string) transmitter {
-	return &httpTransmitter{endpointAddress}
+func newTransmitter(endpointAddress string, client *http.Client) transmitter {
+	if client == nil {
+		client = http.DefaultClient
+	}
+	return &httpTransmitter{endpointAddress, client}
 }
 
 func (transmitter *httpTransmitter) Transmit(payload []byte, items telemetryBufferItems) (*transmissionResult, error) {
@@ -78,8 +82,7 @@ func (transmitter *httpTransmitter) Transmit(payload []byte, items telemetryBuff
 	req.Header.Set("Content-Type", "application/x-json-stream")
 	req.Header.Set("Accept-Encoding", "gzip, deflate")
 
-	client := http.DefaultClient
-	resp, err := client.Do(req)
+	resp, err := transmitter.client.Do(req)
 	if err != nil {
 		diagnosticsWriter.Printf("Failed to transmit telemetry: %s", err.Error())
 		return nil, err
