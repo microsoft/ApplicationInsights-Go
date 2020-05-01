@@ -53,7 +53,7 @@ func NewInMemoryChannel(config *TelemetryConfiguration) *InMemoryChannel {
 		batchSize:       config.MaxBatchSize,
 		batchInterval:   config.MaxBatchInterval,
 		throttle:        newThrottleManager(),
-		transmitter:     newTransmitter(config.EndpointUrl),
+		transmitter:     newTransmitter(config.EndpointUrl, config.Client),
 	}
 
 	go channel.acceptLoop()
