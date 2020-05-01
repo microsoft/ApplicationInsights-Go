@@ -1,6 +1,7 @@
 package appinsights
 
 import (
+	"net/http"
 	"os"
 	"runtime"
 	"time"
@@ -21,6 +22,9 @@ type TelemetryConfiguration struct {
 
 	// Maximum time to wait before sending a batch of telemetry.
 	MaxBatchInterval time.Duration
+
+	// Customized http client if desired (will use http.DefaultClient otherwise)
+	Client *http.Client
 }
 
 // Creates a new TelemetryConfiguration object with the specified

@@ -15,4 +15,8 @@ func TestTelemetryConfiguration(t *testing.T) {
 	if config.EndpointUrl != defaultEndpoint {
 		t.Errorf("EndpointUrl is %s, want %s", config.EndpointUrl, defaultEndpoint)
 	}
+
+	if config.Client != nil {
+		t.Errorf("Client is not nil, want nil")
+	}
 }
