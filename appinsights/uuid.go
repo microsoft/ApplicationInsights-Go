@@ -8,10 +8,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/satori/go.uuid"
+	"github.com/gofrs/uuid"
 )
 
-// uuidGenerator is a wrapper for satori/go.uuid, used for a few reasons:
+// uuidGenerator is a wrapper for gofrs/uuid, an active fork of satori/go.uuid used for a few reasons:
 //   - Avoids build failures due to version differences when a project imports us but
 //     does not respect our vendoring. (satori/go.uuid#77, #71, #66, ...)
 //   - Avoids error output when creaing new UUID's: if the crypto reader fails,
