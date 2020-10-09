@@ -51,8 +51,6 @@ func (gen *uuidGenerator) newUUID() uuid.UUID {
 	//err will be either EOF or unexpected EOF
 	if err != nil {
 		gen.fallback(&u)
-		u.SetVersion(uuid.V4)
-		u.SetVariant(uuid.VariantRFC4122)
 	}
 
 	return u
@@ -64,6 +62,8 @@ func (gen *uuidGenerator) fallback(u *uuid.UUID) {
 	defer gen.Unlock()
 	// This does not fail as per documentation
 	gen.fallbackRand.Read(u[:])
+	u.SetVersion(uuid.V4)
+	u.SetVariant(uuid.VariantRFC4122)
 }
 
 // newUUID generates a new V4 UUID
