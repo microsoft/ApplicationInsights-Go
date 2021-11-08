@@ -23,7 +23,7 @@ Known gaps include:
   spilling events to disk in case of network interruption.  This SDK has no
   such feature.
 
-We’re constantly assessing opportunities to expand our support for other languages, so follow our [GitHub Announcements](https://github.com/microsoft/ApplicationInsights-Announcements/issues) page to receive the latest SDK news.
+We’re constantly assessing opportunities to expand our support for other languages, so follow our [Azure Updates](https://azure.microsoft.com/updates/?query=application%20insights) page to receive the latest SDK news.
 
 ## Requirements
 **Install**
