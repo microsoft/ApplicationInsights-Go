@@ -10,8 +10,9 @@ telemetry of various kinds (event, metric, trace) to the Application
 Insights service where they can be visualized in the Azure Portal.
 
 ## Status
-This SDK is NOT maintained or supported by Microsoft even though we've contributed to it in the past. Note that Azure Monitor only provides support when using our [supported SDKs](https://docs.microsoft.com/en-us/azure/azure-monitor/app/platforms#unsupported-community-sdks), and this SDK does not yet meet that standard.  Known gaps include:
+This SDK is NOT currently maintained or supported by Microsoft. Azure Monitor only provides support when using our [supported SDKs](https://docs.microsoft.com/en-us/azure/azure-monitor/app/platforms#unsupported-community-sdks), and this SDK does not yet meet that standard.
 
+Known gaps include:
 * Operation correlation is not supported, but this can be managed by the
   caller through the interfaces that exist today.
 * Sampling is not supported.  The more mature SDKs support dynamic sampling,
@@ -22,7 +23,7 @@ This SDK is NOT maintained or supported by Microsoft even though we've contribut
   spilling events to disk in case of network interruption.  This SDK has no
   such feature.
 
-We’re constantly assessing opportunities to expand our support for other languages, so follow our [GitHub Announcements](https://github.com/microsoft/ApplicationInsights-Announcements/issues) page to receive the latest SDK news.
+We’re constantly assessing opportunities to expand our support for other languages, so follow our [Azure Updates](https://azure.microsoft.com/updates/?query=application%20insights) page to receive the latest SDK news.
 
 ## Requirements
 **Install**
