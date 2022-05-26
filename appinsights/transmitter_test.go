@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -34,7 +34,7 @@ func (server *testServer) Close() {
 }
 
 func (server *testServer) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
-	body, _ := ioutil.ReadAll(req.Body)
+	body, _ := io.ReadAll(req.Body)
 
 	hdr := writer.Header()
 	for k, v := range server.responseHeaders {
@@ -42,7 +42,9 @@ func (server *testServer) ServeHTTP(writer http.ResponseWriter, req *http.Reques
 	}
 
 	writer.WriteHeader(server.responseCode)
-	writer.Write(server.responseData)
+	if _, err := writer.Write(server.responseData); err != nil {
+		panic(err)
+	}
 
 	server.notify <- &testRequest{
 		request: req,
@@ -139,7 +141,7 @@ func doBasicTransmit(client transmitter, server *testServer, t *testing.T) {
 		t.Fatalf("Couldn't create gzip reader: %s", err.Error())
 	}
 
-	body, err := ioutil.ReadAll(reader)
+	body, err := io.ReadAll(reader)
 	reader.Close()
 	if err != nil {
 		t.Fatalf("Couldn't read compressed data: %s", err.Error())
@@ -387,8 +389,8 @@ func TestTransmitResults(t *testing.T) {
 		ItemsAccepted: 3,
 		ItemsReceived: 5,
 		Errors: []*itemTransmissionResult{
-			&itemTransmissionResult{Index: 2, StatusCode: 400, Message: "Bad 1"},
-			&itemTransmissionResult{Index: 4, StatusCode: 400, Message: "Bad 2"},
+			{Index: 2, StatusCode: 400, Message: "Bad 1"},
+			{Index: 4, StatusCode: 400, Message: "Bad 2"},
 		},
 	}
 
@@ -396,8 +398,8 @@ func TestTransmitResults(t *testing.T) {
 		ItemsAccepted: 2,
 		ItemsReceived: 4,
 		Errors: []*itemTransmissionResult{
-			&itemTransmissionResult{Index: 2, StatusCode: 400, Message: "Bad 1"},
-			&itemTransmissionResult{Index: 4, StatusCode: 408, Message: "OK Later"},
+			{Index: 2, StatusCode: 400, Message: "Bad 1"},
+			{Index: 4, StatusCode: 408, Message: "OK Later"},
 		},
 	}
 
@@ -405,11 +407,11 @@ func TestTransmitResults(t *testing.T) {
 		ItemsAccepted: 0,
 		ItemsReceived: 5,
 		Errors: []*itemTransmissionResult{
-			&itemTransmissionResult{Index: 0, StatusCode: 500, Message: "Bad 1"},
-			&itemTransmissionResult{Index: 1, StatusCode: 500, Message: "Bad 2"},
-			&itemTransmissionResult{Index: 2, StatusCode: 500, Message: "Bad 3"},
-			&itemTransmissionResult{Index: 3, StatusCode: 500, Message: "Bad 4"},
-			&itemTransmissionResult{Index: 4, StatusCode: 500, Message: "Bad 5"},
+			{Index: 0, StatusCode: 500, Message: "Bad 1"},
+			{Index: 1, StatusCode: 500, Message: "Bad 2"},
+			{Index: 2, StatusCode: 500, Message: "Bad 3"},
+			{Index: 3, StatusCode: 500, Message: "Bad 4"},
+			{Index: 4, StatusCode: 500, Message: "Bad 5"},
 		},
 	}
 
@@ -481,10 +483,10 @@ func TestGetRetryItems(t *testing.T) {
 			ItemsReceived: 7,
 			ItemsAccepted: 4,
 			Errors: []*itemTransmissionResult{
-				&itemTransmissionResult{Index: 1, StatusCode: 200, Message: "OK"},
-				&itemTransmissionResult{Index: 3, StatusCode: 400, Message: "Bad"},
-				&itemTransmissionResult{Index: 5, StatusCode: 408, Message: "Later"},
-				&itemTransmissionResult{Index: 6, StatusCode: 500, Message: "Oops"},
+				{Index: 1, StatusCode: 200, Message: "OK"},
+				{Index: 3, StatusCode: 400, Message: "Bad"},
+				{Index: 5, StatusCode: 408, Message: "Later"},
+				{Index: 6, StatusCode: 500, Message: "Oops"},
 			},
 		},
 	}

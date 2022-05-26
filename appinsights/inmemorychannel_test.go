@@ -404,10 +404,10 @@ func TestPartialRetry(t *testing.T) {
 			ItemsAccepted: 2,
 			ItemsReceived: 5,
 			Errors: []*itemTransmissionResult{
-				&itemTransmissionResult{Index: 1, StatusCode: 500, Message: "Server Error"},
-				&itemTransmissionResult{Index: 2, StatusCode: 200, Message: "OK"},
-				&itemTransmissionResult{Index: 3, StatusCode: 400, Message: "Bad Request"},
-				&itemTransmissionResult{Index: 4, StatusCode: 408, Message: "Plz Retry"},
+				{Index: 1, StatusCode: 500, Message: "Server Error"},
+				{Index: 2, StatusCode: 200, Message: "OK"},
+				{Index: 3, StatusCode: 400, Message: "Bad Request"},
+				{Index: 4, StatusCode: 408, Message: "Plz Retry"},
 			},
 		},
 	}

@@ -140,12 +140,12 @@ type statsTest struct {
 
 func TestAggregateMetricTelemetry(t *testing.T) {
 	statsTests := []statsTest{
-		statsTest{[]float64{}, 0.0, 0.0, 0.0, 0.0},
-		statsTest{[]float64{0.0}, 0.0, 0.0, 0.0, 0.0},
-		statsTest{[]float64{50.0}, 0.0, 0.0, 50.0, 50.0},
-		statsTest{[]float64{50.0, 50.0}, 0.0, 0.0, 50.0, 50.0},
-		statsTest{[]float64{50.0, 60.0}, 5.0, 7.071, 50.0, 60.0},
-		statsTest{[]float64{9.0, 10.0, 11.0, 7.0, 13.0}, 2.0, 2.236, 7.0, 13.0},
+		{[]float64{}, 0.0, 0.0, 0.0, 0.0},
+		{[]float64{0.0}, 0.0, 0.0, 0.0, 0.0},
+		{[]float64{50.0}, 0.0, 0.0, 50.0, 50.0},
+		{[]float64{50.0, 50.0}, 0.0, 0.0, 50.0, 50.0},
+		{[]float64{50.0, 60.0}, 5.0, 7.071, 50.0, 60.0},
+		{[]float64{9.0, 10.0, 11.0, 7.0, 13.0}, 2.0, 2.236, 7.0, 13.0},
 		// TODO: More tests.
 	}
 
@@ -351,12 +351,12 @@ type durationTest struct {
 
 func TestFormatDuration(t *testing.T) {
 	durationTests := []durationTest{
-		durationTest{time.Hour, "0.01:00:00.0000000"},
-		durationTest{time.Minute, "0.00:01:00.0000000"},
-		durationTest{time.Second, "0.00:00:01.0000000"},
-		durationTest{time.Millisecond, "0.00:00:00.0010000"},
-		durationTest{100 * time.Nanosecond, "0.00:00:00.0000001"},
-		durationTest{(31 * time.Hour) + (25 * time.Minute) + (30 * time.Second) + time.Millisecond, "1.07:25:30.0010000"},
+		{time.Hour, "0.01:00:00.0000000"},
+		{time.Minute, "0.00:01:00.0000000"},
+		{time.Second, "0.00:00:01.0000000"},
+		{time.Millisecond, "0.00:00:00.0010000"},
+		{100 * time.Nanosecond, "0.00:00:00.0000001"},
+		{(31 * time.Hour) + (25 * time.Minute) + (30 * time.Second) + time.Millisecond, "1.07:25:30.0010000"},
 	}
 
 	for _, tst := range durationTests {
