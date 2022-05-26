@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/microsoft/ApplicationInsights-Go/appinsights/contracts"
+	"github.com/javestmx/ApplicationInsights-Go/appinsights/contracts"
 )
 
 func TestDefaultTags(t *testing.T) {
