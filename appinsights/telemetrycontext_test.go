@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/microsoft/ApplicationInsights-Go/appinsights/contracts"
+	"github.com/javestmx/ApplicationInsights-Go/appinsights/contracts"
 )
 
 func TestDefaultTags(t *testing.T) {
@@ -93,7 +93,7 @@ func TestSanitize(t *testing.T) {
 
 	// Set up listener for the warnings.
 	NewDiagnosticsMessageListener(func(msg string) error {
-		for k, _ := range found {
+		for k := range found {
 			if strings.Contains(msg, k) {
 				found[k] = found[k] + 1
 				break

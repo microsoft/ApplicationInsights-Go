@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"sort"
 	"time"
@@ -90,7 +90,7 @@ func (transmitter *httpTransmitter) Transmit(payload []byte, items telemetryBuff
 
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		diagnosticsWriter.Printf("Failed to read response from server: %s", err.Error())
 		return nil, err
