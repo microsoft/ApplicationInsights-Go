@@ -45,8 +45,8 @@ jobs:
     - name: Run tests
       uses: actions/setup-go@v2
       with:
-        go-version: 1.16
+        go-version: 1.18
 
     - name: Test script
-      run: ./test.sh
+      run: go test ./...
 
