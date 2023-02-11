@@ -3,7 +3,7 @@ package appinsights
 import (
 	"strings"
 
-	"github.com/microsoft/ApplicationInsights-Go/appinsights/contracts"
+	"github.com/javestmx/ApplicationInsights-Go/appinsights/contracts"
 )
 
 // Encapsulates contextual data common to all telemetry submitted through a

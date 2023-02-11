@@ -1,0 +1,10 @@
+# Configuraciones para el linter de Golang-ci
+run: 
+  go: '1.18'
+  # Desactivando linters para Go-18
+linters:
+  disable:
+    - gosimple
+    - staticcheck
+    - structcheck
+    - unused

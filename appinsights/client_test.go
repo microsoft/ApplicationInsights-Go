@@ -3,7 +3,7 @@ package appinsights
 import (
 	"bytes"
 	"compress/gzip"
-	"io/ioutil"
+	"io"
 	"testing"
 	"time"
 )
@@ -93,7 +93,7 @@ func TestEndToEnd(t *testing.T) {
 	}
 
 	// Read payload
-	body, err := ioutil.ReadAll(reader)
+	body, err := io.ReadAll(reader)
 	reader.Close()
 	if err != nil {
 		t.Fatalf("Couldn't read compressed data: %s", err.Error())

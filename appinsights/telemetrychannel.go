@@ -1,8 +1,9 @@
 package appinsights
 
 import (
-	"github.com/microsoft/ApplicationInsights-Go/appinsights/contracts"
 	"time"
+
+	"github.com/javestmx/ApplicationInsights-Go/appinsights/contracts"
 )
 
 // Implementations of TelemetryChannel are responsible for queueing and
